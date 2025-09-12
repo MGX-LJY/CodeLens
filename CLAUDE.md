@@ -76,3 +76,4 @@ When implementing this project:
 /tests/                   # Comprehensive test suites
 /config/                  # Configuration templates and schemas
 ```
+## 每次都要记得把想法生成在文档中
