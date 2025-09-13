@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "codelens": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": ".",
+      "env": {
+        "PYTHONPATH": "."
+      },
+      "description": "CodeLens MCP服务器 - 提供项目文档生成的信息和模板服务",
+      "capabilities": ["tools"],
+      "tools": [
+        {
+          "name": "doc_scan",
+          "description": "扫描项目文件并返回结构化信息和内容"
+        },
+        {
+          "name": "template_get", 
+          "description": "获取文档模板资源"
+        },
+        {
+          "name": "doc_verify",
+          "description": "验证文档生成状态和完整性"
+        }
+      ]
+    }
+  },
+  "serverOptions": {
+    "codelens": {
+      "timeout": 30000,
+      "retries": 3,
+      "logLevel": "info"
+    }
+  }
+}

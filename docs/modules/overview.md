@@ -2,13 +2,14 @@
 
 ## 识别的功能模块
 
-基于重构后的CodeLens项目结构分析，识别出以下主要功能模块：
+基于CodeLens v0.4.0 MCP服务器架构分析，识别出以下主要功能模块：
 
 1. **服务模块** (`src/services/`) - 核心信息提供服务
 2. **模板模块** (`src/templates/`) - 文档模板资源管理
 3. **MCP工具模块** (`src/mcp_tools/`) - MCP协议接口实现
 4. **日志模块** (`src/logging/`) - 企业级日志系统
-5. **工具脚本模块** (`generate_docs_structure.py`) - 项目文档结构初始化
+5. **🚀 MCP服务器** (`mcp_server.py`) - 完整MCP协议服务器 (v0.4.0新增)
+6. **🧪 测试工具** (`test_mcp_doc_init.py`) - MCP协作流程验证 (v0.4.0新增)
 
 ## 模块详细信息
 
@@ -82,20 +83,45 @@
 - 各工具的`create_mcp_tool()`工厂函数
 - 命令行接口 `main()`
 
-### 工具脚本模块 (generate_docs_structure.py)
+### 🚀 MCP服务器模块 (mcp_server.py) - v0.4.0新增
 **包含文件**:
-- `generate_docs_structure.py` - 文档结构初始化脚本
+- `mcp_server.py` - 完整的MCP协议服务器实现
 
 **核心功能**:
-- 快速生成项目文档目录结构
-- 创建标准的五层文档目录
-- 生成示例文档文件
-- 为新项目提供文档初始化功能
+- 标准MCP协议服务器实现
+- 统一管理所有MCP工具
+- 支持JSON-RPC通信协议
+- 完整的工具路由和错误处理
+- Claude Code seamless集成
 
 **对外接口**:
-- `create_file()`: 文件创建函数
-- `create_directory()`: 目录创建函数
-- `main()`: 脚本主入口
+- `CodeLensMCPServer`: 主服务器类
+  - `handle_request()`: 处理MCP请求
+  - `list_tools()`: 列出所有可用工具
+  - `execute_tool()`: 执行指定工具
+- `main()`: 服务器启动入口
+- 测试模式和信息查看功能
+
+### 🧪 测试工具模块 (test_mcp_doc_init.py) - v0.4.0新增
+**包含文件**:
+- `test_mcp_doc_init.py` - MCP协作流程完整测试
+
+**核心功能**:
+- 模拟Claude Code完整文档生成流程
+- 8步验证协作流程
+- 实际项目测试和验证
+- 性能和质量基准测试
+
+**测试覆盖**:
+- 项目扫描功能验证
+- 模板获取和应用测试
+- 文档生成状态跟踪
+- 完整协作流程验证
+
+**实测结果** (微信自动化项目):
+- 📁 扫描118个文件，耗时0.07秒
+- 🎨 生成7个文档文件
+- 💯 完成度25.0%，状态minimal
 
 ## 模块关系图谱
 

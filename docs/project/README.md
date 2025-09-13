@@ -41,16 +41,17 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 项目状态
 
-**当前版本**: v0.3.0 (日志系统完成)
+**当前版本**: v0.4.0 (MCP服务器完成)
 
-**已实现功能**:
-- ✅ 增强的文件信息提取服务 (FileService)
-- ✅ 完整的文档模板资源管理 (TemplateService) 
-- ✅ 文档验证和状态报告服务 (ValidationService)
-- ✅ 三个MCP工具：doc_scan, template_get, doc_verify
-- ✅ **企业级日志系统**：结构化日志、文件轮转、监控统计
-- ✅ 100%测试覆盖率，所有功能验证通过
-- ✅ 命令行接口支持
+**✅ 已完成功能**:
+- ✅ **完整MCP服务器实现** - 生产就绪的MCP协议服务器
+- ✅ **三个核心MCP工具** - doc_scan, template_get, doc_verify
+- ✅ **增强的文件信息服务** - 完整内容提取、元数据分析
+- ✅ **标准化模板系统** - 4种文档模板，变量验证
+- ✅ **实时状态验证** - 文档生成进度跟踪
+- ✅ **企业级日志系统** - 结构化日志、文件轮转、监控
+- ✅ **MCP协作流程验证** - 微信自动化项目测试成功
+- ✅ **Claude Code配置模板** - 开箱即用的集成配置
 
 **架构优势**:
 - 🎯 专注信息提供，与Claude Code完美协作
@@ -79,44 +80,69 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 使用示例
 
-### MCP工具调用示例
+### 🎯 MCP服务器部署
 
 ```bash
-# 1. 扫描项目获取完整信息
-$ python src/mcp_tools/doc_scan.py . --no-content
+# 1. 启动MCP服务器
+python mcp_server.py
+
+# 2. 测试服务器功能
+python mcp_server.py test /path/to/project
+
+# 3. 查看服务器信息
+python mcp_server.py info
+```
+
+### 🔧 Claude Code集成配置
+
+```json
 {
-  "success": true,
-  "data": {
-    "scan_result": {
-      "statistics": {"total_files": 11, "total_size": 65909},
-      "directory_tree": {...}
+  "mcpServers": {
+    "codelens": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "/path/to/codelens",
+      "env": {
+        "PYTHONPATH": "/path/to/codelens"
+      }
     }
   }
 }
+```
 
-# 2. 获取所有可用模板
-$ python src/mcp_tools/template_get.py --list-all
-{
-  "success": true,
-  "data": {
-    "templates": [
-      {"name": "file_summary", "description": "文件摘要模板"},
-      {"name": "architecture", "description": "架构概述模板"}
-    ]
-  }
-}
+### 📊 实际测试结果 (微信自动化项目)
 
-# 3. 验证文档生成状态
-$ python src/mcp_tools/doc_verify.py .
-{
-  "success": true,
-  "data": {
-    "summary": {
-      "overall_status": "mostly_complete",
-      "completion_percentage": 87.5
-    }
-  }
-}
+```bash
+# 扫描结果
+📁 发现文件: 118 个
+📊 总大小: 1,799,299 字节  
+⏱️ 扫描耗时: 0.07 秒
+📋 文件类型: {'.md': 84, '.py': 32, '.txt': 1, '.json': 1}
+
+# 生成结果
+✅ 项目README: docs/project/README.md
+✅ 架构概述: docs/architecture/overview.md  
+✅ 文件摘要: 5个核心文件
+💯 完成度: 25.0% → minimal状态
+```
+
+### 🎭 协作流程示例
+
+```mermaid
+sequenceDiagram
+    participant CC as Claude Code
+    participant CL as CodeLens MCP
+    
+    CC->>CL: doc_scan(project_path)
+    CL-->>CC: 项目文件信息+内容
+    
+    CC->>CL: template_get("architecture")
+    CL-->>CC: 架构文档模板
+    
+    Note over CC: 基于信息和模板生成文档
+    
+    CC->>CL: doc_verify(project_path) 
+    CL-->>CC: 验证状态报告
 ```
 
 ## 开发路线图

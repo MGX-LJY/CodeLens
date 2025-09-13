@@ -22,7 +22,7 @@ except ImportError:
 
         def error(self, msg, context=None, exc_info=None): pass
 
-        def log_operation_start(self): return "dummy"
+        def log_operation_start(self, *args, **kwargs): return "dummy"
 
         def log_operation_end(self, op, op_id, **ctx): pass
 

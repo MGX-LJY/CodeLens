@@ -143,38 +143,44 @@ python src/mcp_tools/template_get.py --list-all
 python src/mcp_tools/doc_verify.py /path/to/project
 ```
 
-### MCP服务部署
-```python
-# doc_scan工具定义
-{
-  "name": "doc_scan",
-  "description": "扫描项目文件并返回结构化信息",
-  "parameters": {
-    "project_path": "string",
-    "include_content": "boolean",
-    "config": "object"
-  }
-}
+### 🚀 MCP服务器部署 (v0.4.0新增)
+```bash
+# 启动MCP服务器
+python mcp_server.py
 
-# template_get工具定义  
-{
-  "name": "template_get",
-  "description": "获取指定类型的文档模板",
-  "parameters": {
-    "template_name": "string",
-    "format": "string"
-  }
-}
+# 测试模式 - 验证所有功能
+python mcp_server.py test /path/to/project
 
-# doc_verify工具定义
+# 查看服务器信息
+python mcp_server.py info
+```
+
+### 🔧 Claude Code集成配置
+```json
 {
-  "name": "doc_verify", 
-  "description": "检查项目文档生成状态",
-  "parameters": {
-    "project_path": "string",
-    "verification_type": "string"
+  "mcpServers": {
+    "codelens": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "/path/to/codelens",
+      "env": {
+        "PYTHONPATH": "/path/to/codelens"
+      },
+      "description": "CodeLens MCP服务器",
+      "capabilities": ["tools"]
+    }
   }
 }
+```
+
+### 📊 实际性能验证 (微信自动化项目测试)
+```
+🎯 测试项目: wechat-automation-project
+📁 扫描文件: 118个 (Python, Markdown, JSON)
+📊 项目大小: 1.8MB 
+⏱️ 扫描耗时: 0.07秒
+🎨 生成文档: 7个文件
+💯 完成状态: 25.0% → minimal
 ```
 
 ### 模块化设计
