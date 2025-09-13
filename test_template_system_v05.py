@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-CodeLens 0.5.0 模板系统测试
-验证四层架构的26个专业模板是否正常工作
+CodeLens 模板系统测试
+验证四层架构的专业模板是否正常工作
 """
 
 import sys
@@ -21,8 +21,8 @@ except ImportError as e:
 
 
 def test_template_system():
-    """测试0.5.0模板系统"""
-    print("\n🚀 开始测试 CodeLens 0.5.0 模板系统...")
+    """测试模板系统"""
+    print("\n🚀 开始测试 CodeLens 模板系统...")
     
     # 初始化模板服务
     try:
@@ -125,7 +125,7 @@ def test_template_system():
     except Exception as e:
         print(f"  ❌ 模板格式化测试异常: {e}")
     
-    print("\n🎉 CodeLens 0.5.0 模板系统测试完成!")
+    print("\n🎉 CodeLens 模板系统测试完成!")
     return True
 
 
@@ -134,7 +134,7 @@ def show_template_structure():
     service = TemplateService()
     templates = service.get_template_list()
     
-    print("\n📁 CodeLens 0.5.0 模板结构:")
+    print("\n📁 CodeLens 模板结构:")
     print("=" * 60)
     
     by_layer = {}
@@ -156,14 +156,14 @@ def show_template_structure():
 
 
 if __name__ == "__main__":
-    print("🔬 CodeLens 0.5.0 模板系统测试工具")
+    print("🔬 CodeLens 模板系统测试工具")
     print("=" * 50)
     
     success = test_template_system()
     
     if success:
         show_template_structure()
-        print(f"\n✅ 所有测试通过! CodeLens 0.5.0 模板系统工作正常")
+        print(f"\n✅ 所有测试通过! CodeLens 模板系统工作正常")
     else:
         print(f"\n❌ 测试失败! 请检查模板系统配置")
         sys.exit(1)

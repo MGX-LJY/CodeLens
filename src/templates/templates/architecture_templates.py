@@ -77,7 +77,6 @@ class ArchitectureTemplates:
 ### 配置管理
 {configuration_management}
 
-## 版本兼容性
 {version_compatibility}
 
 ## 部署架构

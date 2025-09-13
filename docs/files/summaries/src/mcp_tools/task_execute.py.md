@@ -603,8 +603,3 @@ print(f"任务完成，下一个任务: {complete_result['next_task']['descripti
 - **模板解析失败**: 返回模板解析错误详情
 - **变量提取失败**: 使用空变量列表作为回退
 
-## 版本信息
-- **引入版本**: 0.6.0.0
-- **文件路径**: src/mcp_tools/task_execute.py
-- **依赖模块**: task_engine.*, services.*, templates.*
-- **最后更新**: 2025-09-13

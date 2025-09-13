@@ -300,8 +300,3 @@ except PhaseDependencyError as e:
     print(f"阶段依赖错误: {e}")
 ```
 
-## 版本信息
-- **引入版本**: 0.6.0.0
-- **文件路径**: src/task_engine/phase_controller.py
-- **依赖模块**: task_manager.py
-- **最后更新**: 2025-09-13

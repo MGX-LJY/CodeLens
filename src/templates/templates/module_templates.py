@@ -85,8 +85,6 @@ class ModuleTemplates:
 
 {deployment_dependencies}
 
-## 版本兼容性
-
 {version_compatibility}
 """
     

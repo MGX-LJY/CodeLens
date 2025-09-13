@@ -2,9 +2,9 @@
 
 ## 项目概述
 
-CodeLens 0.6.0.0 是一个专为Claude Code设计的智能化MCP（Model Context Protocol）协作服务器。通过**Task Engine智能任务管理**和**5阶段工作流程**，CodeLens为Claude Code提供从项目分析到文档生成的完整智能化协作体验，实现高质量项目文档的自动化生成。
+CodeLens 0.6.1.1 是一个专为Claude Code设计的智能化MCP（Model Context Protocol）协作服务器。通过**Task Engine智能任务管理**和**5阶段工作流程**，CodeLens为Claude Code提供从项目分析到文档生成的完整智能化协作体验，实现高质量项目文档的自动化生成。
 
-## 🚀 v0.6.0.0 核心特性
+## 🚀 v0.6.1.1 核心特性
 
 🧠 **Task Engine智能任务管理**：完整的任务生命周期管理和5阶段流程控制
 🔄 **5阶段智能工作流**：项目扫描→任务规划→文件文档→模块分析→项目总结
@@ -50,7 +50,7 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 项目状态
 
-**当前版本**: v0.6.0.0 🚀 **Task Engine智能化重大更新**
+**当前版本**: v0.6.1.1 🚀 **Task Engine智能化重大更新**
 
 **✅ 核心功能特性**:
 - ✅ **Task Engine智能管理** - 完整的任务生命周期管理和5阶段流程控制
@@ -62,7 +62,7 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 - ✅ **智能模板服务** - 按层级、类型、名称灵活查询模板
 - ✅ **完整MCP服务器** - 生产就绪的协议服务器实现
 
-**🚀 v0.6.0.0智能化优势**:
+**🚀 v0.6.1.1智能化优势**:
 - 🧠 **智能化协作**: 从被动信息提供到主动智能协作
 - ⚡ **任务驱动**: 完整的任务生命周期管理和进度跟踪
 - 📊 **状态感知**: 实时监控和健康检查机制
@@ -73,10 +73,10 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ### 🚀 Task Engine智能任务管理架构
 
-CodeLens 0.6.0.0 引入了Task Engine智能任务管理层，实现5阶段工作流程控制：
+CodeLens 0.6.1.1 引入了Task Engine智能任务管理层，实现5阶段工作流程控制：
 
 ```
-🧠 Task Engine层 (v0.6.0.0核心)
+🧠 Task Engine层 (v0.6.1.1核心)
 ├── TaskManager - 智能任务管理器 (依赖关系、优先级调度)
 ├── PhaseController - 5阶段严格控制器 (100%完成率要求)
 └── StateTracker - 状态跟踪器 (持久化、进度监控、健康检查)
@@ -212,7 +212,7 @@ sequenceDiagram
 - ✅ **监控统计**：操作追踪、性能分析
 - ✅ **配置管理**：JSON配置文件、运行时更新
 
-### Phase 3: Task Engine智能化 ✅ (v0.6.0.0)
+### Phase 3: Task Engine智能化 ✅ (v0.6.1.1)
 - ✅ **Task Engine核心**: TaskManager, PhaseController, StateTracker
 - ✅ **4个新增智能工具**: doc_guide, task_init, task_execute, task_status  
 - ✅ **5阶段工作流程**: 严格阶段控制和100%完成率要求

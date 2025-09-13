@@ -166,7 +166,6 @@ python src/mcp_tools/doc_verify.py /path/to/project --type full_status
     }
   },
   "metadata": {
-    "version": "0.6.0.0",
     "project_path": "/path/to/project",
     "created_at": "2025-09-13T10:00:00Z",
     "last_updated": "2025-09-13T10:35:00Z"

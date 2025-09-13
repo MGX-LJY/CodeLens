@@ -147,7 +147,6 @@ class Task:
         }
     },
     "metadata": {
-        "version": "0.6.0.0",
         "project_path": "/path/to/project",
         "created_at": "2025-09-13T10:00:00Z",
         "last_updated": "2025-09-13T10:30:00Z"
@@ -199,8 +198,3 @@ for task in failed_tasks:
     print(f"失败任务: {task.description}")
 ```
 
-## 版本信息
-- **引入版本**: 0.6.0.0
-- **文件路径**: src/task_engine/task_manager.py
-- **依赖模块**: 无 (纯Python标准库)
-- **最后更新**: 2025-09-13

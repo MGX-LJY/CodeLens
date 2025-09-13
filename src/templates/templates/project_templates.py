@@ -66,8 +66,6 @@ class ProjectTemplates:
 ## 总体目标
 {overall_goals}
 
-## 版本规划
-
 {version_planning}
 
 ## 长期愿景

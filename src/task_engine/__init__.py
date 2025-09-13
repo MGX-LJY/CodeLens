@@ -16,5 +16,3 @@ __all__ = [
     'PhaseController', 'Phase', 'PhaseStatus', 
     'StateTracker'
 ]
-
-__version__ = "0.1.0"

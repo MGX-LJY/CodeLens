@@ -282,8 +282,3 @@ print(f"预计耗时: {plan['estimated_duration']}")
 - **日志记录**: 详细记录分析过程和异常信息
 - **默认值**: 所有分析结果都有合理默认值
 
-## 版本信息
-- **引入版本**: 0.6.0.0
-- **文件路径**: src/mcp_tools/doc_guide.py
-- **依赖模块**: services.file_service
-- **最后更新**: 2025-09-13

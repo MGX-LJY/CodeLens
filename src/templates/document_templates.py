@@ -1,6 +1,6 @@
 """
 文档模板服务：为Claude Code提供标准化的文档模板
-CodeLens 0.5.3 升级 - 四层架构精简文档模板系统
+CodeLens 四层架构精简文档模板系统
 为Claude Code提供16个核心文档模板，覆盖架构、模块、文件、项目四个层次
 """
 from typing import Dict, List, Any
@@ -33,7 +33,7 @@ class DocumentTemplates:
 
 
 class TemplateServiceV05:
-    """0.5.3 精简模板服务类 - 为Claude Code提供16个核心文档模板"""
+    """精简模板服务类 - 为Claude Code提供16个核心文档模板"""
     
     def __init__(self):
         # 初始化四层架构模板
@@ -42,7 +42,7 @@ class TemplateServiceV05:
         self.file_templates = FileTemplates()
         self.project_templates = ProjectTemplates()
         
-        # 0.5.3 模板注册表 - 16个模板
+        # 模板注册表 - 16个模板
         self.template_registry = {
             # 架构层模板 (6个)
             'architecture': self.arch_templates.OVERVIEW_TEMPLATE,
@@ -71,7 +71,7 @@ class TemplateServiceV05:
         
         # 初始化日志器
         self.logger = get_logger(component="TemplateServiceV05", operation="init")
-        self.logger.info("TemplateService 0.5.3初始化完成", {
+        self.logger.info("TemplateService 初始化完成", {
             "template_count": len(self.template_registry),
             "architecture_templates": 6,
             "module_templates": 6,
@@ -80,7 +80,7 @@ class TemplateServiceV05:
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:
-        """获取0.5.3模板列表 - 16个核心模板"""
+        """获取模板列表 - 16个核心模板"""
         return [
             # ============== 架构层模板 (6个) ==============
             {
@@ -237,7 +237,7 @@ class TemplateServiceV05:
             },
             {
                 'name': 'changelog',
-                'description': '变更日志模板 - 版本变更记录',
+                'description': '变更日志模板 - 变更记录',
                 'type': 'project_level',
                 'layer': 'project',
                 'file_path': '/docs/project/CHANGELOG.md',
@@ -367,7 +367,7 @@ class TemplateServiceV05:
 
 
 class TemplateService(TemplateServiceV05):
-    """向后兼容的模板服务 - 继承0.5.0功能"""
+    """向后兼容的模板服务"""
     pass
 
 

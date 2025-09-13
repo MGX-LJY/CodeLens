@@ -19,9 +19,6 @@ from .config import LogConfig, get_default_config, set_default_config
 from .manager import LogManager
 from .rotator import FileRotator
 
-# 版本信息
-__version__ = "1.0.0"
-
 # 全局日志器缓存
 _loggers: Dict[str, LogManager] = {}
 _default_config: Optional[LogConfig] = None
@@ -315,10 +312,7 @@ __all__ = [
 
     # 系统管理
     "get_log_stats",
-    "shutdown_logging",
-
-    # 版本信息
-    "__version__"
+    "shutdown_logging"
 ]
 
 

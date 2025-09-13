@@ -1,7 +1,7 @@
 # Task Engine 模块
 
 ## 模块概述
-Task Engine是CodeLens 0.6.0.0版本的核心新增模块，提供智能化任务管理、5阶段流程控制和状态持久化功能，实现了从基础MCP工具到智能化任务驱动文档生成系统的重要进化。
+Task Engine是CodeLens的核心新增模块，提供智能化任务管理、5阶段流程控制和状态持久化功能，实现了从基础MCP工具到智能化任务驱动文档生成系统的重要进化。
 
 ## 核心组件
 
@@ -126,8 +126,3 @@ state_tracker.record_task_event("completed", task_id)
 health_status = state_tracker.get_health_status()
 ```
 
-## 版本信息
-- **引入版本**: 0.6.0.0
-- **状态**: 稳定
-- **维护者**: CodeLens Team
-- **最后更新**: 2025-09-13

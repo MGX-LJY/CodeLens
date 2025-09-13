@@ -458,8 +458,3 @@ print(f"预计耗时: {task_plan['data']['task_plan']['estimated_duration']}")
 - **默认值填充**: 缺失参数使用合理默认值
 - **日志记录**: 详细记录任务创建过程
 
-## 版本信息
-- **引入版本**: 0.6.0.0
-- **文件路径**: src/mcp_tools/task_init.py
-- **依赖模块**: task_engine.task_manager, task_engine.phase_controller
-- **最后更新**: 2025-09-13
