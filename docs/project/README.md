@@ -41,7 +41,7 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 项目状态
 
-**当前版本**: v0.4.0 (MCP服务器完成)
+**当前版本**: v0.4.1 (日志系统修复)
 
 **✅ 已完成功能**:
 - ✅ **完整MCP服务器实现** - 生产就绪的MCP协议服务器

@@ -6,6 +6,7 @@ CodeLens MCP Server
 
 import sys
 import json
+import time
 import traceback
 from typing import Dict, Any, List
 
@@ -13,6 +14,21 @@ from typing import Dict, Any, List
 from src.mcp_tools.doc_scan import DocScanTool
 from src.mcp_tools.template_get import TemplateGetTool
 from src.mcp_tools.doc_verify import DocVerifyTool
+
+# 导入日志系统
+try:
+    from src.logging import get_logger
+except ImportError:
+    # 如果日志系统不可用，创建一个空日志器
+    class DummyLogger:
+        def debug(self, msg, context=None): pass
+        def info(self, msg, context=None): pass
+        def warning(self, msg, context=None): pass
+        def error(self, msg, context=None, exc_info=None): pass
+        def log_operation_start(self, *args, **kwargs): return "dummy"
+        def log_operation_end(self, op, op_id, **ctx): pass
+    
+    get_logger = lambda **kwargs: DummyLogger()
 
 
 class CodeLensMCPServer:
@@ -25,12 +41,13 @@ class CodeLensMCPServer:
             "template_get": TemplateGetTool(),
             "doc_verify": DocVerifyTool()
         }
+        self.logger = get_logger(component="MCP_Server", operation="server")
         
     def get_server_info(self) -> Dict[str, Any]:
         """获取服务器信息"""
         return {
             "name": "codelens",
-            "version": "0.3.0",
+            "version": "0.4.1",
             "description": "CodeLens MCP服务器 - 为Claude Code提供项目文档生成的信息和模板服务",
             "author": "CodeLens Team",
             "license": "MIT"

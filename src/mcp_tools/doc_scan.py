@@ -5,6 +5,7 @@ MCP doc_scan 工具实现
 import sys
 import os
 import json
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -12,6 +13,21 @@ from typing import Dict, Any, Optional
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from services.file_service import FileService
+
+# 导入日志系统
+try:
+    from ..logging import get_logger
+except ImportError:
+    # 如果日志系统不可用，创建一个空日志器
+    class DummyLogger:
+        def debug(self, msg, context=None): pass
+        def info(self, msg, context=None): pass
+        def warning(self, msg, context=None): pass
+        def error(self, msg, context=None, exc_info=None): pass
+        def log_operation_start(self, *args, **kwargs): return "dummy"
+        def log_operation_end(self, op, op_id, **ctx): pass
+    
+    get_logger = lambda **kwargs: DummyLogger()
 
 
 class DocScanTool:
@@ -21,6 +37,7 @@ class DocScanTool:
         self.tool_name = "doc_scan"
         self.description = "扫描项目文件并返回结构化信息供Claude Code使用"
         self.file_service = FileService()
+        self.logger = get_logger(component="MCP_Tools", operation="doc_scan")
     
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -73,17 +90,29 @@ class DocScanTool:
     
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行doc_scan工具"""
+        start_time = time.time()
+        operation_id = self.logger.log_operation_start("doc_scan", **arguments)
+        
         try:
             # 参数验证
             project_path = arguments.get("project_path")
             if not project_path:
-                return self._error_response("project_path is required")
+                error_msg = "project_path is required"
+                self.logger.error(error_msg, {"arguments": arguments})
+                return self._error_response(error_msg)
             
             if not os.path.exists(project_path):
-                return self._error_response(f"Project path does not exist: {project_path}")
+                error_msg = f"Project path does not exist: {project_path}"
+                self.logger.error(error_msg, {"project_path": project_path})
+                return self._error_response(error_msg)
             
             if not os.path.isdir(project_path):
-                return self._error_response(f"Project path is not a directory: {project_path}")
+                error_msg = f"Project path is not a directory: {project_path}"
+                self.logger.error(error_msg, {"project_path": project_path})
+                return self._error_response(error_msg)
+            
+            # 记录开始扫描
+            self.logger.info("开始扫描项目", {"project_path": project_path})
             
             # 获取参数
             include_content = arguments.get("include_content", True)
@@ -111,6 +140,25 @@ class DocScanTool:
             # 更新directory_tree到project_info中
             project_info['directory_tree'] = directory_tree
             
+            # 记录成功完成
+            duration_ms = (time.time() - start_time) * 1000
+            summary = {
+                "total_files": project_info['statistics']['total_files'],
+                "total_size": project_info['statistics']['total_size'],
+                "file_types": project_info['statistics']['file_types']
+            }
+            
+            self.logger.log_operation_end("doc_scan", operation_id, 
+                                        duration_ms=duration_ms, 
+                                        success=True, 
+                                        **summary)
+            
+            self.logger.info("项目扫描成功完成", {
+                "project_path": project_path,
+                "duration_ms": duration_ms,
+                **summary
+            })
+            
             return self._success_response({
                 "scan_result": project_info,
                 "scan_config": {
@@ -122,14 +170,23 @@ class DocScanTool:
                     "max_depth": max_depth
                 },
                 "message": f"成功扫描项目：{project_path}",
-                "summary": {
-                    "total_files": project_info['statistics']['total_files'],
-                    "total_size": project_info['statistics']['total_size'],
-                    "file_types": project_info['statistics']['file_types']
-                }
+                "summary": summary
             })
                 
         except Exception as e:
+            # 记录失败完成
+            duration_ms = (time.time() - start_time) * 1000
+            self.logger.log_operation_end("doc_scan", operation_id, 
+                                        duration_ms=duration_ms, 
+                                        success=False, 
+                                        error=str(e))
+            
+            self.logger.error("项目扫描失败", {
+                "project_path": arguments.get("project_path"),
+                "duration_ms": duration_ms,
+                "error": str(e)
+            }, exc_info=e)
+            
             return self._error_response(f"扫描失败: {str(e)}")
     
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
