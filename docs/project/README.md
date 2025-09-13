@@ -10,6 +10,7 @@ CodeLens 是一个专为Claude Code设计的MCP（Model Context Protocol）协�
 - **模板资源服务**：提供标准化的文档模板，支持多种文档类型
 - **验证状态报告**：轻量级的文档结构验证，不读取内容
 - **MCP协议兼容**：提供标准的MCP工具接口，支持命令行调用
+- **企业级日志系统**：完整的本地日志解决方案，支持结构化日志、文件轮转和监控
 
 ## 快速开始
 
@@ -40,13 +41,14 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 项目状态
 
-**当前版本**: v1.0.0 (重构完成)
+**当前版本**: v0.3.0 (日志系统完成)
 
 **已实现功能**:
 - ✅ 增强的文件信息提取服务 (FileService)
 - ✅ 完整的文档模板资源管理 (TemplateService) 
 - ✅ 文档验证和状态报告服务 (ValidationService)
 - ✅ 三个MCP工具：doc_scan, template_get, doc_verify
+- ✅ **企业级日志系统**：结构化日志、文件轮转、监控统计
 - ✅ 100%测试覆盖率，所有功能验证通过
 - ✅ 命令行接口支持
 
@@ -58,10 +60,11 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 技术架构
 
-### 三层服务架构
+### 四层服务架构
 - **FileService**: 项目文件信息提取和元数据服务
 - **TemplateService**: 文档模板资源管理和查询服务  
 - **ValidationService**: 文档验证和状态报告服务
+- **LoggingService**: 企业级日志管理，支持结构化日志、文件轮转和监控
 
 ### MCP工具层
 - **doc_scan**: 扫描项目文件并返回结构化信息
@@ -118,19 +121,25 @@ $ python src/mcp_tools/doc_verify.py .
 
 ## 开发路线图
 
-### Phase 1: 完成 ✅
+### Phase 1: 基础架构 ✅
 - ✅ 重构为Claude Code协作助手
 - ✅ 实现三个核心MCP工具
 - ✅ 完善服务层架构
 - ✅ 100%测试覆盖率
 
-### Phase 2: 功能增强
+### Phase 2: 可观测性 ✅
+- ✅ **企业级日志系统**：结构化日志、异步写入
+- ✅ **文件轮转机制**：按大小/时间轮转、自动压缩
+- ✅ **监控统计**：操作追踪、性能分析
+- ✅ **配置管理**：JSON配置文件、运行时更新
+
+### Phase 3: 功能增强
 - 🔄 支持更多文件类型 (JS/TS, Go, Rust等)
 - 🔄 增强模板系统，支持自定义模板
 - 🔄 改进文件过滤和扫描性能
-- 🔄 添加配置文件支持
+- 🔄 日志系统Web界面
 
-### Phase 3: 生态集成
+### Phase 4: 生态集成
 - 🔜 开发Claude Code插件
 - 🔜 提供MCP服务器部署方案
 - 🔜 集成更多IDE和开发工具

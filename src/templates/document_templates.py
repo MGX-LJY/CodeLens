@@ -3,10 +3,27 @@
 """
 from typing import Dict, List, Any
 
+# 导入日志系统
+try:
+    from ..logging import get_logger
+except ImportError:
+    # 如果日志系统不可用，创建一个空日志器
+    class DummyLogger:
+        def debug(self, msg, context=None): pass
+
+        def info(self, msg, context=None): pass
+
+        def warning(self, msg, context=None): pass
+
+        def error(self, msg, context=None, exc_info=None): pass
+
+
+    get_logger = lambda **kwargs: DummyLogger()
+
 
 class DocumentTemplates:
     """文档模板集合"""
-    
+
     # 文件摘要模板
     FILE_SUMMARY_TEMPLATE = """# 文件摘要：{filename}
 
@@ -115,7 +132,7 @@ class DocumentTemplates:
 
 class TemplateService:
     """模板服务类 - 为Claude Code提供文档模板"""
-    
+
     def __init__(self):
         self.templates = DocumentTemplates()
         self.template_registry = {
@@ -124,7 +141,14 @@ class TemplateService:
             'architecture': self.templates.ARCHITECTURE_TEMPLATE,
             'project_readme': self.templates.PROJECT_README_TEMPLATE
         }
-    
+
+        # 初始化日志器
+        self.logger = get_logger(component="TemplateService", operation="default")
+        self.logger.info("TemplateService初始化完成", {
+            "template_count": len(self.template_registry),
+            "available_templates": list(self.template_registry.keys())
+        })
+
     def get_template_list(self) -> List[Dict[str, Any]]:
         """获取可用模板列表"""
         return [
@@ -132,75 +156,90 @@ class TemplateService:
                 'name': 'file_summary',
                 'description': '文件摘要模板 - 用于生成单个文件的功能摘要',
                 'type': 'file_level',
-                'variables': ['filename', 'function_overview', 'class_definitions', 
-                            'function_definitions', 'constants', 'imports', 'exports', 
-                            'algorithms', 'notes']
+                'variables': ['filename', 'function_overview', 'class_definitions',
+                              'function_definitions', 'constants', 'imports', 'exports',
+                              'algorithms', 'notes']
             },
             {
-                'name': 'module_analysis', 
+                'name': 'module_analysis',
                 'description': '模块分析模板 - 用于生成模块级别的分析文档',
                 'type': 'module_level',
-                'variables': ['identified_modules', 'module_details', 'module_relations', 
-                            'core_interfaces']
+                'variables': ['identified_modules', 'module_details', 'module_relations',
+                              'core_interfaces']
             },
             {
                 'name': 'architecture',
                 'description': '架构文档模板 - 用于生成系统架构概述',
-                'type': 'architecture_level', 
+                'type': 'architecture_level',
                 'variables': ['project_overview', 'tech_stack', 'architecture_pattern',
-                            'core_components', 'data_flow', 'system_boundaries',
-                            'deployment_architecture']
+                              'core_components', 'data_flow', 'system_boundaries',
+                              'deployment_architecture']
             },
             {
                 'name': 'project_readme',
                 'description': '项目README模板 - 用于生成项目说明文档',
                 'type': 'project_level',
                 'variables': ['project_name', 'project_overview', 'core_features',
-                            'quick_start', 'project_status', 'tech_architecture',
-                            'usage_examples', 'roadmap', 'contribution_guide', 'license']
+                              'quick_start', 'project_status', 'tech_architecture',
+                              'usage_examples', 'roadmap', 'contribution_guide', 'license']
             }
         ]
-    
+
     def get_template_content(self, template_name: str) -> Dict[str, Any]:
         """获取指定模板的内容和元数据"""
+        self.logger.debug("获取模板内容", {
+            "template_name": template_name,
+            "available_templates": list(self.template_registry.keys())
+        })
+
         if template_name not in self.template_registry:
+            self.logger.warning("模板不存在", {
+                "template_name": template_name,
+                "available_templates": list(self.template_registry.keys())
+            })
             return {
                 'success': False,
                 'error': f'Template "{template_name}" not found'
             }
-        
+
         template_info = next(
-            (t for t in self.get_template_list() if t['name'] == template_name), 
+            (t for t in self.get_template_list() if t['name'] == template_name),
             {}
         )
-        
+
+        self.logger.info("模板获取成功", {
+            "template_name": template_name,
+            "template_type": template_info.get('type', 'unknown'),
+            "content_length": len(self.template_registry[template_name])
+        })
+
         return {
             'success': True,
             'template_name': template_name,
             'content': self.template_registry[template_name],
             'metadata': template_info
         }
-    
+
     def get_template_by_type(self, template_type: str) -> List[Dict[str, Any]]:
         """根据类型获取模板列表"""
         return [
-            template for template in self.get_template_list() 
+            template for template in self.get_template_list()
             if template['type'] == template_type
         ]
-    
+
     def validate_template_variables(self, template_name: str, variables: Dict[str, str]) -> Dict[str, Any]:
         """验证模板变量是否完整"""
         template_info = self.get_template_content(template_name)
         if not template_info['success']:
             return template_info
-        
+
         required_vars = template_info['metadata'].get('variables', [])
         provided_vars = set(variables.keys())
         required_vars_set = set(required_vars)
-        
+
         missing_vars = required_vars_set - provided_vars
         extra_vars = provided_vars - required_vars_set
-        
+
         return {
             'success': True,
             'template_name': template_name,
@@ -211,13 +250,13 @@ class TemplateService:
                 'required_variables': required_vars
             }
         }
-    
+
     def format_template(self, template_name: str, **kwargs) -> Dict[str, Any]:
         """格式化模板内容"""
         template_info = self.get_template_content(template_name)
         if not template_info['success']:
             return template_info
-        
+
         try:
             formatted_content = template_info['content'].format(**kwargs)
             return {
@@ -238,30 +277,30 @@ class TemplateService:
                 'error': f'Template formatting error: {str(e)}',
                 'template_name': template_name
             }
-    
+
     # 兼容性方法，保持向后兼容
     def get_file_summary_template(self) -> str:
         """获取文件摘要模板（兼容方法）"""
         return self.templates.FILE_SUMMARY_TEMPLATE
-    
+
     def get_module_analysis_template(self) -> str:
         """获取模块分析模板（兼容方法）"""
         return self.templates.MODULE_ANALYSIS_TEMPLATE
-    
+
     def get_architecture_template(self) -> str:
         """获取架构文档模板（兼容方法）"""
         return self.templates.ARCHITECTURE_TEMPLATE
-    
+
     def format_file_summary(self, **kwargs) -> str:
         """格式化文件摘要（兼容方法）"""
         result = self.format_template('file_summary', **kwargs)
         return result.get('formatted_content', '') if result['success'] else ''
-    
+
     def format_module_analysis(self, **kwargs) -> str:
         """格式化模块分析（兼容方法）"""
         result = self.format_template('module_analysis', **kwargs)
         return result.get('formatted_content', '') if result['success'] else ''
-    
+
     def format_architecture_doc(self, **kwargs) -> str:
         """格式化架构文档（兼容方法）"""
         result = self.format_template('architecture', **kwargs)

@@ -7,7 +7,8 @@
 1. **服务模块** (`src/services/`) - 核心信息提供服务
 2. **模板模块** (`src/templates/`) - 文档模板资源管理
 3. **MCP工具模块** (`src/mcp_tools/`) - MCP协议接口实现
-4. **工具脚本模块** (`generate_docs_structure.py`) - 项目文档结构初始化
+4. **日志模块** (`src/logging/`) - 企业级日志系统
+5. **工具脚本模块** (`generate_docs_structure.py`) - 项目文档结构初始化
 
 ## 模块详细信息
 
