@@ -1,5 +1,26 @@
 # CodeLens 更新日志
 
+## [0.2.0] - 2025-09-13
+
+### 添加
+- ValidationService文档验证服务
+- doc_scan MCP工具（替代doc_init）
+- template_get MCP工具
+- doc_verify MCP工具
+- 增强的FileService（元数据、目录树、统计）
+- 模板资源管理功能
+
+### 移除
+- AIService和AI生成功能
+- ThreeLayerDocGenerator文档生成器
+- AI提示词相关功能
+
+### 变更
+- 重构为Claude Code协作助手架构
+- 从AI文档生成转为信息提供服务
+- 标准化JSON响应格式
+- 无状态MCP工具设计
+
 ## [0.1.0] - 2025-09-12
 
 ### 添加

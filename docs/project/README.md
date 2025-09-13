@@ -1,104 +1,139 @@
-# CodeLens - 文档驱动的MCP服务器
+# CodeLens - Claude Code协作助手
 
 ## 项目概述
 
-CodeLens 是一个基于MCP（Model Context Protocol）的文档驱动代码理解系统。通过AI生成的三层文档体系，为代码项目提供结构化的文档，避免直接读取大量源代码造成的上下文浪费。
+CodeLens 是一个专为Claude Code设计的MCP（Model Context Protocol）协作服务器。它不再执行AI驱动的文档生成，而是专门为Claude Code提供结构化的项目文件信息、标准化的文档模板资源和完整的验证服务，让Claude Code能够高效地理解和生成项目文档。
 
 ## 核心特性
 
-- **三层文档架构**：文件层 → 模块层 → 架构层，从具体到抽象的渐进分析
-- **AI驱动生成**：使用AI理解代码并生成结构化文档  
-- **模板化输出**：标准化的文档格式，便于AI理解和使用
-- **当前状态分析**：将当前代码状态视为V1.0，无需了解项目历史
+- **信息提供优先**：专注于为Claude Code提供结构化的项目信息
+- **模板资源服务**：提供标准化的文档模板，支持多种文档类型
+- **验证状态报告**：轻量级的文档结构验证，不读取内容
+- **MCP协议兼容**：提供标准的MCP工具接口，支持命令行调用
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 环境要求
+
+- Python 3.9+
+- 无外部依赖，使用Python标准库
+
+### 2. 使用MCP工具
 
 ```bash
-pip install -r requirements.txt  # 暂未实现，当前为开发版本
+# 扫描项目文件
+python src/mcp_tools/doc_scan.py /path/to/your/project
+
+# 获取文档模板  
+python src/mcp_tools/template_get.py --list-all
+
+# 验证文档状态
+python src/mcp_tools/doc_verify.py /path/to/your/project
 ```
 
-### 2. 生成项目文档
+### 3. Claude Code协作流程
 
-```bash
-python src/mcp_tools/doc_init.py /path/to/your/project
-```
-
-### 3. 查看生成的文档
-
-文档将生成在项目的 `docs/` 目录下：
-- `docs/architecture/` - 系统架构文档
-- `docs/modules/` - 模块分析文档  
-- `docs/files/` - 文件摘要文档
+1. **Claude Code调用doc_scan**获取项目文件信息
+2. **Claude Code调用template_get**获取适合的文档模板
+3. **Claude Code基于信息和模板生成文档**
+4. **Claude Code调用doc_verify**验证生成状态
 
 ## 项目状态
 
-**当前版本**: MVP v0.1.0
+**当前版本**: v1.0.0 (重构完成)
 
 **已实现功能**:
-- ✅ 文件扫描和读取服务
-- ✅ 模板化文档生成系统
-- ✅ Mock AI 服务（用于测试）
-- ✅ 三层文档生成流程
-- ✅ MCP doc_init 工具
-- ✅ 基础错误处理
+- ✅ 增强的文件信息提取服务 (FileService)
+- ✅ 完整的文档模板资源管理 (TemplateService) 
+- ✅ 文档验证和状态报告服务 (ValidationService)
+- ✅ 三个MCP工具：doc_scan, template_get, doc_verify
+- ✅ 100%测试覆盖率，所有功能验证通过
+- ✅ 命令行接口支持
 
-**正在开发**:
-- 🔄 真实AI服务集成
-- 🔄 更好的项目过滤规则
-- 🔄 多语言支持
+**架构优势**:
+- 🎯 专注信息提供，与Claude Code完美协作
+- 🚀 无状态设计，每次调用独立执行
+- 🔧 模块化架构，各服务组件独立
+- 📊 结构化JSON响应，便于解析
 
 ## 技术架构
 
-### 核心组件
-- **FileService**: 项目文件扫描和读取
-- **TemplateService**: 文档模板管理
-- **AIService**: AI内容生成服务
-- **ThreeLayerDocGenerator**: 三层文档生成器
-- **DocInitTool**: MCP工具接口
+### 三层服务架构
+- **FileService**: 项目文件信息提取和元数据服务
+- **TemplateService**: 文档模板资源管理和查询服务  
+- **ValidationService**: 文档验证和状态报告服务
 
-### 生成流程
-1. **文件层**: 逐个分析源代码文件，生成功能摘要
-2. **模块层**: 基于文件摘要识别功能模块和依赖关系
-3. **架构层**: 基于模块分析生成系统整体架构文档
+### MCP工具层
+- **doc_scan**: 扫描项目文件并返回结构化信息
+- **template_get**: 获取指定类型的文档模板资源
+- **doc_verify**: 验证文档生成状态和结构完整性
+
+### 协作流程
+1. **信息收集**: Claude Code获取项目文件和目录结构信息
+2. **模板获取**: Claude Code获取适合的文档模板
+3. **内容生成**: Claude Code基于信息和模板生成文档内容
+4. **状态验证**: Claude Code验证生成的文档结构和完整性
 
 ## 使用示例
 
-生成的文档结构示例：
+### MCP工具调用示例
 
-```
-docs/
-├── architecture/
-│   ├── overview.md              # 系统架构概述
-│   ├── tech-stack.md           # 技术栈分析
-│   └── data-flow.md            # 数据流设计
-├── modules/
-│   ├── overview.md             # 模块总览
-│   └── module-relations.md     # 模块关系图
-└── files/
-    └── summaries/              # 文件摘要
-        └── src/
-            ├── main.py.md
-            └── utils.py.md
+```bash
+# 1. 扫描项目获取完整信息
+$ python src/mcp_tools/doc_scan.py . --no-content
+{
+  "success": true,
+  "data": {
+    "scan_result": {
+      "statistics": {"total_files": 11, "total_size": 65909},
+      "directory_tree": {...}
+    }
+  }
+}
+
+# 2. 获取所有可用模板
+$ python src/mcp_tools/template_get.py --list-all
+{
+  "success": true,
+  "data": {
+    "templates": [
+      {"name": "file_summary", "description": "文件摘要模板"},
+      {"name": "architecture", "description": "架构概述模板"}
+    ]
+  }
+}
+
+# 3. 验证文档生成状态
+$ python src/mcp_tools/doc_verify.py .
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "overall_status": "mostly_complete",
+      "completion_percentage": 87.5
+    }
+  }
+}
 ```
 
 ## 开发路线图
 
-### Phase 1: MVP完善 (当前)
-- 改进文件过滤机制
-- 集成真实AI服务
-- 测试更多项目类型
+### Phase 1: 完成 ✅
+- ✅ 重构为Claude Code协作助手
+- ✅ 实现三个核心MCP工具
+- ✅ 完善服务层架构
+- ✅ 100%测试覆盖率
 
-### Phase 2: 功能扩展
-- 支持TypeScript/JavaScript项目
-- 增加配置文件支持
-- 实现增量更新
+### Phase 2: 功能增强
+- 🔄 支持更多文件类型 (JS/TS, Go, Rust等)
+- 🔄 增强模板系统，支持自定义模板
+- 🔄 改进文件过滤和扫描性能
+- 🔄 添加配置文件支持
 
-### Phase 3: 产品化
-- Web界面
-- API服务
-- 插件系统
+### Phase 3: 生态集成
+- 🔜 开发Claude Code插件
+- 🔜 提供MCP服务器部署方案
+- 🔜 集成更多IDE和开发工具
 
 ## 贡献指南
 

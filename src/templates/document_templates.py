@@ -1,6 +1,7 @@
 """
-文档模板服务：提供标准化的文档模板
+文档模板服务：为Claude Code提供标准化的文档模板
 """
+from typing import Dict, List, Any
 
 
 class DocumentTemplates:
@@ -80,133 +81,188 @@ class DocumentTemplates:
 {deployment_architecture}
 """
 
-    # AI提示词模板
-    PROMPTS = {
-        'file_analysis': """
-请分析以下Python源代码文件，生成详细的文件摘要：
+    # 项目README模板
+    PROJECT_README_TEMPLATE = """# {project_name}
 
-文件路径：{file_path}
-文件内容：
-```python
-{file_content}
-```
+## 项目概述
+{project_overview}
 
-请按照以下要求分析：
+## 核心特性
+{core_features}
 
-1. **功能概述**：这个文件的主要作用和功能是什么？
-2. **类定义**：列出所有类，简要说明每个类的作用和主要方法
-3. **函数定义**：列出重要的函数，说明其功能和参数
-4. **重要常量和配置**：识别重要的常量、配置项、全局变量
-5. **导入的模块**：分析import语句，说明依赖了哪些外部模块
-6. **对外接口**：这个文件对外提供了哪些接口（类、函数、常量）
-7. **关键算法和逻辑**：如果有复杂的算法或业务逻辑，请简要说明
-8. **备注**：其他值得注意的信息
+## 快速开始
+{quick_start}
 
-请用清晰、简洁的语言描述，避免冗余。
-""",
-        
-        'module_analysis': """
-请基于以下文件摘要和项目结构，识别和分析项目的功能模块：
+## 项目状态
+{project_status}
 
-项目结构：
-{directory_structure}
+## 技术架构
+{tech_architecture}
 
-文件摘要列表：
-{file_summaries}
+## 使用示例
+{usage_examples}
 
-请按照以下要求分析：
+## 开发路线图
+{roadmap}
 
-1. **识别功能模块**：根据文件的功能和目录结构，识别出项目包含哪些主要的功能模块
-2. **模块归类**：将每个文件归类到相应的功能模块中
-3. **模块职责**：说明每个模块的核心职责和功能
-4. **模块接口**：识别模块之间的接口和调用关系
-5. **依赖关系**：分析模块之间的依赖关系，哪些模块依赖哪些模块
-6. **核心流程**：如果能识别出主要的业务流程，请说明模块是如何协作的
+## 贡献指南
+{contribution_guide}
 
-请以模块为单位组织信息，每个模块包含：模块名称、包含的文件、核心功能、对外接口、依赖关系。
-""",
-        
-        'architecture_analysis': """
-请基于以下模块分析和项目信息，生成项目的整体架构文档：
-
-项目基础信息：
-{project_info}
-
-模块分析结果：
-{module_analysis}
-
-请按照以下要求分析：
-
-1. **项目概况**：基于分析结果，总结项目的整体功能和目标
-2. **技术栈分析**：根据导入的模块和文件类型，分析项目使用的技术栈
-3. **架构模式**：识别项目采用的架构模式（如MVC、分层架构、微服务等）
-4. **核心组件**：总结项目的核心组件和它们的作用
-5. **数据流设计**：分析主要的数据流向和处理流程
-6. **系统边界**：说明系统的边界、输入输出接口
-7. **部署架构**：推断项目的部署方式和运行环境
-
-请从软件架构的角度进行分析，关注系统的整体设计和组织方式。
+## 许可证
+{license}
 """
-    }
 
 
 class TemplateService:
-    """模板服务类"""
+    """模板服务类 - 为Claude Code提供文档模板"""
     
     def __init__(self):
         self.templates = DocumentTemplates()
+        self.template_registry = {
+            'file_summary': self.templates.FILE_SUMMARY_TEMPLATE,
+            'module_analysis': self.templates.MODULE_ANALYSIS_TEMPLATE,
+            'architecture': self.templates.ARCHITECTURE_TEMPLATE,
+            'project_readme': self.templates.PROJECT_README_TEMPLATE
+        }
     
+    def get_template_list(self) -> List[Dict[str, Any]]:
+        """获取可用模板列表"""
+        return [
+            {
+                'name': 'file_summary',
+                'description': '文件摘要模板 - 用于生成单个文件的功能摘要',
+                'type': 'file_level',
+                'variables': ['filename', 'function_overview', 'class_definitions', 
+                            'function_definitions', 'constants', 'imports', 'exports', 
+                            'algorithms', 'notes']
+            },
+            {
+                'name': 'module_analysis', 
+                'description': '模块分析模板 - 用于生成模块级别的分析文档',
+                'type': 'module_level',
+                'variables': ['identified_modules', 'module_details', 'module_relations', 
+                            'core_interfaces']
+            },
+            {
+                'name': 'architecture',
+                'description': '架构文档模板 - 用于生成系统架构概述',
+                'type': 'architecture_level', 
+                'variables': ['project_overview', 'tech_stack', 'architecture_pattern',
+                            'core_components', 'data_flow', 'system_boundaries',
+                            'deployment_architecture']
+            },
+            {
+                'name': 'project_readme',
+                'description': '项目README模板 - 用于生成项目说明文档',
+                'type': 'project_level',
+                'variables': ['project_name', 'project_overview', 'core_features',
+                            'quick_start', 'project_status', 'tech_architecture',
+                            'usage_examples', 'roadmap', 'contribution_guide', 'license']
+            }
+        ]
+    
+    def get_template_content(self, template_name: str) -> Dict[str, Any]:
+        """获取指定模板的内容和元数据"""
+        if template_name not in self.template_registry:
+            return {
+                'success': False,
+                'error': f'Template "{template_name}" not found'
+            }
+        
+        template_info = next(
+            (t for t in self.get_template_list() if t['name'] == template_name), 
+            {}
+        )
+        
+        return {
+            'success': True,
+            'template_name': template_name,
+            'content': self.template_registry[template_name],
+            'metadata': template_info
+        }
+    
+    def get_template_by_type(self, template_type: str) -> List[Dict[str, Any]]:
+        """根据类型获取模板列表"""
+        return [
+            template for template in self.get_template_list() 
+            if template['type'] == template_type
+        ]
+    
+    def validate_template_variables(self, template_name: str, variables: Dict[str, str]) -> Dict[str, Any]:
+        """验证模板变量是否完整"""
+        template_info = self.get_template_content(template_name)
+        if not template_info['success']:
+            return template_info
+        
+        required_vars = template_info['metadata'].get('variables', [])
+        provided_vars = set(variables.keys())
+        required_vars_set = set(required_vars)
+        
+        missing_vars = required_vars_set - provided_vars
+        extra_vars = provided_vars - required_vars_set
+        
+        return {
+            'success': True,
+            'template_name': template_name,
+            'validation_result': {
+                'is_valid': len(missing_vars) == 0,
+                'missing_variables': list(missing_vars),
+                'extra_variables': list(extra_vars),
+                'required_variables': required_vars
+            }
+        }
+    
+    def format_template(self, template_name: str, **kwargs) -> Dict[str, Any]:
+        """格式化模板内容"""
+        template_info = self.get_template_content(template_name)
+        if not template_info['success']:
+            return template_info
+        
+        try:
+            formatted_content = template_info['content'].format(**kwargs)
+            return {
+                'success': True,
+                'template_name': template_name,
+                'formatted_content': formatted_content,
+                'variables_used': kwargs
+            }
+        except KeyError as e:
+            return {
+                'success': False,
+                'error': f'Missing template variable: {str(e)}',
+                'template_name': template_name
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Template formatting error: {str(e)}',
+                'template_name': template_name
+            }
+    
+    # 兼容性方法，保持向后兼容
     def get_file_summary_template(self) -> str:
-        """获取文件摘要模板"""
+        """获取文件摘要模板（兼容方法）"""
         return self.templates.FILE_SUMMARY_TEMPLATE
     
     def get_module_analysis_template(self) -> str:
-        """获取模块分析模板"""
+        """获取模块分析模板（兼容方法）"""
         return self.templates.MODULE_ANALYSIS_TEMPLATE
     
     def get_architecture_template(self) -> str:
-        """获取架构文档模板"""
+        """获取架构文档模板（兼容方法）"""
         return self.templates.ARCHITECTURE_TEMPLATE
     
-    def get_prompt(self, prompt_name: str) -> str:
-        """获取AI提示词模板"""
-        return self.templates.PROMPTS.get(prompt_name, "")
-    
-    def build_file_analysis_prompt(self, file_path: str, file_content: str) -> str:
-        """构建文件分析提示词"""
-        prompt_template = self.get_prompt('file_analysis')
-        return prompt_template.format(
-            file_path=file_path,
-            file_content=file_content[:10000]  # 限制长度避免token过多
-        )
-    
-    def build_module_analysis_prompt(self, directory_structure: str, file_summaries: str) -> str:
-        """构建模块分析提示词"""
-        prompt_template = self.get_prompt('module_analysis')
-        return prompt_template.format(
-            directory_structure=directory_structure,
-            file_summaries=file_summaries
-        )
-    
-    def build_architecture_analysis_prompt(self, project_info: str, module_analysis: str) -> str:
-        """构建架构分析提示词"""
-        prompt_template = self.get_prompt('architecture_analysis')
-        return prompt_template.format(
-            project_info=project_info,
-            module_analysis=module_analysis
-        )
-    
     def format_file_summary(self, **kwargs) -> str:
-        """格式化文件摘要"""
-        template = self.get_file_summary_template()
-        return template.format(**kwargs)
+        """格式化文件摘要（兼容方法）"""
+        result = self.format_template('file_summary', **kwargs)
+        return result.get('formatted_content', '') if result['success'] else ''
     
     def format_module_analysis(self, **kwargs) -> str:
-        """格式化模块分析"""
-        template = self.get_module_analysis_template()
-        return template.format(**kwargs)
+        """格式化模块分析（兼容方法）"""
+        result = self.format_template('module_analysis', **kwargs)
+        return result.get('formatted_content', '') if result['success'] else ''
     
     def format_architecture_doc(self, **kwargs) -> str:
-        """格式化架构文档"""
-        template = self.get_architecture_template()
-        return template.format(**kwargs)
+        """格式化架构文档（兼容方法）"""
+        result = self.format_template('architecture', **kwargs)
+        return result.get('formatted_content', '') if result['success'] else ''

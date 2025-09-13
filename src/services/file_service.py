@@ -1,10 +1,12 @@
 """
 文件服务：负责扫描和读取项目源代码文件
+为Claude Code提供结构化的文件信息
 """
 import os
 import glob
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
+from datetime import datetime
 
 
 class FileService:
@@ -173,3 +175,140 @@ class FileService:
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         
         return str(summary_path)
+    
+    def get_file_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """获取文件元数据信息"""
+        try:
+            path = Path(file_path)
+            if not path.exists():
+                return None
+            
+            stat = path.stat()
+            return {
+                'path': str(path),
+                'name': path.name,
+                'size': stat.st_size,
+                'modified_time': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                'created_time': datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                'is_file': path.is_file(),
+                'is_directory': path.is_dir(),
+                'extension': path.suffix if path.is_file() else None
+            }
+        except Exception as e:
+            print(f"Error getting metadata for {file_path}: {e}")
+            return None
+    
+    def get_directory_tree(self, project_path: str, max_depth: int = 3) -> Dict[str, Any]:
+        """获取优化的目录树结构，专为Claude Code设计"""
+        project_path = Path(project_path)
+        
+        def _build_tree(path: Path, current_depth: int = 0) -> Dict[str, Any]:
+            if current_depth > max_depth:
+                return None
+            
+            # 获取基本信息
+            node = {
+                'name': path.name,
+                'path': str(path),
+                'type': 'directory' if path.is_dir() else 'file',
+                'depth': current_depth
+            }
+            
+            # 添加元数据
+            if path.exists():
+                try:
+                    stat = path.stat()
+                    node['size'] = stat.st_size
+                    node['modified'] = datetime.fromtimestamp(stat.st_mtime).isoformat()
+                except:
+                    pass
+            
+            # 如果是目录，添加子节点
+            if path.is_dir() and current_depth < max_depth:
+                children = []
+                try:
+                    items = sorted(path.iterdir(), key=lambda x: (x.is_file(), x.name.lower()))
+                    for item in items:
+                        if self._should_exclude(item, self.default_excludes):
+                            continue
+                        
+                        child = _build_tree(item, current_depth + 1)
+                        if child:
+                            children.append(child)
+                    
+                    node['children'] = children
+                    node['children_count'] = len(children)
+                except PermissionError:
+                    node['children'] = []
+                    node['children_count'] = 0
+            
+            return node
+        
+        return _build_tree(project_path)
+    
+    def get_project_files_info(self, project_path: str, include_content: bool = True, 
+                              extensions: List[str] = None, exclude_patterns: List[str] = None,
+                              max_file_size: int = 50000) -> Dict[str, Any]:
+        """获取项目文件的完整信息，为Claude Code提供结构化数据"""
+        
+        # 获取项目基础信息
+        project_info = self.get_project_info(project_path)
+        
+        # 扫描源代码文件
+        source_files = self.scan_source_files(project_path, extensions, exclude_patterns)
+        
+        # 构建文件信息列表
+        files_info = []
+        for file_path in source_files:
+            file_info = {
+                'path': file_path,
+                'relative_path': self.get_relative_path(file_path, project_path)
+            }
+            
+            # 添加文件元数据
+            metadata = self.get_file_metadata(file_path)
+            if metadata:
+                file_info.update(metadata)
+            
+            # 添加文件内容（如果需要）
+            if include_content:
+                content = self.read_file_safe(file_path, max_file_size)
+                file_info['content'] = content
+                file_info['content_available'] = content is not None
+            
+            files_info.append(file_info)
+        
+        # 获取目录树
+        directory_tree = self.get_directory_tree(project_path)
+        
+        # 统计信息
+        statistics = {
+            'total_files': len(files_info),
+            'total_size': sum(f.get('size', 0) for f in files_info),
+            'file_types': {},
+            'largest_file': None,
+            'newest_file': None
+        }
+        
+        # 统计文件类型
+        for file_info in files_info:
+            ext = file_info.get('extension', 'no_extension')
+            statistics['file_types'][ext] = statistics['file_types'].get(ext, 0) + 1
+        
+        # 找到最大和最新的文件
+        if files_info:
+            statistics['largest_file'] = max(files_info, key=lambda f: f.get('size', 0))
+            statistics['newest_file'] = max(files_info, key=lambda f: f.get('modified_time', ''))
+        
+        return {
+            'project_info': project_info,
+            'files': files_info,
+            'directory_tree': directory_tree,
+            'statistics': statistics,
+            'scan_config': {
+                'extensions': extensions or self.default_extensions,
+                'exclude_patterns': exclude_patterns or self.default_excludes,
+                'max_file_size': max_file_size,
+                'include_content': include_content
+            }
+        }

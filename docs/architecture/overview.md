@@ -2,125 +2,172 @@
 
 ## 项目概况
 
-CodeLens 是一个文档驱动的MCP（Model Context Protocol）服务器，专门用于AI驱动的代码理解和文档生成。系统通过三层渐进式文档生成架构，将复杂的代码项目转化为结构化的文档，为AI提供更好的代码理解能力。
+CodeLens 是一个为Claude Code设计的MCP（Model Context Protocol）协作服务器。它不再执行AI驱动的文档生成，而是专门为Claude Code提供结构化的项目文件信息、文档模板资源和验证服务，让Claude Code能够高效地理解和生成项目文档。
 
 ## 技术栈分析
 
 ### 核心技术栈
 - **开发语言**: Python 3.9+
 - **架构协议**: MCP (Model Context Protocol)
-- **AI集成**: 可插拔的AI服务接口（当前支持Mock实现）
-- **文档格式**: Markdown + 结构化模板
-- **配置管理**: Python字典配置（计划扩展到YAML）
-- **文件处理**: 基于pathlib的现代Python文件操作
+- **文件处理**: pathlib + glob 高效文件操作
+- **模板系统**: 字符串格式化 + 结构化元数据
+- **验证机制**: 文件存在性检查（不读取内容）
+- **数据格式**: JSON结构化数据交换
 
 ## 架构模式
 
-CodeLens 采用**服务导向的三层生成架构**：
+CodeLens 采用**Claude Code协作助手架构**：
 
 ### 1. 服务层 (Services Layer)
-- **FileService**: 文件扫描、读取、路径管理
-- **TemplateService**: 文档模板管理和格式化
-- **AIService**: AI内容生成抽象接口
+- **FileService**: 项目文件扫描、元数据提取、目录树生成
+- **TemplateService**: 文档模板管理、模板查询和格式化
+- **ValidationService**: 文档结构验证、生成状态报告
 
-### 2. 生成层 (Generation Layer)
-- **ThreeLayerDocGenerator**: 核心文档生成器
-- **文档生成流程**: 文件层 → 模块层 → 架构层
+### 2. MCP接口层 (MCP Interface Layer)
+- **doc_scan**: 扫描项目文件并返回结构化信息
+- **template_get**: 提供各种文档模板资源
+- **doc_verify**: 验证文档生成状态和完整性
 
-### 3. 接口层 (Interface Layer)  
-- **MCP工具接口**: doc_init等标准MCP工具
-- **命令行接口**: 直接调用和测试接口
+### 3. 协作流程层 (Collaboration Layer)
+- **信息提供者**: CodeLens提供项目文件信息和模板
+- **内容生成者**: Claude Code基于提供的信息生成文档
+- **状态验证**: CodeLens验证生成的文档结构完整性
 
 ## 核心组件
 
 ### 1. 文件服务 (FileService)
-**职责**: 项目文件的扫描、读取和管理
-- scan_source_files(): 智能文件扫描
+**职责**: 为Claude Code提供完整的项目文件信息
+- get_project_files_info(): 获取项目文件的完整结构化信息
+- get_file_metadata(): 获取单个文件的元数据（大小、修改时间等）
+- get_directory_tree(): 生成优化的目录树结构
+- scan_source_files(): 智能文件扫描和过滤
 - read_file_safe(): 安全文件读取（带大小限制）
-- scan_directory_structure(): 目录结构分析
-- get_project_info(): 项目基础信息提取
 
 ### 2. 模板服务 (TemplateService)
-**职责**: 文档模板管理和AI提示词生成
-- 文档模板: FILE_SUMMARY, MODULE_ANALYSIS, ARCHITECTURE
-- AI提示词: file_analysis, module_analysis, architecture_analysis
-- 格式化方法: 模板填充和内容格式化
+**职责**: 为Claude Code提供标准化的文档模板
+- get_template_list(): 获取所有可用模板的元数据
+- get_template_content(): 获取特定模板的内容和信息
+- get_template_by_type(): 按类型筛选模板
+- validate_template_variables(): 验证模板变量完整性
+- format_template(): 格式化模板内容
 
-### 3. AI服务 (AIService)
-**职责**: AI内容生成的抽象接口
-- MockAIService: 测试用的模拟实现
-- generate_file_summary(): 文件摘要生成
-- generate_module_analysis(): 模块分析生成
-- generate_architecture_doc(): 架构文档生成
+**提供的模板类型**:
+- file_summary: 文件摘要模板
+- module_analysis: 模块分析模板  
+- architecture: 架构概述模板
+- project_readme: 项目README模板
 
-### 4. 三层文档生成器 (ThreeLayerDocGenerator)
-**职责**: 核心业务逻辑，协调各服务完成文档生成
-- _generate_file_layer(): 第三层文件文档生成
-- _generate_module_layer(): 第二层模块文档生成  
-- _generate_architecture_layer(): 第一层架构文档生成
+### 3. 验证服务 (ValidationService)
+**职责**: 验证文档生成状态但不读取内容
+- get_generation_status(): 获取文档生成的完整状态报告
+- check_directory_structure(): 检查目录结构是否符合预期
+- get_missing_files(): 获取缺失的文档文件列表
+- get_validation_summary(): 获取验证结果摘要和改进建议
+
+### 4. MCP工具集合
+**职责**: 提供标准MCP协议接口
+
+#### doc_scan工具
+- 扫描项目文件并返回结构化信息
+- 支持内容包含/排除选项
+- 提供文件统计和元数据
+
+#### template_get工具  
+- 按名称或类型获取文档模板
+- 提供模板使用示例和变量验证
+- 支持多种返回格式
+
+#### doc_verify工具
+- 验证文档生成状态和结构完整性
+- 提供详细的层级信息和改进建议
+- 支持自定义验证规则
 
 ## 数据流设计
 
-### 三层渐进生成流程
-1. **项目扫描**: 项目路径 → 文件列表 → 文件内容读取
-2. **文件层生成**: 逐个文件 → AI分析 → 文件摘要文档
-3. **模块层生成**: 收集文件摘要 → AI识别模块 → 模块关系文档
-4. **架构层生成**: 基于模块分析 → AI生成架构 → 架构概述文档
-5. **报告生成**: 汇总统计信息 → 生成完整报告
+### Claude Code协作流程
+1. **项目扫描请求**: Claude Code → doc_scan → 项目文件信息
+2. **模板获取请求**: Claude Code → template_get → 文档模板资源
+3. **内容生成阶段**: Claude Code基于文件信息和模板生成文档
+4. **验证检查请求**: Claude Code → doc_verify → 生成状态报告
+5. **迭代优化**: 基于验证结果继续完善文档
 
 ### 关键数据流
-1. **输入处理**: 项目路径 → 文件列表 → 文件内容
-2. **AI处理**: 内容 + 模板 → AI提示词 → 生成结果
-3. **输出格式化**: AI结果 → 模板填充 → Markdown文档
-4. **层级传递**: 下层结果作为上层输入的上下文
+1. **信息收集**: 项目路径 → 文件扫描 → 结构化数据 → JSON响应
+2. **模板提供**: 模板请求 → 模板查询 → 格式化模板 → JSON响应
+3. **文档验证**: 验证请求 → 结构检查 → 状态分析 → JSON响应
+4. **协作循环**: 信息 → 生成 → 验证 → 改进 → 完成
 
 ## 系统边界和约束
 
 ### 输入边界
-- **支持的项目类型**: 当前仅支持Python项目（.py文件）
+- **支持的项目类型**: 主要支持Python项目，可扩展其他语言
 - **文件大小限制**: 单文件最大50KB（可配置）
-- **项目规模**: 适合中小型项目（< 1000文件）
+- **项目规模**: 适合中小型到大型项目（高效的文件扫描机制）
+- **目录深度**: 目录树扫描最大深度3层（可配置）
 
 ### 输出边界
-- **文档格式**: Markdown格式的结构化文档
-- **存储位置**: 项目根目录下的docs/目录
-- **文档层次**: 三层固定结构（architecture, modules, files）
+- **数据格式**: JSON格式的结构化数据响应
+- **模板格式**: Markdown模板，支持变量替换
+- **验证范围**: 文件存在性检查，不读取文件内容
+- **MCP协议**: 标准MCP工具接口，支持命令行调用
 
 ### 系统约束
-- **AI服务依赖**: 当前为Mock实现，需要集成真实AI服务
-- **语言支持**: 当前仅支持Python，计划扩展其他语言
-- **配置能力**: 配置选项有限，需要增强配置系统
+- **专注信息提供**: 不执行AI内容生成，专注于数据提供
+- **无状态设计**: 每次MCP调用都是独立的，无状态保存
+- **文件系统依赖**: 依赖本地文件系统访问权限
+- **Python环境**: 需要Python 3.9+运行环境
 
 ## 部署架构
 
-### 开发部署
+### 命令行部署
 ```bash
-# 直接运行
-python src/mcp_tools/doc_init.py /path/to/project
+# 扫描项目文件
+python src/mcp_tools/doc_scan.py /path/to/project
 
-# 作为模块调用
-from src.doc_generator import ThreeLayerDocGenerator
-generator = ThreeLayerDocGenerator()
-generator.generate_project_docs(project_path)
+# 获取文档模板
+python src/mcp_tools/template_get.py --list-all
+
+# 验证文档状态
+python src/mcp_tools/doc_verify.py /path/to/project
 ```
 
 ### MCP服务部署
 ```python
-# MCP工具定义
+# doc_scan工具定义
 {
-  "name": "doc_init",
-  "description": "初始化项目的三层文档结构",
+  "name": "doc_scan",
+  "description": "扫描项目文件并返回结构化信息",
   "parameters": {
     "project_path": "string",
-    "output_path": "string", 
+    "include_content": "boolean",
     "config": "object"
+  }
+}
+
+# template_get工具定义  
+{
+  "name": "template_get",
+  "description": "获取指定类型的文档模板",
+  "parameters": {
+    "template_name": "string",
+    "format": "string"
+  }
+}
+
+# doc_verify工具定义
+{
+  "name": "doc_verify", 
+  "description": "检查项目文档生成状态",
+  "parameters": {
+    "project_path": "string",
+    "verification_type": "string"
   }
 }
 ```
 
-### 扩展性设计
-- **AI服务可插拔**: 通过工厂模式支持不同AI实现
-- **模板可定制**: 支持自定义文档模板
-- **语言可扩展**: 通过语言特定的解析器支持多语言
-- **配置可扩展**: 支持YAML/JSON配置文件
+### 模块化设计
+- **服务独立**: 各服务组件职责清晰，可独立测试和维护
+- **模板可扩展**: 支持添加新的文档模板类型
+- **工具可插拔**: MCP工具可独立部署和调用
+- **配置灵活**: 支持多种配置参数和选项
 
