@@ -2,7 +2,9 @@
 MCP doc_guide 工具实现
 智能分析项目特征，为AI提供文档生成策略和建议
 """
+import argparse
 import json
+import logging
 import os
 import sys
 from collections import Counter
@@ -13,10 +15,8 @@ from typing import Dict, Any, List
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, project_root)
 
-from src.services.file_service import FileService
-
-# 导入日志系统
-import logging
+# 必须在sys.path修改后再导入
+from src.services.file_service import FileService  # noqa: E402
 
 
 class ProjectAnalyzer:
@@ -126,7 +126,6 @@ class ProjectAnalyzer:
 
         # 估计模板数量
         estimated_files = min(file_count, 30)  # 文件层最多30个
-        estimated_modules = len(analysis["identified_modules"])
         estimated_templates = estimated_files + 6 + 6 + 3  # 文件+模块+架构+项目
 
         return {
@@ -212,7 +211,8 @@ class ProjectAnalyzer:
             "directory_structure": directory_structure
         }
 
-    def _should_ignore_file(self, file_path: Path, ignore_files: List[str], ignore_dirs: List[str]) -> bool:
+    @staticmethod
+    def _should_ignore_file(file_path: Path, ignore_files: List[str], ignore_dirs: List[str]) -> bool:
         """检查文件是否应该被忽略"""
         # 检查文件名模式
         for pattern in ignore_files:
@@ -227,7 +227,7 @@ class ProjectAnalyzer:
 
         return False
 
-    def _detect_project_type(self, project_path: Path, file_info: Dict[str, Any]) -> str:
+    def _detect_project_type(self, _project_path: Path, file_info: Dict[str, Any]) -> str:
         """检测项目类型"""
         scores = {}
 
@@ -256,7 +256,7 @@ class ProjectAnalyzer:
 
         return max(scores, key=scores.get)
 
-    def _detect_framework(self, project_path: Path, file_info: Dict[str, Any], project_type: str) -> str:
+    def _detect_framework(self, project_path: Path, file_info: Dict[str, Any], _project_type: str) -> str:
         """检测主要框架"""
         scores = {}
 
@@ -271,7 +271,7 @@ class ProjectAnalyzer:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read().lower()
                         file_contents.append(content)
-                except:
+                except (IOError, OSError, UnicodeDecodeError):
                     continue
 
         # 也检查一些源代码文件
@@ -283,7 +283,7 @@ class ProjectAnalyzer:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read().lower()[:2000]  # 只读前2000字符
                     file_contents.append(content)
-            except:
+            except (IOError, OSError, UnicodeDecodeError):
                 continue
 
         all_content = " ".join(file_contents)
@@ -301,7 +301,8 @@ class ProjectAnalyzer:
         best_framework = max(scores, key=scores.get)
         return best_framework if scores[best_framework] > 0 else "custom"
 
-    def _identify_modules(self, project_path: Path, file_info: Dict[str, Any], project_type: str) -> List[str]:
+    @staticmethod
+    def _identify_modules(_project_path: Path, file_info: Dict[str, Any], project_type: str) -> List[str]:
         """识别功能模块"""
         modules = set()
 
@@ -340,7 +341,8 @@ class ProjectAnalyzer:
 
         return sorted(list(modules))
 
-    def _assess_complexity(self, file_info: Dict[str, Any]) -> str:
+    @staticmethod
+    def _assess_complexity(file_info: Dict[str, Any]) -> str:
         """评估代码复杂度"""
         file_count = len(file_info["files"])
         dir_count = len(file_info["directory_structure"])
@@ -352,7 +354,8 @@ class ProjectAnalyzer:
         else:
             return "complex"
 
-    def _identify_key_files(self, project_path: Path, file_info: Dict[str, Any], project_type: str) -> List[str]:
+    @staticmethod
+    def _identify_key_files(_project_path: Path, file_info: Dict[str, Any], project_type: str) -> List[str]:
         """识别关键文件"""
         key_files = []
 
@@ -402,7 +405,8 @@ class ProjectAnalyzer:
         scored_files.sort(key=lambda x: x[1], reverse=True)
         return [file_name for file_name, score in scored_files[:20] if score > 0]
 
-    def _get_focus_recommendations(self, analysis: Dict[str, Any], focus_areas: List[str]) -> List[str]:
+    @staticmethod
+    def _get_focus_recommendations(analysis: Dict[str, Any], focus_areas: List[str]) -> List[str]:
         """获取焦点建议"""
         recommendations = []
         project_type = analysis["project_type"]
@@ -429,7 +433,8 @@ class ProjectAnalyzer:
 
         return recommendations
 
-    def _get_architecture_components(self, project_type: str) -> List[str]:
+    @staticmethod
+    def _get_architecture_components(project_type: str) -> List[str]:
         """获取架构组件"""
         base_components = ["system_overview", "tech_stack", "data_flow"]
 
@@ -444,7 +449,8 @@ class ProjectAnalyzer:
         specific_components = type_specific.get(project_type, ["general_architecture"])
         return base_components + specific_components[:3]  # 最多6个组件
 
-    def _estimate_duration(self, file_count: int, module_count: int, arch_count: int) -> str:
+    @staticmethod
+    def _estimate_duration(file_count: int, module_count: int, arch_count: int) -> str:
         """估计完成时间"""
         # 假设每个文件3分钟，每个模块5分钟，每个架构组件10分钟
         total_minutes = file_count * 3 + module_count * 5 + arch_count * 10 + 30  # 加30分钟基础时间
@@ -465,7 +471,6 @@ class DocGuideTool:
         self.tool_name = "doc_guide"
         self.description = "智能分析项目特征，为AI提供文档生成策略和建议"
         self.analyzer = ProjectAnalyzer()
-        import logging
         self.logger = logging.getLogger('doc_guide')
 
     def get_tool_definition(self) -> Dict[str, Any]:
@@ -564,7 +569,7 @@ class DocGuideTool:
                 "generation_plan": plan
             })
 
-        except Exception as e:
+        except (OSError, IOError, ValueError) as e:
             self.logger.error(f"项目分析失败: {str(e)}", exc_info=e)
             return self._error_response(f"Analysis failed: {str(e)}")
 
@@ -593,7 +598,6 @@ def create_mcp_tool() -> DocGuideTool:
 # 命令行接口，用于测试
 def main():
     """命令行测试接口"""
-    import argparse
 
     parser = argparse.ArgumentParser(description="MCP doc_guide tool")
     parser.add_argument("project_path", help="Project path to analyze")
