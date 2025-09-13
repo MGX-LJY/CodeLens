@@ -8,37 +8,46 @@
 │                        开发环境                             │
 ├─────────────────────────────────────────────────────────────┤
 │                      Claude Code                           │
-│                   (MCP 客户端)                             │
+│                 (智能化文档生成客户端)                      │
 └─────────────────────┬───────────────────────────────────────┘
-                      │ MCP 协议调用
+                      │ MCP 协议调用 (7个专业工具)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      本地主机                              │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │              CodeLens MCP 服务器                       │ │
+│  │           CodeLens 智能化任务驱动 MCP 服务器            │ │
 │  ├─────────────────────────────────────────────────────────┤ │
-│  │  MCP 工具层                                            │ │
-│  │  ├── doc_scan.py                                      │ │
-│  │  ├── template_get.py                                  │ │
-│  │  └── doc_verify.py                                    │ │
+│  │  MCP 工具层 (7个专业工具)                              │ │
+│  │  ├── doc_guide.py    (智能项目分析)                   │ │
+│  │  ├── task_init.py    (任务计划生成)                   │ │
+│  │  ├── task_execute.py (任务执行管理)                   │ │
+│  │  ├── task_status.py  (状态监控中心)                   │ │
+│  │  ├── doc_scan.py     (项目文件扫描)                   │ │
+│  │  ├── template_get.py (模板获取)                       │ │
+│  │  └── doc_verify.py   (文档验证)                       │ │
 │  ├─────────────────────────────────────────────────────────┤ │
-│  │  服务层                                                │ │
-│  │  ├── FileService                                      │ │
-│  │  ├── TemplateService                                  │ │
-│  │  ├── ValidationService                                │ │
-│  │  └── LoggingService                                   │ │
+│  │  任务引擎层 (Task Engine)                             │ │
+│  │  ├── TaskManager     (14种任务类型管理)               │ │
+│  │  ├── PhaseController (5阶段严格控制)                  │ │
+│  │  └── StateTracker    (状态跟踪监控)                   │ │
+│  ├─────────────────────────────────────────────────────────┤ │
+│  │  服务层 (Services)                                    │ │
+│  │  ├── FileService     (智能文件分析)                   │ │
+│  │  ├── TemplateService (16个核心模板)                   │ │
+│  │  └── ValidationService (完整性验证)                   │ │
 │  └─────────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │                      文件系统                              │
 │  ├── 项目源代码目录                                         │
 │  ├── 文档输出目录 (/docs)                                  │
-│  ├── 日志文件目录 (/logs)                                  │
-│  │   ├── codelens.log                                     │
-│  │   ├── codelens.log.1.gz                                │
-│  │   └── codelens.log.2.gz                                │
-│  └── 配置文件                                              │
-│      └── logging_config.json                              │
+│  │   ├── architecture/   (架构层文档)                     │
+│  │   ├── modules/        (模块层文档)                     │
+│  │   ├── files/          (文件层文档)                     │
+│  │   └── project/        (项目层文档)                     │
+│  └── 任务状态存储 (.codelens/)                             │
+│      ├── tasks.json      (任务状态文件)                    │
+│      └── execution_history.json (执行历史)                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -46,8 +55,20 @@
 
 ### 1. **命令行部署** - 直接工具调用
 ```bash
+# 智能项目分析
+python src/mcp_tools/doc_guide.py /path/to/project
+
+# 任务计划生成
+python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json
+
+# 任务执行管理
+python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode execute
+
+# 状态监控检查
+python src/mcp_tools/task_status.py /path/to/project --type overall_status
+
 # 项目文件扫描
-python src/mcp_tools/doc_scan.py /path/to/project
+python src/mcp_tools/doc_scan.py /path/to/project --no-content
 
 # 模板获取
 python src/mcp_tools/template_get.py --list-all
@@ -62,27 +83,38 @@ python src/mcp_tools/doc_verify.py /path/to/project
   "mcpServers": {
     "codelens": {
       "command": "python",
-      "args": ["/path/to/codelens/src/mcp_tools/doc_scan.py"],
-      "env": {
-        "CODELENS_LOG_CONFIG": "logging_config.json"
-      }
+      "args": ["/path/to/codelens/src/mcp_tools/doc_guide.py"]
     }
   }
 }
 ```
 
-### 3. **配置化部署** - 企业级日志
-```bash
-# 使用自定义日志配置
-export CODELENS_LOG_CONFIG=/path/to/custom_logging_config.json
-python src/mcp_tools/doc_scan.py /project/path
+**支持的7个MCP工具**:
+- `doc_guide.py`: 智能项目分析
+- `task_init.py`: 任务计划生成  
+- `task_execute.py`: 任务执行管理
+- `task_status.py`: 状态监控中心
+- `doc_scan.py`: 项目文件扫描
+- `template_get.py`: 模板获取
+- `doc_verify.py`: 文档验证
 
-# 生产环境部署
-python -c "
-from src.logging import initialize_logging
-initialize_logging('production_logging_config.json')
-# 然后运行 MCP 工具
-"
+### 3. **智能化工作流部署** - 完整5阶段流程
+```bash
+# 完整的智能化文档生成工作流
+# 1. 项目分析
+python src/mcp_tools/doc_guide.py /path/to/project > analysis.json
+
+# 2. 任务规划
+python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json --create-tasks
+
+# 3. 状态监控
+python src/mcp_tools/task_status.py /path/to/project --type current_task
+
+# 4. 任务执行 (循环执行直到完成)
+python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode execute
+
+# 5. 文档验证
+python src/mcp_tools/doc_verify.py /path/to/project --type full_status
 ```
 
 ## 运行环境要求
@@ -91,49 +123,53 @@ initialize_logging('production_logging_config.json')
 - **Python 版本**: Python 3.9+ (推荐 3.11+)
 - **操作系统**: Windows 10+, macOS 10.15+, Linux (Ubuntu 20.04+)
 - **内存**: 最小 256MB，推荐 512MB
-- **磁盘空间**: 50MB (代码) + 可配置日志空间
+- **磁盘空间**: 50MB (代码) + 可变文档空间 + 任务状态存储
 
 ### **权限要求**
 - **文件读取权限**: 需要访问目标项目目录
-- **文件写入权限**: 日志文件目录写入权限
+- **文件写入权限**: 文档输出目录和.codelens状态目录写入权限
 - **网络权限**: 不需要网络访问（纯本地操作）
 
 ### **依赖要求**
 - **零外部依赖**: 仅使用 Python 标准库
 - **模块化设计**: 各组件可独立部署
 
-## 日志系统部署
+## 任务状态存储部署
 
-### **日志文件结构**
+### **状态文件结构**
 ```
-/logs/
-├── codelens.log              # 当前日志文件
-├── codelens.log.1.gz         # 轮转压缩日志
-├── codelens.log.2.gz         # 历史压缩日志
-└── statistics/               # 统计信息 (可选)
-    ├── operation_stats.json
-    └── performance_metrics.json
+/.codelens/
+├── tasks.json               # 主任务状态文件
+├── execution_history.json   # 执行历史记录
+└── performance_metrics.json # 性能指标统计 (可选)
 ```
 
-### **配置文件部署**
+### **任务状态文件格式**
 ```json
 {
-  "level": "INFO",
-  "file": {
-    "enabled": true,
-    "path": "logs/codelens.log",
-    "max_size_mb": 10,
-    "backup_count": 5,
-    "rotation": "size"
+  "tasks": {
+    "task_id": {
+      "id": "task_id",
+      "type": "file_summary", 
+      "description": "生成app.py文件摘要",
+      "phase": "phase_2_files",
+      "status": "completed",
+      "target_file": "app.py",
+      "template": "file_summary",
+      "output_path": "docs/files/summaries/app.py.md",
+      "dependencies": ["scan_task_id"],
+      "priority": "high",
+      "created_at": "2025-09-13T10:30:00Z",
+      "completed_at": "2025-09-13T10:35:00Z",
+      "estimated_time": "3 minutes",
+      "metadata": {}
+    }
   },
-  "console": {
-    "enabled": false,
-    "level": "WARNING"
-  },
-  "features": {
-    "async_write": true,
-    "operation_tracking": true,
-    "context_manager": true
+  "metadata": {
+    "version": "0.6.0.0",
+    "project_path": "/path/to/project",
+    "created_at": "2025-09-13T10:00:00Z",
+    "last_updated": "2025-09-13T10:35:00Z"
   }
 }
 ```
@@ -141,39 +177,55 @@ initialize_logging('production_logging_config.json')
 ## 性能优化部署
 
 ### **开发环境**
-- 启用控制台日志便于调试
-- 降低日志级别为 DEBUG
-- 禁用异步写入便于实时查看
+- 使用task_status工具实时监控任务执行
+- 启用详细的错误信息输出
+- 保留完整的任务执行历史用于调试
 
-### **生产环境**
-- 禁用控制台日志减少开销
-- 设置 INFO 或 WARNING 级别
-- 启用异步写入提升性能
-- 配置合理的日志轮转策略
+### **生产环境**  
+- 配置合理的任务状态文件轮转策略
+- 定期清理旧的执行历史记录
+- 启用性能指标收集和分析
+- 监控.codelens目录磁盘使用情况
 
 ### **高负载环境**
-- 增大日志文件大小限制
-- 减少备份文件数量
-- 启用文件压缩节省空间
-- 监控磁盘使用情况
+- 增大文档输出目录磁盘空间
+- 优化任务并发执行策略
+- 配置任务状态检查点，支持增量恢复
+- 监控内存使用和文件句柄数量
 
 ## 监控和维护
 
-### **日志监控**
+### **任务状态监控**
 ```bash
-# 查看实时日志
-tail -f logs/codelens.log
+# 检查总体状态
+python src/mcp_tools/task_status.py /path/to/project --type overall_status
 
-# 检查日志统计
-python -c "
-from src.logging import get_logger
-logger = get_logger()
-print(logger.get_statistics())
-"
+# 查看当前任务
+python src/mcp_tools/task_status.py /path/to/project --type current_task
+
+# 执行健康检查
+python src/mcp_tools/task_status.py /path/to/project --type health_check
+
+# 获取执行建议
+python src/mcp_tools/task_status.py /path/to/project --type next_actions
 ```
 
 ### **性能监控**
-- 操作耗时统计
-- 文件处理数量追踪
-- 内存使用监控
-- 磁盘空间检查
+- 任务执行时间统计
+- 阶段完成率追踪  
+- 文档生成数量统计
+- 系统健康状态检查
+- 内存使用和磁盘空间监控
+
+### **维护操作**
+```bash
+# 清理任务状态
+rm -rf .codelens/
+
+# 重新初始化项目
+python src/mcp_tools/doc_guide.py /path/to/project
+python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json
+
+# 状态文件备份
+cp .codelens/tasks.json .codelens/tasks.backup.json
+```

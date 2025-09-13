@@ -7,97 +7,139 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                        客户端层                             │
 │                      Claude Code                           │
+│                   (智能化文档生成)                          │
 └─────────────────────┬───────────────────────────────────────┘
-                      │ MCP 协议通信
+                      │ MCP 协议通信 (7个专业工具)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      接口层                                │
+│                   MCP接口层 (7个工具)                       │
 ├─────────────────┬─────────────────┬─────────────────────────┤
-│   doc_scan      │  template_get   │     doc_verify          │
-│ DocScanTool     │ TemplateGetTool │   DocVerifyTool         │
-└─────────────────┼─────────────────┼─────────────────────────┘
-                  │                 │                     │
-                  ▼                 ▼                     ▼
+│   doc_guide     │    task_init    │    task_execute         │
+│ DocGuideTool    │ TaskInitTool    │  TaskExecuteTool        │
+├─────────────────┼─────────────────┼─────────────────────────┤
+│  task_status    │    doc_scan     │   template_get          │
+│TaskStatusTool   │ DocScanTool     │ TemplateGetTool         │
+├─────────────────┼─────────────────┼─────────────────────────┤
+│   doc_verify    │                 │                         │
+│ DocVerifyTool   │                 │                         │
+└─────────────────┴─────────────────┴─────────────────────────┘
+                      │
+                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      业务层                                │
+│                   任务引擎层                                │
 ├──────────────┬──────────────┬──────────────┬─────────────────┤
-│ FileService  │TemplateService│ValidationService│LoggingService│
+│ TaskManager  │PhaseController│ StateTracker │   调度算法       │
+│ 任务生命周期  │ 阶段流程控制  │ 状态跟踪监控  │  智能调度引擎    │
+└──────────────┼──────────────┼──────────────┼─────────────────┘
+               │              │              │
+               ▼              ▼              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      服务层                                │
+├──────────────┬──────────────┬──────────────┬─────────────────┤
+│ FileService  │TemplateService│ValidationService│              │
+│ 智能文件服务  │   模板管理    │   验证服务     │                 │
 └──────────────┼──────────────┼──────────────┼─────────────────┘
                │              │              │
                ▼              ▼              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      基础层                                │
 ├─────────────────┬─────────────────┬─────────────────────────┤
-│   文件系统       │    模板存储      │      日志存储           │
-│ Python pathlib  │   内存模板       │   本地文件系统          │
+│   文件系统       │    模板资源      │     状态存储            │
+│ Python pathlib  │  16个核心模板    │   JSON持久化文件        │
+│  智能过滤       │  四层架构模板     │  .codelens/tasks.json   │
 └─────────────────┴─────────────────┴─────────────────────────┘
 ```
 
 ## 详细组件说明
 
-### 1. **MCP 工具组件** - 对外接口层
-- **DocScanTool**: 项目文件扫描工具，提供 MCP 接口
-- **TemplateGetTool**: 模板获取工具，支持模板查询和格式化
-- **DocVerifyTool**: 文档验证工具，检查文档生成状态
+### 1. **MCP 工具组件** - 对外接口层 (7个专业工具)
+- **DocGuideTool**: 智能项目分析器，自动识别项目类型、框架和生成文档策略
+- **TaskInitTool**: 任务计划生成器，基于分析结果创建5阶段执行计划
+- **TaskExecuteTool**: 任务执行管理器，提供模板、上下文和执行指导
+- **TaskStatusTool**: 状态监控中心，实时进度跟踪和健康诊断
+- **DocScanTool**: 项目文件扫描工具，智能过滤和结构化数据提取
+- **TemplateGetTool**: 模板获取工具，支持多维度查询和格式化
+- **DocVerifyTool**: 文档验证工具，完整性检查和改进建议
 
-### 2. **服务组件** - 核心业务逻辑
-- **FileService**: 文件信息服务，负责项目扫描和元数据提取
-- **TemplateService**: 模板管理服务，提供文档模板资源
-- **ValidationService**: 验证服务，检查文档结构完整性
-- **LoggingService**: 日志服务，提供企业级日志管理
+### 2. **任务引擎组件** - 智能化任务驱动核心
+- **TaskManager**: 智能任务管理器，支持14种任务类型、依赖关系和优先级调度
+- **PhaseController**: 5阶段严格控制器，确保100%完成率的阶段转换
+- **StateTracker**: 实时状态跟踪，支持执行历史、性能监控和健康检查
+- **调度算法**: 基于依赖关系的DAG调度和优先级算法
 
-### 3. **日志系统组件** - 可观测性基础设施
-- **LogManager**: 统一日志管理器，支持结构化日志
-- **FileRotator**: 文件轮转器，自动轮转和压缩日志文件
-- **LogConfig**: 配置管理器，支持运行时配置更新
+### 3. **服务组件** - 核心业务逻辑
+- **FileService**: 智能文件分析服务，项目类型检测、框架识别和智能过滤
+- **TemplateService**: 模板管理服务，16个核心模板统一管理，四层架构支持
+- **ValidationService**: 验证服务，文档结构验证、完整性检查和多种验证模式
 
 ### 4. **基础组件** - 底层支撑
-- **文件系统接口**: 基于 pathlib 的文件操作
-- **模板存储**: 内存中的模板资源管理
-- **配置系统**: JSON 配置文件管理
+- **文件系统接口**: 基于 pathlib 的智能文件操作和过滤
+- **模板资源**: 16个核心模板，四层架构(Architecture/Module/File/Project)支持
+- **状态存储**: JSON持久化文件系统，支持任务状态和执行历史保存
 
 ## 组件依赖关系
 
 ```
-DocScanTool ──────────────→ FileService ──────────→ LoggingService
-                                │                        ↑
-                                ▼                        │
-TemplateGetTool ──────────→ TemplateService ─────────────┘
-                                │                        ↑
-                                ▼                        │
-DocVerifyTool ─────────────→ ValidationService ─────────┘
+DocGuideTool ──────────────→ FileService + ProjectAnalyzer
+                                │
+                                ▼
+TaskInitTool ──────────────→ TaskManager + TaskPlanGenerator
+                                │
+                                ▼
+TaskExecuteTool ───────────→ TaskManager + TaskExecutor + TemplateService
+                                │
+                                ▼
+TaskStatusTool ────────────→ TaskManager + PhaseController + StateTracker
+                                │
+                                ▼
+DocScanTool ───────────────→ FileService
+                                │
+                                ▼
+TemplateGetTool ───────────→ TemplateService
+                                │
+                                ▼
+DocVerifyTool ─────────────→ ValidationService
 
-LoggingService 内部组件关系：
-LogManager ───→ FileRotator ───→ 本地文件系统
-    │               │
-    ▼               ▼
-LogConfig ─────→ JSON配置文件
+任务引擎内部组件关系：
+TaskManager ←→ PhaseController ←→ StateTracker
+     │              │                  │
+     ▼              ▼                  ▼
+   依赖图管理    阶段控制逻辑      状态持久化存储
+     │              │                  │
+     ▼              ▼                  ▼
+  优先级调度    100%完成验证      性能监控分析
 ```
 
 ### 依赖说明
-- **MCP 工具** → **服务层**: 所有 MCP 工具都依赖对应的服务组件
-- **服务层** → **日志服务**: 所有服务都集成了日志功能
-- **日志服务** → **文件系统**: 日志系统依赖本地文件系统存储
+- **MCP 工具** → **任务引擎/服务层**: MCP工具依赖任务引擎和对应服务组件
+- **任务引擎组件** → **相互协作**: TaskManager、PhaseController、StateTracker紧密协作
+- **任务引擎** → **服务层**: 任务引擎调用FileService、TemplateService、ValidationService
 - **服务间无依赖**: FileService、TemplateService、ValidationService 相互独立
+- **状态持久化**: 任务状态保存到JSON文件，支持中断恢复
 
 ## 数据流组件
 
-### 输入处理流
+### 智能化协作处理流
 ```
-Claude Code 请求 → MCP 工具 → 参数验证 → 服务调用
+Claude Code 请求 → MCP 工具(7个) → 参数验证 → 任务引擎调用
 ```
 
-### 业务处理流  
+### 任务引擎处理流  
 ```
-服务调用 → 业务逻辑 → 数据处理 → 结果生成
+任务引擎调用 → TaskManager/PhaseController/StateTracker → 服务层调用 → 智能分析执行
+```
+
+### 服务层处理流
+```
+服务层调用 → FileService/TemplateService/ValidationService → 业务逻辑 → 数据处理
 ```
 
 ### 输出处理流
 ```
-结果生成 → JSON 格式化 → MCP 响应 → Claude Code
+数据处理 → 结果生成 → JSON 格式化 → MCP 响应 → Claude Code
 ```
 
-### 日志处理流
+### 状态持久化流
 ```
-所有操作 → 日志生成 → 格式化 → 异步写入 → 文件轮转
+任务状态变更 → StateTracker → JSON持久化 → .codelens/tasks.json → 中断恢复支持
 ```

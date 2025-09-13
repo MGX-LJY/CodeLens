@@ -1,6 +1,11 @@
 # CodeLens 数据流设计
 
-## 5阶段智能化工作流
+## 智能化协作工作流
+
+### Claude Code 与 CodeLens 协作流程
+CodeLens通过7个MCP工具与Claude Code协作，提供完整的文档生成支持：
+
+## MCP工具协作流程
 
 ### 阶段1: 项目分析 (doc_guide)
 ```
@@ -67,6 +72,60 @@ Claude Code → doc_verify → ValidationService
 目录检查 → 文件存在性验证 → 状态分析
      ↓
 验证报告 → JSON响应 → Claude Code
+```
+
+## 5阶段文档生成工作流
+
+### Phase 1: 项目扫描分析 (phase_1_scan)
+```
+任务类型: SCAN (1个任务)
+TaskManager → 项目扫描任务 → FileService → 项目结构分析
+     ↓
+项目信息 → 文件列表 → 统计数据 → 任务状态更新(COMPLETED)
+```
+
+### Phase 2: 文件层文档生成 (phase_2_files)  
+```
+任务类型: FILE_SUMMARY (1-50个任务)
+TaskManager → 文件任务调度 → 依赖验证(Phase 1) → 优先级排序
+     ↓
+高优先级文件(main.py, app.py等) → 模板匹配 → 文档生成
+     ↓
+普通/低优先级文件 → 批量处理 → 状态跟踪 → 100%完成检查
+```
+
+### Phase 3: 模块层架构分析 (phase_3_modules)
+```
+任务类型: MODULE_* (6-20个任务)  
+依赖检查(Phase 2 100%完成) → 模块任务生成
+     ↓
+MODULE_ANALYSIS → MODULE_RELATIONS → DEPENDENCY_GRAPH
+     ↓
+重要模块详细任务: MODULE_README + MODULE_API + MODULE_FLOW
+     ↓
+模块关系构建 → 架构设计基础 → 阶段完成验证
+```
+
+### Phase 4: 架构层文档生成 (phase_4_architecture)
+```
+任务类型: ARCHITECTURE/TECH_STACK/DATA_FLOW + 图表任务 (6个任务)
+依赖检查(Phase 3 100%完成) → 架构任务并发执行
+     ↓
+系统架构设计 + 技术栈分析 + 数据流设计
+     ↓
+架构图表生成: SYSTEM_ARCHITECTURE + COMPONENT_DIAGRAM + DEPLOYMENT_DIAGRAM  
+     ↓
+架构文档完整性验证 → 项目技术全貌构建
+```
+
+### Phase 5: 项目层总结文档 (phase_5_project)
+```
+任务类型: PROJECT_README (1个任务)
+依赖检查(Phase 4 100%完成) → 项目总结任务
+     ↓
+整合所有阶段成果 → 项目README生成 → 文档完整性验证
+     ↓
+项目文档生成完成 → 全流程状态更新(COMPLETED)
 ```
 
 ## 详细数据流程
