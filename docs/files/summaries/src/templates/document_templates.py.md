@@ -2,12 +2,12 @@
 
 ## 功能概述
 
-CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为Claude Code提供18个核心模板的统一管理服务。该文件集成了四层文档架构（Architecture/Module/File/Project），支持智能模板查询、统计分析和格式化功能。
+CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为Claude Code提供16个核心模板的统一管理服务。该文件集成了四层文档架构（Architecture/Module/File/Project），支持智能模板查询、统计分析和格式化功能。
 
 ## 主要组件
 
 ### 类定义
-- **TemplateServiceV05**: 18个核心模板的统一管理中心
+- **TemplateServiceV05**: 16个核心模板的统一管理中心
   - 集成四层模板架构
   - 提供智能查询和统计功能
   - 支持模板格式化和变量验证
@@ -15,7 +15,7 @@ CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为
 ### 核心方法
 
 **模板管理方法**：
-- `get_template_list()`: 获取全部18个模板的详细元数据
+- `get_template_list()`: 获取全部16个模板的详细元数据
 - `get_template_content()`: 获取指定模板的完整内容和信息
 - `get_templates_by_layer()`: 按四层架构分类获取模板
 - `get_layer_stats()`: 获取各层级模板分布统计
@@ -24,15 +24,15 @@ CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为
 **四层架构集成**：
 - 架构层（6个模板）：系统概述、技术栈、数据流等
 - 模块层（6个模板）：模块总览、关系分析、依赖图谱等
-- 文件层（3个模板）：文件摘要、类分析、函数目录
+- 文件层（1个模板）：综合文件摘要（整合文件摘要、类分析、函数目录）
 - 项目层（3个模板）：README、变更日志、路线图
 
 ### 模板系统架构
 - **ArchitectureTemplates**: 6个架构层核心模板
 - **ModuleTemplates**: 6个模块层核心模板
-- **FileTemplates**: 3个文件层核心模板
+- **FileTemplates**: 1个文件层综合模板
 - **ProjectTemplates**: 3个项目层核心模板
-- **模板注册表**: 统一管理所有18个模板的元数据和内容
+- **模板注册表**: 统一管理所有16个模板的元数据和内容
 
 ## 依赖关系
 
@@ -45,7 +45,7 @@ CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为
   - `ProjectTemplates`: 项目层模板
 
 ### 对外接口
-- `TemplateServiceV05`: 18个模板的统一管理中心
+- `TemplateServiceV05`: 16个模板的统一管理中心
 - 四层架构模板查询接口
 - 模板统计和分析接口
 - 智能格式化和验证接口
@@ -54,7 +54,7 @@ CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为
 
 ### 四层架构管理
 - **分层模板组织**: 按Architecture/Module/File/Project四层分类
-- **统一注册机制**: 自动注册所有18个模板到统一索引
+- **统一注册机制**: 自动注册所有16个模板到统一索引
 - **智能查询算法**: 支持按层级、类型、名称多维度查询
 - **元数据管理**: 为每个模板提供完整的描述和变量定义
 
@@ -73,10 +73,10 @@ CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为
 
 该文件是CodeLens模板系统的核心枢纽：
 - 为Claude Code提供标准化的模板访问接口
-- 实现18个核心模板的统一管理和协调
+- 实现16个核心模板的统一管理和协调
 - 支持四层文档架构的完整实现
 - 为MCP工具（template_get）提供服务基础
 
 ## 备注
 
-TemplateServiceV05代表了CodeLens模板系统的0.5.3精简化演进，从26个专业模板精简到18个核心模板，保留最常用的核心功能，为AI驱动的文档生成提供了高效的模板资源基础。
+TemplateServiceV05代表了CodeLens模板系统的0.5.3精简化演进，从26个专业模板精简到16个核心模板（文件层进一步从3个整合为1个），保留最常用的核心功能，为AI驱动的文档生成提供了更高效的模板资源基础。

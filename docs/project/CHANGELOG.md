@@ -1,5 +1,20 @@
 # CodeLens 更新日志
 
+## [0.5.4.0] - 2025-09-13
+
+### 模板系统优化
+- 文件层模板整合：将3个文件层模板整合为1个FILE_SUMMARY_TEMPLATE
+- 模板系统从18个精简到16个核心模板：架构层(6个) + 模块层(6个) + 文件层(1个) + 项目层(3个)
+
+### 技术改进
+- 更新mcp_server.py到v0.5.4.0，完全适配16个模板系统
+- 更新validation_service.py适配16模板验证逻辑
+- 新增通用项目文档目录结构生成功能
+
+### 文档更新
+- 创建模块连接文档：api-services.md和auth-database.md
+- 更新docs/files/summaries/src/templates相关文档
+
 ## [0.5.3.2] - 2025-09-13
 
 ### MCP服务器更新

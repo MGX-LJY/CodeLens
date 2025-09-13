@@ -48,15 +48,15 @@ class CodeLensMCPServer:
         return {
             "name": "codelens",
             "version": "0.5.3.2",
-            "description": "CodeLens MCP服务器 - 18个核心模板四层架构协作平台，为Claude Code提供专业文档生成服务",
+            "description": "CodeLens MCP服务器 - 16个核心模板四层架构协作平台，为Claude Code提供专业文档生成服务",
             "author": "CodeLens Team",
             "license": "MIT",
             "features": {
                 "template_system": {
-                    "total_templates": 18,
+                    "total_templates": 16,
                     "architecture_layer": 6,
                     "module_layer": 6, 
-                    "file_layer": 3,
+                    "file_layer": 1,
                     "project_layer": 3
                 },
                 "mcp_tools": 3,
@@ -146,7 +146,7 @@ def main():
     # 如果是命令行模式，提供交互式测试
     if len(sys.argv) > 1:
         if sys.argv[1] == "test":
-            print("CodeLens MCP服务器 v0.5.3.2 - 18个核心模板系统测试模式")
+            print("CodeLens MCP服务器 v0.5.3.2 - 16个核心模板系统测试模式")
             print("=" * 60)
             
             # 测试服务器信息
@@ -158,7 +158,7 @@ def main():
             # 显示模板系统特性
             features = info.get('features', {})
             template_system = features.get('template_system', {})
-            print(f"\n🎯 18个核心模板系统:")
+            print(f"\n🎯 16个核心模板系统:")
             print(f"  架构层模板: {template_system.get('architecture_layer', 0)} 个")
             print(f"  模块层模板: {template_system.get('module_layer', 0)} 个")
             print(f"  文件层模板: {template_system.get('file_layer', 0)} 个")

@@ -1,7 +1,7 @@
 """
 文档模板服务：为Claude Code提供标准化的文档模板
 CodeLens 0.5.3 升级 - 四层架构精简文档模板系统
-为Claude Code提供18个专业文档模板，覆盖架构、模块、文件、项目四个层次
+为Claude Code提供16个核心文档模板，覆盖架构、模块、文件、项目四个层次
 """
 from typing import Dict, List, Any
 
@@ -33,7 +33,7 @@ class DocumentTemplates:
 
 
 class TemplateServiceV05:
-    """0.5.3 精简模板服务类 - 为Claude Code提供18个核心文档模板"""
+    """0.5.3 精简模板服务类 - 为Claude Code提供16个核心文档模板"""
     
     def __init__(self):
         # 初始化四层架构模板
@@ -42,7 +42,7 @@ class TemplateServiceV05:
         self.file_templates = FileTemplates()
         self.project_templates = ProjectTemplates()
         
-        # 0.5.3 模板注册表 - 18个模板
+        # 0.5.3 模板注册表 - 16个模板
         self.template_registry = {
             # 架构层模板 (6个)
             'architecture': self.arch_templates.OVERVIEW_TEMPLATE,
@@ -60,10 +60,8 @@ class TemplateServiceV05:
             'module_api': self.module_templates.API_TEMPLATE,
             'module_flow': self.module_templates.FLOW_TEMPLATE,
             
-            # 文件层模板 (3个)
+            # 文件层模板 (1个)
             'file_summary': self.file_templates.SUMMARY_TEMPLATE,
-            'class_analysis': self.file_templates.CLASS_ANALYSIS_TEMPLATE,
-            'function_catalog': self.file_templates.FUNCTION_CATALOG_TEMPLATE,
             
             # 项目层模板 (3个)
             'project_readme': self.project_templates.README_TEMPLATE,
@@ -77,12 +75,12 @@ class TemplateServiceV05:
             "template_count": len(self.template_registry),
             "architecture_templates": 6,
             "module_templates": 6,
-            "file_templates": 3,
+            "file_templates": 1,
             "project_templates": 3
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:
-        """获取0.5.3模板列表 - 18个专业模板"""
+        """获取0.5.3模板列表 - 16个核心模板"""
         return [
             # ============== 架构层模板 (6个) ==============
             {
@@ -212,35 +210,16 @@ class TemplateServiceV05:
                               'flow_diagram', 'exception_handling', 'performance_optimization']
             },
             
-            # ============== 文件层模板 (3个) ==============
+            # ============== 文件层模板 (1个) ==============
             {
                 'name': 'file_summary',
-                'description': '文件摘要模板 - 单个文件功能摘要',
+                'description': '综合文件摘要模板 - 完整的文件分析文档（整合文件摘要、类分析、函数目录功能）',
                 'type': 'file_level',
                 'layer': 'file',
                 'file_path': '/docs/files/summaries/[file].md',
                 'variables': ['filename', 'function_overview', 'class_definitions',
                               'function_definitions', 'constants', 'imports', 'exports',
-                              'algorithms', 'performance_analysis', 'test_coverage', 'notes']
-            },
-            {
-                'name': 'class_analysis',
-                'description': '类分析模板 - 深度类结构分析',
-                'type': 'file_level',
-                'layer': 'file',
-                'file_path': '/docs/files/summaries/class-analysis.md',
-                'variables': ['class_name', 'class_overview', 'inheritance_hierarchy', 'attributes_analysis',
-                              'methods_analysis', 'design_patterns', 'responsibility_analysis',
-                              'collaboration_relationships', 'optimization_suggestions']
-            },
-            {
-                'name': 'function_catalog',
-                'description': '函数目录模板 - 模块函数清单',
-                'type': 'file_level',
-                'layer': 'file',
-                'file_path': '/docs/files/summaries/function-catalog.md',
-                'variables': ['module_name', 'function_overview', 'public_functions', 'private_functions',
-                              'static_methods', 'class_methods', 'complexity_analysis', 'call_graph']
+                              'algorithms', 'performance_analysis_section', 'architecture_contribution_section', 'notes']
             },
 
             
