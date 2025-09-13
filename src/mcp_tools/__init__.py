@@ -6,7 +6,6 @@ CodeLens MCP工具集合
 
 from .doc_scan import DocScanTool
 from .template_get import TemplateGetTool
-from .doc_verify import DocVerifyTool
 from .doc_guide import DocGuideTool
 from .task_init import TaskInitTool
 from .task_execute import TaskExecuteTool
@@ -15,7 +14,6 @@ from .task_status import TaskStatusTool
 __all__ = [
     'DocScanTool',
     'TemplateGetTool', 
-    'DocVerifyTool',
     'DocGuideTool',
     'TaskInitTool',
     'TaskExecuteTool',

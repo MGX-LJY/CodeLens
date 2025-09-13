@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-CodeLens 0.6.1.2 是一个专为Claude Code设计的智能化MCP（Model Context Protocol）协作服务器。通过**Task Engine智能任务管理**和**5阶段工作流程**，CodeLens为Claude Code提供从项目分析到文档生成的完整智能化协作体验，实现高质量项目文档的自动化生成。
+CodeLens 0.6.1.4 是一个专为Claude Code设计的智能化MCP（Model Context Protocol）协作服务器。通过**Task Engine智能任务管理**和**5阶段工作流程**，CodeLens为Claude Code提供从项目分析到文档生成的完整智能化协作体验，实现高质量项目文档的自动化生成。
 
 ## 🚀 核心特性
 

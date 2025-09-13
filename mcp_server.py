@@ -13,7 +13,6 @@ from typing import Dict, Any, List
 # 导入MCP工具
 from src.mcp_tools.doc_scan import DocScanTool
 from src.mcp_tools.template_get import TemplateGetTool
-from src.mcp_tools.doc_verify import DocVerifyTool
 
 # 导入日志系统
 try:
@@ -38,8 +37,7 @@ class CodeLensMCPServer:
         """初始化MCP服务器"""
         self.tools = {
             "doc_scan": DocScanTool(),
-            "template_get": TemplateGetTool(),
-            "doc_verify": DocVerifyTool()
+            "template_get": TemplateGetTool()
         }
         self.logger = get_logger(component="MCP_Server", operation="server")
         
@@ -47,7 +45,7 @@ class CodeLensMCPServer:
         """获取服务器信息"""
         return {
             "name": "codelens",
-            "version": "0.5.3.2",
+            "version": "0.6.1.4",
             "description": "CodeLens MCP服务器 - 16个核心模板四层架构协作平台，为Claude Code提供专业文档生成服务",
             "author": "CodeLens Team",
             "license": "MIT",
@@ -59,7 +57,7 @@ class CodeLensMCPServer:
                     "file_layer": 1,
                     "project_layer": 3
                 },
-                "mcp_tools": 3,
+                "mcp_tools": 2,
                 "logging_system": True,
                 "zero_dependencies": True
             }
