@@ -1,5 +1,7 @@
 """
 文档模板服务：为Claude Code提供标准化的文档模板
+CodeLens 0.5.0 升级 - 四层架构完整文档模板系统
+为Claude Code提供26个专业文档模板，覆盖架构、模块、文件、项目四个层次
 """
 from typing import Dict, List, Any
 
@@ -10,180 +12,367 @@ except ImportError:
     # 如果日志系统不可用，创建一个空日志器
     class DummyLogger:
         def debug(self, msg, context=None): pass
-
         def info(self, msg, context=None): pass
-
         def warning(self, msg, context=None): pass
-
         def error(self, msg, context=None, exc_info=None): pass
-
 
     get_logger = lambda **kwargs: DummyLogger()
 
+# 导入四层架构模板
+from .templates import ArchitectureTemplates, ModuleTemplates, FileTemplates, ProjectTemplates
+
 
 class DocumentTemplates:
-    """文档模板集合"""
+    """原版文档模板集合 - 保持向后兼容"""
 
-    # 文件摘要模板
-    FILE_SUMMARY_TEMPLATE = """# 文件摘要：{filename}
-
-## 功能概述
-{function_overview}
-
-## 主要组件
-
-### 类定义
-{class_definitions}
-
-### 函数定义
-{function_definitions}
-
-### 重要常量和配置
-{constants}
-
-## 依赖关系
-
-### 导入的模块
-{imports}
-
-### 对外接口
-{exports}
-
-## 关键算法和逻辑
-{algorithms}
-
-## 备注
-{notes}
-"""
-
-    # 模块分析模板
-    MODULE_ANALYSIS_TEMPLATE = """# 模块总览
-
-## 识别的功能模块
-{identified_modules}
-
-## 模块详细信息
-
-{module_details}
-
-## 模块关系图谱
-{module_relations}
-
-## 核心接口汇总
-{core_interfaces}
-"""
-
-    # 架构文档模板
-    ARCHITECTURE_TEMPLATE = """# 系统架构概述
-
-## 项目概况
-{project_overview}
-
-## 技术栈分析
-{tech_stack}
-
-## 架构模式
-{architecture_pattern}
-
-## 核心组件
-{core_components}
-
-## 数据流设计
-{data_flow}
-
-## 系统边界和约束
-{system_boundaries}
-
-## 部署架构
-{deployment_architecture}
-"""
-
-    # 项目README模板
-    PROJECT_README_TEMPLATE = """# {project_name}
-
-## 项目概述
-{project_overview}
-
-## 核心特性
-{core_features}
-
-## 快速开始
-{quick_start}
-
-## 项目状态
-{project_status}
-
-## 技术架构
-{tech_architecture}
-
-## 使用示例
-{usage_examples}
-
-## 开发路线图
-{roadmap}
-
-## 贡献指南
-{contribution_guide}
-
-## 许可证
-{license}
-"""
+    # 原有的四个基础模板，保持向后兼容
+    FILE_SUMMARY_TEMPLATE = FileTemplates.SUMMARY_TEMPLATE
+    MODULE_ANALYSIS_TEMPLATE = ModuleTemplates.OVERVIEW_TEMPLATE
+    ARCHITECTURE_TEMPLATE = ArchitectureTemplates.OVERVIEW_TEMPLATE
+    PROJECT_README_TEMPLATE = ProjectTemplates.README_TEMPLATE
 
 
-class TemplateService:
-    """模板服务类 - 为Claude Code提供文档模板"""
-
+class TemplateServiceV05:
+    """0.5.0 增强模板服务类 - 为Claude Code提供26个专业文档模板"""
+    
     def __init__(self):
-        self.templates = DocumentTemplates()
+        # 初始化四层架构模板
+        self.arch_templates = ArchitectureTemplates()
+        self.module_templates = ModuleTemplates()
+        self.file_templates = FileTemplates()
+        self.project_templates = ProjectTemplates()
+        
+        # 0.5.0 完整模板注册表 - 26个模板
         self.template_registry = {
-            'file_summary': self.templates.FILE_SUMMARY_TEMPLATE,
-            'module_analysis': self.templates.MODULE_ANALYSIS_TEMPLATE,
-            'architecture': self.templates.ARCHITECTURE_TEMPLATE,
-            'project_readme': self.templates.PROJECT_README_TEMPLATE
+            # 架构层模板 (7个)
+            'architecture': self.arch_templates.OVERVIEW_TEMPLATE,
+            'tech_stack': self.arch_templates.TECH_STACK_TEMPLATE,
+            'data_flow': self.arch_templates.DATA_FLOW_TEMPLATE,
+            'system_architecture': self.arch_templates.SYSTEM_ARCH_TEMPLATE,
+            'component_diagram': self.arch_templates.COMPONENT_DIAGRAM_TEMPLATE,
+            'deployment_diagram': self.arch_templates.DEPLOYMENT_DIAGRAM_TEMPLATE,
+            'design_patterns': self.arch_templates.DESIGN_PATTERNS_TEMPLATE,
+            
+            # 模块层模板 (6个)
+            'module_analysis': self.module_templates.OVERVIEW_TEMPLATE,
+            'module_relations': self.module_templates.RELATIONS_TEMPLATE,
+            'dependency_graph': self.module_templates.DEPENDENCY_GRAPH_TEMPLATE,
+            'module_readme': self.module_templates.MODULE_README_TEMPLATE,
+            'module_api': self.module_templates.API_TEMPLATE,
+            'module_flow': self.module_templates.FLOW_TEMPLATE,
+            
+            # 文件层模板 (5个)
+            'file_summary': self.file_templates.SUMMARY_TEMPLATE,
+            'class_analysis': self.file_templates.CLASS_ANALYSIS_TEMPLATE,
+            'function_catalog': self.file_templates.FUNCTION_CATALOG_TEMPLATE,
+            'algorithm_breakdown': self.file_templates.ALGORITHM_BREAKDOWN_TEMPLATE,
+            'code_metrics': self.file_templates.CODE_METRICS_TEMPLATE,
+            
+            # 项目层模板 (8个)
+            'project_readme': self.project_templates.README_TEMPLATE,
+            'changelog': self.project_templates.CHANGELOG_TEMPLATE,
+            'roadmap': self.project_templates.ROADMAP_TEMPLATE,
+            'contributing': self.project_templates.CONTRIBUTING_TEMPLATE,
+            'api_reference': self.project_templates.API_REFERENCE_TEMPLATE,
+            'troubleshooting': self.project_templates.TROUBLESHOOTING_TEMPLATE,
+            'performance': self.project_templates.PERFORMANCE_TEMPLATE,
+            'version_record': self.project_templates.VERSION_RECORD_TEMPLATE
         }
-
+        
         # 初始化日志器
-        self.logger = get_logger(component="TemplateService", operation="default")
-        self.logger.info("TemplateService初始化完成", {
+        self.logger = get_logger(component="TemplateServiceV05", operation="init")
+        self.logger.info("TemplateService 0.5.0初始化完成", {
             "template_count": len(self.template_registry),
-            "available_templates": list(self.template_registry.keys())
+            "architecture_templates": 7,
+            "module_templates": 6,
+            "file_templates": 5,
+            "project_templates": 8
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:
-        """获取可用模板列表"""
+        """获取0.5.0完整模板列表 - 26个专业模板"""
         return [
-            {
-                'name': 'file_summary',
-                'description': '文件摘要模板 - 用于生成单个文件的功能摘要',
-                'type': 'file_level',
-                'variables': ['filename', 'function_overview', 'class_definitions',
-                              'function_definitions', 'constants', 'imports', 'exports',
-                              'algorithms', 'notes']
-            },
-            {
-                'name': 'module_analysis',
-                'description': '模块分析模板 - 用于生成模块级别的分析文档',
-                'type': 'module_level',
-                'variables': ['identified_modules', 'module_details', 'module_relations',
-                              'core_interfaces']
-            },
+            # ============== 架构层模板 ==============
             {
                 'name': 'architecture',
-                'description': '架构文档模板 - 用于生成系统架构概述',
+                'description': '架构概述模板 - 系统整体架构设计',
                 'type': 'architecture_level',
-                'variables': ['project_overview', 'tech_stack', 'architecture_pattern',
-                              'core_components', 'data_flow', 'system_boundaries',
-                              'deployment_architecture']
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/overview.md',
+                'variables': ['project_name', 'project_overview', 'tech_stack', 'architecture_pattern',
+                              'services_layer', 'mcp_interface_layer', 'collaboration_layer',
+                              'core_components', 'data_flow', 'system_boundaries', 'deployment_architecture']
             },
             {
+                'name': 'tech_stack',
+                'description': '技术栈模板 - 详细技术选型和架构原则',
+                'type': 'architecture_level',
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/tech-stack.md',
+                'variables': ['project_name', 'programming_languages', 'architecture_patterns',
+                              'data_formats', 'filesystem_operations', 'dependency_strategy',
+                              'performance_optimization', 'reliability_guarantee', 'observability',
+                              'configuration_management', 'version_compatibility', 'deployment_architecture']
+            },
+            {
+                'name': 'data_flow',
+                'description': '数据流模板 - 系统数据流转设计',
+                'type': 'architecture_level',
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/data-flow.md',
+                'variables': ['project_name', 'flow_1_name', 'flow_1_diagram', 'flow_2_name', 'flow_2_diagram',
+                              'flow_3_name', 'flow_3_diagram', 'flow_4_name', 'flow_4_diagram',
+                              'detailed_flows', 'data_formats', 'performance_considerations']
+            },
+            {
+                'name': 'system_architecture',
+                'description': '系统架构图模板 - 可视化架构图表',
+                'type': 'architecture_level',
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/diagrams/system-architecture.md',
+                'variables': ['project_name', 'overall_architecture_diagram', 'layer_1_name', 'layer_1_diagram',
+                              'layer_2_name', 'layer_2_diagram', 'layer_3_name', 'layer_3_diagram',
+                              'tech_stack_diagram', 'additional_diagrams']
+            },
+            {
+                'name': 'component_diagram',
+                'description': '组件图模板 - 组件关系和依赖',
+                'type': 'architecture_level',
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/diagrams/component-diagram.md',
+                'variables': ['project_name', 'component_hierarchy', 'component_1_name', 'component_1_desc',
+                              'component_1_details', 'component_2_name', 'component_2_desc', 'component_2_details',
+                              'component_3_name', 'component_3_desc', 'component_3_details',
+                              'component_4_name', 'component_4_desc', 'component_4_details',
+                              'dependency_diagram', 'dependency_details', 'data_flow_components']
+            },
+            {
+                'name': 'deployment_diagram',
+                'description': '部署图模板 - 部署架构和环境配置',
+                'type': 'architecture_level',
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/diagrams/deployment-diagram.md',
+                'variables': ['project_name', 'deployment_overview', 'env_1_name', 'env_1_diagram',
+                              'env_2_name', 'env_2_diagram', 'env_3_name', 'env_3_diagram',
+                              'configuration_management', 'monitoring_logging', 'scalability_design']
+            },
+            {
+                'name': 'design_patterns',
+                'description': '设计模式模板 - 使用的设计模式和最佳实践',
+                'type': 'architecture_level',
+                'layer': 'architecture',
+                'file_path': '/docs/architecture/design-patterns.md',
+                'variables': ['project_name', 'pattern_1_name', 'pattern_1_usage', 'pattern_1_implementation',
+                              'pattern_1_benefits', 'pattern_2_name', 'pattern_2_usage', 'pattern_2_implementation',
+                              'pattern_2_benefits', 'pattern_3_name', 'pattern_3_usage', 'pattern_3_implementation',
+                              'pattern_3_benefits', 'architecture_principles', 'code_quality', 'best_practices']
+            },
+            
+            # ============== 模块层模板 ==============
+            {
+                'name': 'module_analysis',
+                'description': '模块总览模板 - 模块功能和架构总览',
+                'type': 'module_level',
+                'layer': 'module',
+                'file_path': '/docs/modules/overview.md',
+                'variables': ['project_name', 'version', 'identified_modules', 'module_details',
+                              'dependency_graph', 'dependency_analysis', 'data_flow',
+                              'core_interfaces', 'design_principles']
+            },
+            {
+                'name': 'module_relations',
+                'description': '模块关系模板 - 模块间依赖和协作关系',
+                'type': 'module_level',
+                'layer': 'module',
+                'file_path': '/docs/modules/module-relations.md',
+                'variables': ['project_name', 'overall_dependency_arch', 'layer_1_name', 'layer_1_dependencies',
+                              'layer_2_name', 'layer_2_dependencies', 'layer_3_name', 'layer_3_dependencies',
+                              'layer_4_name', 'layer_4_dependencies', 'dependency_injection',
+                              'circular_dependency_analysis', 'module_extensibility', 'testing_dependencies',
+                              'deployment_dependencies', 'version_compatibility']
+            },
+            {
+                'name': 'dependency_graph',
+                'description': '依赖图谱模板 - 模块依赖可视化分析',
+                'type': 'module_level',
+                'layer': 'module',
+                'file_path': '/docs/modules/dependency-graph.md',
+                'variables': ['project_name', 'dependency_hierarchy', 'dependency_matrix',
+                              'critical_path_analysis', 'dependency_risk_assessment', 'optimization_suggestions']
+            },
+            {
+                'name': 'module_readme',
+                'description': '模块主文档模板 - 单个模块详细说明',
+                'type': 'module_level',
+                'layer': 'module',
+                'file_path': '/docs/modules/modules/[module]/README.md',
+                'variables': ['module_name', 'module_overview', 'core_functions', 'architecture_design',
+                              'main_components', 'api_interfaces', 'configuration_options',
+                              'usage_examples', 'testing_strategy', 'performance_metrics', 'troubleshooting']
+            },
+            {
+                'name': 'module_api',
+                'description': '模块API模板 - 模块对外API接口',
+                'type': 'module_level',
+                'layer': 'module',
+                'file_path': '/docs/modules/modules/[module]/api.md',
+                'variables': ['module_name', 'api_overview', 'core_apis', 'data_models',
+                              'error_handling', 'usage_examples', 'performance_considerations']
+            },
+            {
+                'name': 'module_flow',
+                'description': '模块流程模板 - 模块内业务流程',
+                'type': 'module_level',
+                'layer': 'module',
+                'file_path': '/docs/modules/modules/[module]/flow.md',
+                'variables': ['module_name', 'flow_overview', 'flow_1_name', 'flow_1_description',
+                              'flow_2_name', 'flow_2_description', 'flow_3_name', 'flow_3_description',
+                              'flow_diagram', 'exception_handling', 'performance_optimization']
+            },
+            
+            # ============== 文件层模板 ==============
+            {
+                'name': 'file_summary',
+                'description': '文件摘要模板 - 单个文件功能摘要',
+                'type': 'file_level',
+                'layer': 'file',
+                'file_path': '/docs/files/summaries/[file].md',
+                'variables': ['filename', 'function_overview', 'class_definitions',
+                              'function_definitions', 'constants', 'imports', 'exports',
+                              'algorithms', 'performance_analysis', 'test_coverage', 'notes']
+            },
+            {
+                'name': 'class_analysis',
+                'description': '类分析模板 - 深度类结构分析',
+                'type': 'file_level',
+                'layer': 'file',
+                'file_path': '/docs/files/summaries/class-analysis.md',
+                'variables': ['class_name', 'class_overview', 'inheritance_hierarchy', 'attributes_analysis',
+                              'methods_analysis', 'design_patterns', 'responsibility_analysis',
+                              'collaboration_relationships', 'optimization_suggestions']
+            },
+            {
+                'name': 'function_catalog',
+                'description': '函数目录模板 - 模块函数清单',
+                'type': 'file_level',
+                'layer': 'file',
+                'file_path': '/docs/files/summaries/function-catalog.md',
+                'variables': ['module_name', 'function_overview', 'public_functions', 'private_functions',
+                              'static_methods', 'class_methods', 'complexity_analysis', 'call_graph']
+            },
+            {
+                'name': 'algorithm_breakdown',
+                'description': '算法分解模板 - 核心算法详细分析',
+                'type': 'file_level',
+                'layer': 'file',
+                'file_path': '/docs/files/summaries/algorithm-breakdown.md',
+                'variables': ['algorithm_name', 'algorithm_overview', 'core_idea', 'step_breakdown',
+                              'time_complexity', 'space_complexity', 'implementation_details',
+                              'optimization_strategies', 'test_cases']
+            },
+            {
+                'name': 'code_metrics',
+                'description': '代码度量模板 - 代码质量分析报告',
+                'type': 'file_level',
+                'layer': 'file',
+                'file_path': '/docs/files/summaries/code-metrics.md',
+                'variables': ['file_name', 'basic_metrics', 'complexity_metrics', 'quality_metrics',
+                              'test_coverage', 'code_standards', 'improvement_suggestions']
+            },
+            
+            # ============== 项目层模板 ==============
+            {
                 'name': 'project_readme',
-                'description': '项目README模板 - 用于生成项目说明文档',
+                'description': '项目README模板 - 项目主文档',
                 'type': 'project_level',
-                'variables': ['project_name', 'project_overview', 'core_features',
-                              'quick_start', 'project_status', 'tech_architecture',
+                'layer': 'project',
+                'file_path': '/docs/project/README.md',
+                'variables': ['project_name', 'project_subtitle', 'project_overview', 'core_features',
+                              'environment_requirements', 'step_2_name', 'step_2_content', 'step_3_name',
+                              'step_3_content', 'current_version', 'project_status', 'tech_architecture',
                               'usage_examples', 'roadmap', 'contribution_guide', 'license']
+            },
+            {
+                'name': 'changelog',
+                'description': '变更日志模板 - 版本变更记录',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/CHANGELOG.md',
+                'variables': ['project_name', 'version_entries']
+            },
+            {
+                'name': 'roadmap',
+                'description': '发展路线模板 - 项目发展规划',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/roadmap.md',
+                'variables': ['project_name', 'overall_goals', 'version_planning', 'long_term_vision',
+                              'technology_evolution', 'community_building']
+            },
+            {
+                'name': 'contributing',
+                'description': '贡献指南模板 - 开发贡献规范',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/CONTRIBUTING.md',
+                'variables': ['project_name', 'how_to_contribute', 'development_setup', 'coding_standards',
+                              'commit_standards', 'testing_requirements', 'review_process', 'community_guidelines']
+            },
+            {
+                'name': 'api_reference',
+                'description': 'API参考模板 - 完整API文档',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/API-reference.md',
+                'variables': ['project_name', 'api_overview', 'authentication', 'endpoints',
+                              'data_models', 'error_codes', 'rate_limits', 'sdks_tools']
+            },
+            {
+                'name': 'troubleshooting',
+                'description': '故障排除模板 - 问题解决指南',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/troubleshooting.md',
+                'variables': ['project_name', 'common_issues', 'error_codes', 'debugging_tips',
+                              'performance_issues', 'configuration_issues', 'getting_help']
+            },
+            {
+                'name': 'performance',
+                'description': '性能报告模板 - 性能分析和优化',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/performance.md',
+                'variables': ['project_name', 'performance_overview', 'benchmark_results',
+                              'performance_optimizations', 'monitoring_metrics', 'scalability_analysis',
+                              'optimization_recommendations']
+            },
+            {
+                'name': 'version_record',
+                'description': '版本记录模板 - 详细版本信息',
+                'type': 'project_level',
+                'layer': 'project',
+                'file_path': '/docs/project/versions/[version].md',
+                'variables': ['version_number', 'release_date', 'version_type', 'importance_level',
+                              'major_changes', 'new_features', 'improvements', 'bug_fixes',
+                              'breaking_changes', 'upgrade_guide', 'known_issues']
             }
         ]
+    
+    def get_templates_by_layer(self, layer: str) -> List[Dict[str, Any]]:
+        """根据文档层级获取模板列表"""
+        return [
+            template for template in self.get_template_list()
+            if template.get('layer') == layer
+        ]
+    
+    def get_layer_stats(self) -> Dict[str, int]:
+        """获取各层级模板统计"""
+        templates = self.get_template_list()
+        stats = {}
+        for template in templates:
+            layer = template.get('layer', 'unknown')
+            stats[layer] = stats.get(layer, 0) + 1
+        return stats
 
     def get_template_content(self, template_name: str) -> Dict[str, Any]:
         """获取指定模板的内容和元数据"""
@@ -210,6 +399,7 @@ class TemplateService:
         self.logger.info("模板获取成功", {
             "template_name": template_name,
             "template_type": template_info.get('type', 'unknown'),
+            "template_layer": template_info.get('layer', 'unknown'),
             "content_length": len(self.template_registry[template_name])
         })
 
@@ -278,30 +468,21 @@ class TemplateService:
                 'template_name': template_name
             }
 
-    # 兼容性方法，保持向后兼容
-    def get_file_summary_template(self) -> str:
-        """获取文件摘要模板（兼容方法）"""
-        return self.templates.FILE_SUMMARY_TEMPLATE
 
-    def get_module_analysis_template(self) -> str:
-        """获取模块分析模板（兼容方法）"""
-        return self.templates.MODULE_ANALYSIS_TEMPLATE
+class TemplateService(TemplateServiceV05):
+    """向后兼容的模板服务 - 继承0.5.0功能"""
+    pass
 
-    def get_architecture_template(self) -> str:
-        """获取架构文档模板（兼容方法）"""
-        return self.templates.ARCHITECTURE_TEMPLATE
 
-    def format_file_summary(self, **kwargs) -> str:
-        """格式化文件摘要（兼容方法）"""
-        result = self.format_template('file_summary', **kwargs)
-        return result.get('formatted_content', '') if result['success'] else ''
+# 兼容性方法，保持向后兼容
+def get_file_summary_template() -> str:
+    """获取文件摘要模板（兼容方法）"""
+    return FileTemplates.SUMMARY_TEMPLATE
 
-    def format_module_analysis(self, **kwargs) -> str:
-        """格式化模块分析（兼容方法）"""
-        result = self.format_template('module_analysis', **kwargs)
-        return result.get('formatted_content', '') if result['success'] else ''
+def get_module_analysis_template() -> str:
+    """获取模块分析模板（兼容方法）"""
+    return ModuleTemplates.OVERVIEW_TEMPLATE
 
-    def format_architecture_doc(self, **kwargs) -> str:
-        """格式化架构文档（兼容方法）"""
-        result = self.format_template('architecture', **kwargs)
-        return result.get('formatted_content', '') if result['success'] else ''
+def get_architecture_template() -> str:
+    """获取架构文档模板（兼容方法）"""
+    return ArchitectureTemplates.OVERVIEW_TEMPLATE

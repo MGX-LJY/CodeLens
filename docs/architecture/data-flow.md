@@ -1,31 +1,69 @@
 
-# CodeLens 数据流设计
+# CodeLens 0.5.0 数据流设计
 
-## 主要数据流向
+## 🚀 企业级数据流架构
 
-### 1. 项目扫描数据流 (doc_scan)
+### 1. 智能项目扫描数据流 (doc_scan)
 ```
-Claude Code → doc_scan工具 → FileService
+Claude Code → doc_scan工具 → FileService (Enhanced)
                 ↓
-项目路径 → 文件扫描 → 元数据提取 → 目录树生成
+项目路径 → 智能文件扫描 → 元数据提取 → 目录树生成
                 ↓
-结构化数据 → JSON格式化 → 返回响应
+26模板兼容性分析 → 文件类型识别 → 项目规模评估
                 ↓
-             日志记录 → 本地日志文件
-```
-
-### 2. 模板获取数据流 (template_get)
-```
-Claude Code → template_get工具 → TemplateService
+结构化数据 + 模板建议 → JSON格式化 → 返回响应
                 ↓
-模板查询 → 模板加载 → 变量验证 → 格式化
-                ↓
-模板内容 → JSON格式化 → 返回响应
-                ↓
-             日志记录 → 本地日志文件
+企业级日志记录 → 性能监控 → 本地日志文件
 ```
 
-### 3. 文档验证数据流 (doc_verify)
+### 2. 26模板系统数据流 (template_get)
+```
+Claude Code → template_get工具 → TemplateServiceV05
+                ↓
+四层模板查询 → 层级定位 → 模板加载
+                ↓
+┌─ 架构层 (7个) → 系统级模板
+├─ 模块层 (6个) → 功能级模板  
+├─ 文件层 (5个) → 代码级模板
+└─ 项目层 (8个) → 管理级模板
+                ↓
+变量验证 → 智能格式化 → 使用指南生成
+                ↓
+模板内容 + 元数据 → JSON响应 → Claude Code
+                ↓
+操作追踪 → 模板使用统计 → 企业级日志
+```
+
+### 3. AI协作文档生成数据流 (0.5.0新增)
+```
+Claude Code 智能分析项目 → 选择合适文档层级
+                ↓
+┌─ 🏛️ 架构层文档生成流程
+│  Claude → doc_scan → 项目架构信息
+│  Claude → template_get(architecture) → 7个架构模板
+│  Claude → 生成系统架构文档
+│
+├─ 🧩 模块层文档生成流程  
+│  Claude → doc_scan → 模块依赖信息
+│  Claude → template_get(module) → 6个模块模板
+│  Claude → 生成模块关系文档
+│
+├─ 📄 文件层文档生成流程
+│  Claude → doc_scan → 文件代码信息  
+│  Claude → template_get(file) → 5个文件模板
+│  Claude → 生成代码文档
+│
+└─ 📈 项目层文档生成流程
+   Claude → doc_scan → 项目元信息
+   Claude → template_get(project) → 8个项目模板
+   Claude → 生成项目管理文档
+                ↓
+四层文档体系完整生成 → doc_verify验证
+                ↓
+企业级文档输出 → 质量验证 → 持续优化
+```
+
+### 4. 四层架构验证数据流 (doc_verify)
 ```
 Claude Code → doc_verify工具 → ValidationService
                 ↓

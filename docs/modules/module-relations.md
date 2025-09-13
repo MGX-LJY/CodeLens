@@ -1,21 +1,30 @@
 
-# CodeLens 模块依赖关系分析
+# CodeLens 0.5.0 模块依赖关系分析
 
-## 整体依赖架构
+## 🏗️ 0.5.0整体依赖架构
 
 ```
-MCP 工具层 (接口层)
-├── doc_scan.py ──────────→ FileService
-├── template_get.py ──────→ TemplateService
-└── doc_verify.py ────────→ ValidationService
+🔧 MCP 工具层 (Claude Code接口层)
+├── doc_scan.py ──────────→ FileService (增强项目扫描)
+├── template_get.py ──────→ TemplateServiceV05 (26模板管理)
+└── doc_verify.py ────────→ ValidationService (四层验证)
 
-服务层 (核心业务)
-├── FileService ──────────→ LoggingService
-├── TemplateService ──────→ LoggingService
-├── ValidationService ────→ LoggingService
-└── LoggingService ───────→ [独立模块]
+🚀 核心服务层 (0.5.0增强业务)
+├── TemplateServiceV05 ───→ 四层模板系统 + LoggingService
+│   ├── ArchitectureTemplates (7个架构模板)
+│   ├── ModuleTemplates (6个模块模板)
+│   ├── FileTemplates (5个文件模板)
+│   └── ProjectTemplates (8个项目模板)
+├── FileService ──────────→ LoggingService (文件信息服务)
+├── ValidationService ────→ LoggingService (四层架构验证)
+└── LoggingService ───────→ [企业级独立日志模块]
 
-日志系统内部依赖
+📊 模板架构内部依赖
+├── TemplateServiceV05 ───→ ArchitectureTemplates, ModuleTemplates
+├── TemplateServiceV05 ───→ FileTemplates, ProjectTemplates
+└── 各模板类 ─────────────→ [独立模板定义，无相互依赖]
+
+📈 企业级日志系统内部依赖
 ├── LogManager ───────────→ LogConfig, FileRotator
 ├── FileRotator ─────────→ LogConfig
 └── LogConfig ───────────→ [独立配置模块]
@@ -23,16 +32,21 @@ MCP 工具层 (接口层)
 
 ## 详细依赖关系
 
-### 1. MCP工具层依赖
-- **DocScanTool** → **FileService**: 项目文件扫描和信息提取
-- **TemplateGetTool** → **TemplateService**: 模板获取和管理
-- **DocVerifyTool** → **ValidationService**: 文档验证和状态检查
+### 1. MCP工具层依赖 (0.5.0增强)
+- **DocScanTool** → **FileService**: 项目文件扫描 + 26模板兼容性分析
+- **TemplateGetTool** → **TemplateServiceV05**: 26个专业模板获取和四层架构查询
+- **DocVerifyTool** → **ValidationService**: 四层文档架构验证和状态检查
 
-### 2. 服务层依赖
+### 2. 核心服务层依赖 (0.5.0重构)
+- **TemplateServiceV05** → **四层模板类**: 26个专业模板的统一管理
+  - → **ArchitectureTemplates**: 7个架构层专业模板
+  - → **ModuleTemplates**: 6个模块层专业模板  
+  - → **FileTemplates**: 5个文件层专业模板
+  - → **ProjectTemplates**: 8个项目层专业模板
+- **TemplateServiceV05** → **LoggingService**: 模板操作日志记录和性能监控
 - **FileService** → **LoggingService**: 文件操作日志记录和性能监控
-- **TemplateService** → **LoggingService**: 模板操作日志记录
-- **ValidationService** → **LoggingService**: 验证操作日志记录
-- **LoggingService**: 独立服务，无外部业务依赖
+- **ValidationService** → **LoggingService**: 四层架构验证操作日志记录
+- **LoggingService**: 企业级独立服务，无外部业务依赖
 
 ### 3. 日志系统内部依赖
 - **LogManager** → **LogConfig**: 配置管理和运行时更新

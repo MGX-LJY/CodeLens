@@ -1,17 +1,67 @@
 
-# CodeLens 技术栈
+# CodeLens 0.5.0 技术栈分析
 
-## 核心技术
+## 🚀 革命性技术创新
 
-### 编程语言
-- **Python 3.9+**: 主要开发语言
-- **类型系统**: 使用typing模块提供完整类型注解
+### 四层文档架构技术栈
+- **分层设计哲学**: 企业级文档架构分层策略
+- **模板引擎2.0**: 26个专业模板的统一管理与智能格式化
+- **AI协作优化**: 专为Claude Code深度集成设计的信息提供技术
 
-### 架构模式
-- **MCP协议**: Model Context Protocol 标准协议实现
-- **服务分层**: FileService、TemplateService、ValidationService、LoggingService
-- **模块化设计**: 各组件独立可测试
-- **无状态设计**: 每次调用独立执行
+### 编程语言与类型系统
+- **Python 3.9+**: 主要开发语言，零外部依赖设计
+- **强类型系统**: typing模块完整类型注解，提升代码质量
+- **企业级设计**: 面向生产环境的可靠性和性能优化
+
+### 🏗️ 核心架构模式
+- **MCP 2.0协议**: Model Context Protocol标准协议深度实现
+- **四层服务架构**: TemplateServiceV05、FileService、ValidationService、LoggingService
+- **模板层级管理**: Architecture → Module → File → Project分层治理
+- **智能协作模式**: AI-Human协作的信息提供与内容生成分离
+- **模块化微服务**: 各组件独立部署、测试、维护
+- **无状态设计**: 每次MCP调用完全独立执行
+
+## 📊 26模板系统技术架构
+
+### 模板引擎核心技术
+- **TemplateServiceV05**: 26个专业模板的统一管理中心
+- **模块化模板组织**: 独立Python文件 + 类继承设计
+- **智能模板查询**: 按层级、类型、名称的多维度查询API
+- **变量验证引擎**: 模板变量完整性检查和格式化
+- **元数据管理**: 每个模板的完整描述、变量定义、使用指南
+
+### 四层模板架构技术栈
+
+#### 🏛️ 架构层技术 (7个模板)
+```python
+from .architecture_templates import ArchitectureTemplates
+# 系统概述、技术栈、数据流、设计模式、安全、部署、扩展性
+```
+
+#### 🧩 模块层技术 (6个模板)  
+```python
+from .module_templates import ModuleTemplates
+# 模块总览、关系分析、依赖图谱、模块文档、API接口、业务流程
+```
+
+#### 📄 文件层技术 (5个模板)
+```python
+from .file_templates import FileTemplates
+# 文件摘要、类分析、函数目录、算法分解、代码度量
+```
+
+#### 📈 项目层技术 (8个模板)
+```python
+from .project_templates import ProjectTemplates
+# README、变更日志、路线图、贡献指南、API参考、故障排除、性能、版本
+```
+
+### 模板技术特性
+- **字符串模板引擎**: 基于Python字符串格式化的高性能模板
+- **变量替换系统**: 支持嵌套变量和条件格式化
+- **模板继承**: 支持模板复用和扩展机制
+- **国际化支持**: 中英文双语模板体系
+- **版本控制**: 模板版本管理和兼容性保证
 
 ### 日志系统技术栈
 - **LogManager**: 统一日志管理器，支持结构化JSON日志

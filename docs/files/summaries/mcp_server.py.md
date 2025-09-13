@@ -2,7 +2,7 @@
 
 ## 功能概述
 
-CodeLens MCP协议服务器的核心实现，为Claude Code提供完整的MCP协议支持。作为v0.4.0的重要新增功能，该服务器统一管理所有MCP工具，实现了标准的JSON-RPC通信协议。
+CodeLens 0.5.0 企业级MCP协议服务器的核心实现，为Claude Code提供26个专业模板系统的完整MCP协议支持。该服务器统一管理所有增强MCP工具，集成四层文档架构，实现了标准的JSON-RPC通信协议，专为AI协作优化设计。
 
 ## 主要组件
 
@@ -17,9 +17,10 @@ CodeLens MCP协议服务器的核心实现，为Claude Code提供完整的MCP协
 - `main()`: 服务器主入口，支持多种运行模式
 
 ### 重要常量和配置
-- 服务器版本: v0.4.0
+- 服务器版本: v0.5.0 (26个专业模板系统)
 - 支持的MCP方法: initialize, tools/list, tools/call
-- 集成的工具: doc_scan, template_get, doc_verify
+- 集成的工具: doc_scan (26模板兼容), template_get (四层架构), doc_verify (四层验证)
+- 模板系统: 26个专业模板，四层文档架构
 
 ## 依赖关系
 
