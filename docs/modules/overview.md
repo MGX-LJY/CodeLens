@@ -1,19 +1,19 @@
-# CodeLens 0.5.0 模块总览
+# CodeLens 模块总览
 
-## 🚀 识别的功能模块
+## 识别的功能模块
 
-基于CodeLens v0.5.0 企业级MCP服务器架构分析，识别出以下主要功能模块：
+基于CodeLens MCP服务器架构分析，识别出以下主要功能模块：
 
-1. **🏗️ 模板系统模块** (`src/templates/`) - 26个专业模板四层架构管理
-2. **📊 服务模块** (`src/services/`) - 增强的信息提供服务
-3. **🔧 MCP工具模块** (`src/mcp_tools/`) - MCP协议接口实现
-4. **📈 日志模块** (`src/logging/`) - 企业级日志系统
-5. **🚀 MCP服务器** (`mcp_server.py`) - 完整MCP协议服务器 
-6. **🧪 测试工具** (`test_new_mcp_tools.py`) - 0.5.0模板系统验证
+1. **模板系统模块** (`src/templates/`) - 26个专业模板四层架构管理
+2. **服务模块** (`src/services/`) - 增强的信息提供服务
+3. **MCP工具模块** (`src/mcp_tools/`) - MCP协议接口实现
+4. **日志模块** (`src/logging/`) - 完整日志系统
+5. **MCP服务器** (`mcp_server.py`) - 完整MCP协议服务器 
+6. **测试工具** (`test_new_mcp_tools.py`) - 模板系统验证
 
 ## 模块详细信息
 
-### 🏗️ 模板系统模块 (src/templates/) - 0.5.0核心创新
+### 模板系统模块 (src/templates/)
 **包含文件**:
 - `document_templates.py` - TemplateServiceV05核心管理器
 - `templates/` - 模块化模板组织目录
@@ -29,7 +29,7 @@
 - **智能模板查询**: 按层级、类型、名称多维度查询
 - **模板格式化引擎**: 支持变量验证和智能替换
 - **模块化模板组织**: 独立文件便于维护和扩展
-- **企业级模板质量**: 满足专业文档生成需求
+- **专业模板质量**: 满足专业文档生成需求
 
 **🏗️ 四层模板架构**:
 - **架构层 (7个)**: 系统概述、技术栈、数据流、设计模式、安全、部署、扩展性
@@ -80,7 +80,7 @@
 - **智能项目扫描**: doc_scan支持模板兼容性分析
 - **分层模板查询**: template_get支持按层级查询26个模板
 - **四层文档验证**: doc_verify支持四层架构完整性验证
-- **企业级MCP协议**: 支持命令行和MCP调用双模式
+- **完整MCP协议**: 支持命令行和MCP调用双模式
 - **结构化响应**: JSON格式完整响应和错误处理
 
 **对外接口**:
@@ -91,36 +91,36 @@
 - `DocVerifyTool`: 四层架构验证工具类
   - `execute()`: 验证四层文档体系生成状态
 - 各工具的`create_mcp_tool()`工厂函数
-- 命令行接口 `main()` 支持0.5.0参数
+- 命令行接口 `main()` 支持新版本参数
 
-### 🚀 企业级MCP服务器模块 (mcp_server.py) - 0.5.0增强
+### MCP服务器模块 (mcp_server.py)
 **包含文件**:
 - `mcp_server.py` - 26模板系统完整MCP协议服务器
 
-**🚀 核心功能**:
+**核心功能**:
 - **26模板系统集成**: 完整支持四层架构模板查询
-- **企业级MCP协议**: 标准JSON-RPC通信协议实现
-- **智能工具路由**: 统一管理所有0.5.0增强MCP工具
+- **完整MCP协议**: 标准JSON-RPC通信协议实现
+- **智能工具路由**: 统一管理所有增强MCP工具
 - **四层架构支持**: 完整支持architecture/module/file/project层级
 - **Claude Code深度集成**: 为AI协作优化的无缝集成
 
 **对外接口**:
-- `CodeLensMCPServer`: 0.5.0增强主服务器类
+- `CodeLensMCPServer`: 增强主服务器类
   - `handle_request()`: 处理26模板系统MCP请求
   - `list_tools()`: 列出支持四层架构的所有工具
   - `execute_tool()`: 执行增强的模板工具
-- `main()`: 服务器启动入口 + 0.5.0特性展示
+- `main()`: 服务器启动入口和特性展示
 - 26模板系统测试模式和信息查看
 
-### 🧪 模板系统测试模块 (test_template_system_v05.py) - 0.5.0新增
+### 模板系统测试模块 (test_template_system_v05.py)
 **包含文件**:
 - `test_template_system_v05.py` - 26模板系统完整验证
 
-**🚀 核心功能**:
+**核心功能**:
 - **26模板完整性测试**: 验证四层架构所有模板正常工作
 - **TemplateServiceV05验证**: 测试核心模板管理器功能
 - **四层架构验证**: 确保architecture/module/file/project层级正确
-- **企业级质量保证**: 专业模板质量和性能基准测试
+- **质量保证**: 专业模板质量和性能基准测试
 
 **🧪 测试覆盖**:
 - 26个模板加载和功能验证
@@ -129,7 +129,7 @@
 - 按层级获取模板功能测试
 - 模板服务性能和稳定性测试
 
-**✅ 实测结果** (CodeLens 0.5.0自测):
+**✅ 实测结果** (CodeLens自测):
 - 🚀 26个模板全部加载成功
 - 📊 四层架构分布: Architecture(7) + Module(6) + File(5) + Project(8)
 - ⚡ 模板查询耗时: <0.02秒
@@ -137,14 +137,14 @@
 
 ## 模块关系图谱
 
-### 🏗️ 0.5.0依赖关系
+### 依赖关系
 ```
 🔧 MCP工具层 (Claude Code接口)
 ├── DocScanTool → FileService (项目扫描 + 26模板兼容性分析)
 ├── TemplateGetTool → TemplateServiceV05 (四层26模板查询)
 └── DocVerifyTool → ValidationService (四层架构验证)
 
-🚀 服务层 (0.5.0核心)
+🚀 服务层 (核心)
 ├── TemplateServiceV05 (26模板统一管理中心)
 │   ├── ArchitectureTemplates (7个架构层模板)
 │   ├── ModuleTemplates (6个模块层模板)  
@@ -152,11 +152,11 @@
 │   └── ProjectTemplates (8个项目层模板)
 ├── FileService (增强文件信息服务)
 ├── ValidationService (四层架构验证服务)
-└── LoggingService (企业级日志管理)
+└── LoggingService (完整日志管理)
 
 🧪 测试和验证层
 ├── test_template_system_v05.py (26模板系统验证)
-└── mcp_server.py (0.5.0 MCP服务器)
+└── mcp_server.py (MCP服务器)
 ```
 
 ### 🔍 详细依赖分析

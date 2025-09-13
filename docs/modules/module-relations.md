@@ -17,14 +17,14 @@
 │   └── ProjectTemplates (8个项目模板)
 ├── FileService ──────────→ LoggingService (文件信息服务)
 ├── ValidationService ────→ LoggingService (四层架构验证)
-└── LoggingService ───────→ [企业级独立日志模块]
+└── LoggingService ───────→ [独立日志模块]
 
 📊 模板架构内部依赖
 ├── TemplateServiceV05 ───→ ArchitectureTemplates, ModuleTemplates
 ├── TemplateServiceV05 ───→ FileTemplates, ProjectTemplates
 └── 各模板类 ─────────────→ [独立模板定义，无相互依赖]
 
-📈 企业级日志系统内部依赖
+📈 日志系统内部依赖
 ├── LogManager ───────────→ LogConfig, FileRotator
 ├── FileRotator ─────────→ LogConfig
 └── LogConfig ───────────→ [独立配置模块]
@@ -46,7 +46,7 @@
 - **TemplateServiceV05** → **LoggingService**: 模板操作日志记录和性能监控
 - **FileService** → **LoggingService**: 文件操作日志记录和性能监控
 - **ValidationService** → **LoggingService**: 四层架构验证操作日志记录
-- **LoggingService**: 企业级独立服务，无外部业务依赖
+- **LoggingService**: 独立服务，无外部业务依赖
 
 ### 3. 日志系统内部依赖
 - **LogManager** → **LogConfig**: 配置管理和运行时更新
