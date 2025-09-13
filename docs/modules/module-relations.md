@@ -9,7 +9,7 @@
 ├── template_get.py ──────→ TemplateServiceV05 (26模板管理)
 └── doc_verify.py ────────→ ValidationService (四层验证)
 
-🚀 核心服务层 (0.5.0增强业务)
+🚀 核心服务层 (业务)
 ├── TemplateServiceV05 ───→ 四层模板系统 + LoggingService
 │   ├── ArchitectureTemplates (7个架构模板)
 │   ├── ModuleTemplates (6个模块模板)

@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-CodeLens 0.5.1 是一个专为Claude Code设计的MCP（Model Context Protocol）协作服务器。通过四层文档架构和26个专业模板系统，CodeLens为Claude Code提供结构化项目信息、标准化文档模板和完整验证服务，实现高效的项目文档理解与生成。
+CodeLens 0.5.2 是一个专为Claude Code设计的MCP（Model Context Protocol）协作服务器。通过四层文档架构和26个专业模板系统，CodeLens为Claude Code提供结构化项目信息、标准化文档模板和完整验证服务，实现高效的项目文档理解与生成。
 
 ## 核心特性
 
@@ -42,7 +42,7 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 
 ## 项目状态
 
-**当前版本**: v0.5.1 (26个专业模板系统)
+**当前版本**: v0.5.2 (26个专业模板系统)
 
 **✅ 核心功能特性**:
 - ✅ **专业模板库** - 26个专业模板，满足不同文档需求

@@ -1,51 +1,82 @@
-# 文件摘要：document_templates.py
+# 文件摘要：src/templates/document_templates.py
 
 ## 功能概述
-为Claude Code提供标准化文档模板的资源管理服务。重构后删除了AI提示词功能，专注于模板资源的查询、验证和格式化，支持多种模板类型和灵活的获取方式。
+
+CodeLens模板系统的核心管理文件，实现了TemplateServiceV05类，为Claude Code提供26个专业模板的统一管理服务。该文件集成了四层文档架构（Architecture/Module/File/Project），支持智能模板查询、统计分析和格式化功能。
 
 ## 主要组件
 
 ### 类定义
-- **DocumentTemplates**: 文档模板常量类，包含所有标准模板定义
-- **TemplateService**: 增强的模板服务类，提供完整的模板资源管理功能
+- **TemplateServiceV05**: 26个专业模板的统一管理中心
+  - 集成四层模板架构
+  - 提供智能查询和统计功能
+  - 支持模板格式化和变量验证
 
-### 函数定义
-**新增核心方法**：
-- `get_template_list()`: 获取所有可用模板的元数据列表
-- `get_template_content()`: 获取指定模板的内容和元数据
-- `get_template_by_type()`: 根据类型筛选模板
-- `validate_template_variables()`: 验证模板变量完整性
-- `format_template()`: 格式化模板内容
+### 核心方法
 
-**保留兼容方法**：
-- `get_file_summary_template()`: 获取文件摘要模板
-- `get_module_analysis_template()`: 获取模块分析模板
-- `get_architecture_template()`: 获取架构文档模板  
-- `format_*()`: 各种格式化方法
+**模板管理方法**：
+- `get_template_list()`: 获取全部26个模板的详细元数据
+- `get_template_content()`: 获取指定模板的完整内容和信息
+- `get_templates_by_layer()`: 按四层架构分类获取模板
+- `get_layer_stats()`: 获取各层级模板分布统计
+- `format_template()`: 智能模板格式化和变量验证
 
-### 重要常量和配置
-- `FILE_SUMMARY_TEMPLATE`: 文件摘要的Markdown模板
-- `MODULE_ANALYSIS_TEMPLATE`: 模块分析的Markdown模板
-- `ARCHITECTURE_TEMPLATE`: 架构文档的Markdown模板
-- `PROJECT_README_TEMPLATE`: 项目README模板（新增）
-- `template_registry`: 模板注册表，管理所有可用模板
+**四层架构集成**：
+- 架构层（7个模板）：系统概述、技术栈、数据流等
+- 模块层（6个模板）：模块总览、关系分析、依赖图谱等
+- 文件层（5个模板）：文件摘要、类分析、函数目录等
+- 项目层（8个模板）：README、变更日志、路线图等
+
+### 模板系统架构
+- **ArchitectureTemplates**: 7个架构层专业模板
+- **ModuleTemplates**: 6个模块层专业模板
+- **FileTemplates**: 5个文件层专业模板
+- **ProjectTemplates**: 8个项目层专业模板
+- **模板注册表**: 统一管理所有26个模板的元数据和内容
 
 ## 依赖关系
 
 ### 导入的模块
-- `typing`: 类型注解支持（增强）
+- `typing`: 完整类型注解支持
+- `src.templates.templates`: 四层模板类导入
+  - `ArchitectureTemplates`: 架构层模板
+  - `ModuleTemplates`: 模块层模板
+  - `FileTemplates`: 文件层模板
+  - `ProjectTemplates`: 项目层模板
 
 ### 对外接口
-- `DocumentTemplates`: 模板常量类
-- `TemplateService`: 增强的模板服务类
-- 完整的模板查询和验证接口
+- `TemplateServiceV05`: 26个模板的统一管理中心
+- 四层架构模板查询接口
+- 模板统计和分析接口
+- 智能格式化和验证接口
 
 ## 关键算法和逻辑
-- **模板资源管理**: 通过注册表统一管理所有模板资源
-- **元数据提供**: 为每个模板提供详细的元数据信息
-- **变量验证**: 检查模板变量的完整性和正确性
-- **灵活查询**: 支持按名称、类型等多种方式查询模板
-- **格式化服务**: 提供安全的模板格式化和错误处理
+
+### 四层架构管理
+- **分层模板组织**: 按Architecture/Module/File/Project四层分类
+- **统一注册机制**: 自动注册所有26个模板到统一索引
+- **智能查询算法**: 支持按层级、类型、名称多维度查询
+- **元数据管理**: 为每个模板提供完整的描述和变量定义
+
+### 模板服务核心逻辑
+- **模板加载**: 动态加载四层模板类，按需实例化
+- **统计分析**: 实时计算各层级模板分布和总数
+- **格式化引擎**: 安全的变量替换和模板格式化
+- **错误处理**: 完整的异常捕获和友好的错误信息
+
+### 性能优化设计
+- **按需加载**: 仅在需要时实例化模板类
+- **缓存机制**: 模板元数据缓存，提升查询性能
+- **内存优化**: 高效的模板索引和查找算法
+
+## 架构贡献
+
+该文件是CodeLens模板系统的核心枢纽：
+- 为Claude Code提供标准化的模板访问接口
+- 实现26个专业模板的统一管理和协调
+- 支持四层文档架构的完整实现
+- 为MCP工具（template_get）提供服务基础
 
 ## 备注
-重构后的TemplateService专注于为Claude Code提供模板资源服务，删除了AI提示词功能，增强了模板管理和验证能力。
+
+TemplateServiceV05代表了CodeLens模板系统的重要演进，从简单的4个模板扩展到26个专业模板的完整体系，为AI驱动的文档生成提供了强大的模板资源基础。
