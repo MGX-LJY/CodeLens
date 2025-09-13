@@ -47,10 +47,22 @@ class CodeLensMCPServer:
         """获取服务器信息"""
         return {
             "name": "codelens",
-            "version": "0.4.1",
-            "description": "CodeLens MCP服务器 - 为Claude Code提供项目文档生成的信息和模板服务",
+            "version": "0.5.3.2",
+            "description": "CodeLens MCP服务器 - 18个核心模板四层架构协作平台，为Claude Code提供专业文档生成服务",
             "author": "CodeLens Team",
-            "license": "MIT"
+            "license": "MIT",
+            "features": {
+                "template_system": {
+                    "total_templates": 18,
+                    "architecture_layer": 6,
+                    "module_layer": 6, 
+                    "file_layer": 3,
+                    "project_layer": 3
+                },
+                "mcp_tools": 3,
+                "logging_system": True,
+                "zero_dependencies": True
+            }
         }
     
     def list_tools(self) -> List[Dict[str, Any]]:
@@ -134,29 +146,60 @@ def main():
     # 如果是命令行模式，提供交互式测试
     if len(sys.argv) > 1:
         if sys.argv[1] == "test":
-            print("CodeLens MCP服务器 - 测试模式")
-            print("=" * 50)
+            print("CodeLens MCP服务器 v0.5.3.2 - 18个核心模板系统测试模式")
+            print("=" * 60)
             
             # 测试服务器信息
             info = server.get_server_info()
-            print(f"服务器信息: {json.dumps(info, indent=2, ensure_ascii=False)}")
+            print(f"📊 服务器信息:")
+            print(f"  版本: {info['version']}")
+            print(f"  描述: {info['description']}")
+            
+            # 显示模板系统特性
+            features = info.get('features', {})
+            template_system = features.get('template_system', {})
+            print(f"\n🎯 18个核心模板系统:")
+            print(f"  架构层模板: {template_system.get('architecture_layer', 0)} 个")
+            print(f"  模块层模板: {template_system.get('module_layer', 0)} 个")
+            print(f"  文件层模板: {template_system.get('file_layer', 0)} 个")
+            print(f"  项目层模板: {template_system.get('project_layer', 0)} 个")
+            print(f"  模板总数: {template_system.get('total_templates', 0)} 个")
             
             # 测试工具列表
             tools = server.list_tools()
-            print(f"\n可用工具 ({len(tools)} 个):")
+            print(f"\n🔧 可用MCP工具 ({len(tools)} 个):")
             for tool in tools:
                 print(f"  - {tool['name']}: {tool.get('description', 'No description')}")
             
             # 测试工具执行
             if len(sys.argv) > 2:
                 project_path = sys.argv[2]
-                print(f"\n测试项目扫描: {project_path}")
+                print(f"\n📁 测试项目扫描: {project_path}")
                 result = server.execute_tool("doc_scan", {"project_path": project_path})
                 if result.get("success"):
                     scan_data = result["data"]["scan_result"]
-                    print(f"扫描结果: 发现 {len(scan_data['files'])} 个文件")
+                    print(f"✅ 扫描结果: 发现 {len(scan_data['files'])} 个文件")
+                    
+                    # 测试模板获取
+                    print(f"\n🎨 测试模板系统功能:")
+                    template_result = server.execute_tool("template_get", {"list_all": True})
+                    if template_result.get("success"):
+                        templates = template_result["data"]["templates"]
+                        print(f"✅ 模板系统: 加载 {len(templates)} 个模板")
+                        
+                        # 按层级统计
+                        layer_stats = {}
+                        for template in templates:
+                            layer = template.get('layer', 'unknown')
+                            layer_stats[layer] = layer_stats.get(layer, 0) + 1
+                        
+                        print(f"📊 四层架构分布:")
+                        for layer, count in layer_stats.items():
+                            print(f"  {layer}: {count} 个模板")
+                    else:
+                        print(f"❌ 模板获取失败: {template_result.get('error')}")
                 else:
-                    print(f"扫描失败: {result.get('error')}")
+                    print(f"❌ 扫描失败: {result.get('error')}")
             
             return
         
