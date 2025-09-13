@@ -8,10 +8,11 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
-# 添加父目录到path以导入其他模块
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# 添加项目根目录到path以导入其他模块
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, project_root)
 
-from services.validation_service import ValidationService
+from src.services.validation_service import ValidationService
 
 
 class DocVerifyTool:

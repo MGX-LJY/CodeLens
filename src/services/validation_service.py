@@ -417,15 +417,6 @@ class ValidationService:
 │       ├── README.md                   # 项目主文档
 │       ├── CHANGELOG.md                # 变更日志
 │       ├── roadmap.md                  # 发展路线图
-│       ├── decisions/                  # 架构决策记录 (可选)
-│       │   ├── 001-database-choice.md
-│       │   ├── 002-framework-selection.md
-│       │   └── [其他决策记录...]
-│       └── versions/                   # 版本记录 (可选)
-│           ├── v1.0.0.md
-│           ├── v1.1.0.md
-│           └── [版本发布记录...]
-│
 ├── [项目实际源码目录结构]
 ├── README.md                           # 项目根README (可选更新)
 └── [其他项目文件...]

@@ -15,19 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from templates.document_templates import TemplateService
 
 # 导入日志系统
-try:
-    from ..logging import get_logger
-except ImportError:
-    # 如果日志系统不可用，创建一个空日志器
-    class DummyLogger:
-        def debug(self, msg, context=None): pass
-        def info(self, msg, context=None): pass
-        def warning(self, msg, context=None): pass
-        def error(self, msg, context=None, exc_info=None): pass
-        def log_operation_start(self, *args, **kwargs): return "dummy"
-        def log_operation_end(self, op, op_id, **ctx): pass
-    
-    get_logger = lambda **kwargs: DummyLogger()
+import logging
 
 
 class TemplateGetTool:
@@ -37,7 +25,7 @@ class TemplateGetTool:
         self.tool_name = "template_get"
         self.description = "获取指定类型的文档模板"
         self.template_service = TemplateService()
-        self.logger = get_logger(component="MCP_Tools", operation="template_get")
+        self.logger = logging.getLogger('template_get')
     
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
