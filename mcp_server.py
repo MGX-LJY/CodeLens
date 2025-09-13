@@ -13,6 +13,10 @@ from typing import Dict, Any, List
 # 导入MCP工具
 from src.mcp_tools.doc_scan import DocScanTool
 from src.mcp_tools.template_get import TemplateGetTool
+from src.mcp_tools.doc_guide import DocGuideTool
+from src.mcp_tools.task_init import TaskInitTool
+from src.mcp_tools.task_execute import TaskExecuteTool
+from src.mcp_tools.task_status import TaskStatusTool
 
 # 导入日志系统
 try:
@@ -37,7 +41,11 @@ class CodeLensMCPServer:
         """初始化MCP服务器"""
         self.tools = {
             "doc_scan": DocScanTool(),
-            "template_get": TemplateGetTool()
+            "template_get": TemplateGetTool(),
+            "doc_guide": DocGuideTool(),
+            "task_init": TaskInitTool(),
+            "task_execute": TaskExecuteTool(),
+            "task_status": TaskStatusTool()
         }
         self.logger = get_logger(component="MCP_Server", operation="server")
         
@@ -45,8 +53,8 @@ class CodeLensMCPServer:
         """获取服务器信息"""
         return {
             "name": "codelens",
-            "version": "0.6.1.4",
-            "description": "CodeLens MCP服务器 - 16个核心模板四层架构协作平台，为Claude Code提供专业文档生成服务",
+            "version": "0.6.1.5",
+            "description": "CodeLens MCP服务器 - 智能任务引擎驱动的5阶段文档生成系统，集成16个核心模板和完整的任务管理流程",
             "author": "CodeLens Team",
             "license": "MIT",
             "features": {
@@ -57,7 +65,13 @@ class CodeLensMCPServer:
                     "file_layer": 1,
                     "project_layer": 3
                 },
-                "mcp_tools": 2,
+                "task_engine": {
+                    "total_phases": 5,
+                    "task_types": 15,
+                    "dependency_management": True,
+                    "status_tracking": True
+                },
+                "mcp_tools": 6,
                 "logging_system": True,
                 "zero_dependencies": True
             }
@@ -144,7 +158,7 @@ def main():
     # 如果是命令行模式，提供交互式测试
     if len(sys.argv) > 1:
         if sys.argv[1] == "test":
-            print("CodeLens MCP服务器 v0.5.3.2 - 16个核心模板系统测试模式")
+            print("CodeLens MCP服务器 v0.6.1.5 - 智能任务引擎5阶段文档生成系统测试模式")
             print("=" * 60)
             
             # 测试服务器信息
@@ -162,6 +176,14 @@ def main():
             print(f"  文件层模板: {template_system.get('file_layer', 0)} 个")
             print(f"  项目层模板: {template_system.get('project_layer', 0)} 个")
             print(f"  模板总数: {template_system.get('total_templates', 0)} 个")
+            
+            # 显示任务引擎特性
+            task_engine = features.get('task_engine', {})
+            print(f"\n🚀 智能任务引擎系统:")
+            print(f"  执行阶段: {task_engine.get('total_phases', 0)} 个")
+            print(f"  任务类型: {task_engine.get('task_types', 0)} 种")
+            print(f"  依赖管理: {'✓' if task_engine.get('dependency_management') else '✗'}")
+            print(f"  状态跟踪: {'✓' if task_engine.get('status_tracking') else '✗'}")
             
             # 测试工具列表
             tools = server.list_tools()
@@ -196,6 +218,46 @@ def main():
                             print(f"  {layer}: {count} 个模板")
                     else:
                         print(f"❌ 模板获取失败: {template_result.get('error')}")
+                    
+                    # 测试项目分析
+                    print(f"\n🔍 测试智能项目分析:")
+                    guide_result = server.execute_tool("doc_guide", {"project_path": project_path})
+                    if guide_result.get("success"):
+                        analysis = guide_result["data"]["project_analysis"]
+                        print(f"✅ 项目分析: 识别 {len(analysis.get('identified_modules', []))} 个模块")
+                        print(f"📄 推荐文档: {len(analysis.get('recommended_docs', []))} 类")
+                        
+                        # 测试任务初始化
+                        print(f"\n⚙️ 测试任务计划生成:")
+                        task_init_result = server.execute_tool("task_init", {
+                            "project_path": project_path,
+                            "analysis_result": guide_result["data"]
+                        })
+                        if task_init_result.get("success"):
+                            task_plan = task_init_result["data"]["task_plan"]
+                            print(f"✅ 任务计划: 生成 {task_plan['total_tasks']} 个任务")
+                            print(f"⏱️ 预计耗时: {task_plan['estimated_duration']}")
+                            print(f"📋 阶段分布: {task_plan['total_phases']} 个阶段")
+                            
+                            # 测试任务状态检查
+                            print(f"\n📊 测试任务状态监控:")
+                            status_result = server.execute_tool("task_status", {
+                                "project_path": project_path,
+                                "check_type": "overall_status"
+                            })
+                            if status_result.get("success"):
+                                print(f"✅ 状态监控: 系统运行正常")
+                                progress = status_result['data'].get('overall_progress', 0)
+                                if isinstance(progress, (int, float)):
+                                    print(f"📈 总进度: {float(progress):.1f}%")
+                                else:
+                                    print(f"📈 总进度: 0.0%")
+                            else:
+                                print(f"❌ 状态检查失败: {status_result.get('error')}")
+                        else:
+                            print(f"❌ 任务计划生成失败: {task_init_result.get('error')}")
+                    else:
+                        print(f"❌ 项目分析失败: {guide_result.get('error')}")
                 else:
                     print(f"❌ 扫描失败: {result.get('error')}")
             
