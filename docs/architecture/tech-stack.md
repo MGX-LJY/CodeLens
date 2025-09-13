@@ -8,13 +8,15 @@
 
 ### 架构模式
 - **MCP协议**: Model Context Protocol标准实现
-- **四层服务架构**: 服务层、MCP接口层、协作流程层
+- **四层服务架构**: 任务引擎层、服务层、MCP接口层、协作流程层
+- **智能化任务驱动**: 5阶段工作流程，严格依赖控制
 - **模块化微服务**: 各组件独立部署、测试、维护
-- **无状态设计**: 每次MCP调用完全独立执行
+- **状态感知设计**: 支持任务状态持久化和中断恢复
 
 ### 数据格式
 - **JSON**: 结构化数据交换格式
 - **Markdown**: 文档模板格式
+- **JSON持久化**: 任务状态和执行历史存储
 
 ### 文件系统操作
 - **pathlib**: 现代Python路径操作
@@ -28,18 +30,24 @@
 ## 关键设计原则
 
 ### 性能优化
-- **高效文件扫描**: pathlib + glob组合
-- **内存优化**: 按需加载和缓存机制
-- **快速响应**: 结构化数据处理
+- **智能文件过滤**: 项目类型感知，大幅减少无关文件处理
+- **高效任务调度**: 依赖图优化，避免重复执行
+- **快速状态检查**: 毫秒级响应实时进度监控
+- **内存优化**: 按需加载和状态持久化机制
 
 ### 可靠性保证
 - **异常处理**: 完整的错误捕获和恢复机制
 - **优雅降级**: 确保系统在故障时正常运行
+- **状态持久化**: 支持中断恢复，提升长时间任务执行稳定性
+- **阶段控制**: 严格阶段依赖验证，确保执行正确性
 - **文件权限检查**: 确保文件可访问性
 
 ### 可观测性
 - **结构化输出**: JSON格式便于解析
 - **操作追踪**: 完整的调用链路记录
+- **实时监控**: 任务执行状态和进度实时跟踪
+- **性能指标**: 详细的执行时间和资源使用统计
+- **健康检查**: 自动检测系统健康状态和执行异常
 - **状态报告**: 验证和状态检查
 
 ### 配置管理
@@ -55,10 +63,19 @@
 
 ### 本地开发
 ```bash
-python src/mcp_tools/doc_scan.py
-python src/mcp_tools/template_get.py
-python src/mcp_tools/doc_verify.py
+# 智能项目分析
+python src/mcp_tools/doc_guide.py /path/to/project
+
+# 任务管理
+python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json
+python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode execute
+python src/mcp_tools/task_status.py /path/to/project --type overall_status
+
+# 文件和模板操作
+python src/mcp_tools/doc_scan.py /path/to/project --no-content
+python src/mcp_tools/template_get.py --list-all
+python src/mcp_tools/doc_verify.py /path/to/project
 ```
 
 ### MCP服务器
-标准MCP协议接口，支持Claude Code集成
+标准MCP协议接口，支持Claude Code集成7个MCP工具，提供完整的智能化文档生成工作流
