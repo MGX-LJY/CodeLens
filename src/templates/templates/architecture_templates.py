@@ -225,32 +225,3 @@ class ArchitectureTemplates:
 {scalability_design}
 """
     
-    # 7. 设计模式模板
-    DESIGN_PATTERNS_TEMPLATE = """# {project_name} 设计模式
-
-## 使用的设计模式
-
-### 1. {pattern_1_name}
-**应用场景**: {pattern_1_usage}
-**实现方式**: {pattern_1_implementation}
-**优势**: {pattern_1_benefits}
-
-### 2. {pattern_2_name}
-**应用场景**: {pattern_2_usage}
-**实现方式**: {pattern_2_implementation}
-**优势**: {pattern_2_benefits}
-
-### 3. {pattern_3_name}
-**应用场景**: {pattern_3_usage}
-**实现方式**: {pattern_3_implementation}
-**优势**: {pattern_3_benefits}
-
-## 架构原则
-{architecture_principles}
-
-## 代码质量
-{code_quality}
-
-## 最佳实践
-{best_practices}
-"""
