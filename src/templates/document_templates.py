@@ -63,10 +63,11 @@ class TemplateServiceV05:
             # 文件层模板 (1个)
             'file_summary': self.file_templates.SUMMARY_TEMPLATE,
             
-            # 项目层模板 (3个)
+            # 项目层模板 (4个)
             'project_readme': self.project_templates.README_TEMPLATE,
             'changelog': self.project_templates.CHANGELOG_TEMPLATE,
-            'roadmap': self.project_templates.ROADMAP_TEMPLATE
+            'roadmap': self.project_templates.ROADMAP_TEMPLATE,
+            'project_scan_summary': self.project_templates.PROJECT_SCAN_SUMMARY_TEMPLATE
         }
         
         # 初始化日志器
@@ -76,7 +77,7 @@ class TemplateServiceV05:
             "architecture_templates": 6,
             "module_templates": 6,
             "file_templates": 1,
-            "project_templates": 3
+            "project_templates": 4
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:
@@ -223,7 +224,7 @@ class TemplateServiceV05:
             },
 
             
-            # ============== 项目层模板 (3个) ==============
+            # ============== 项目层模板 (4个) ==============
             {
                 'name': 'project_readme',
                 'description': '项目README模板 - 项目主文档',
@@ -251,6 +252,16 @@ class TemplateServiceV05:
                 'file_path': '/docs/project/roadmap.md',
                 'variables': ['project_name', 'overall_goals', 'version_planning', 'long_term_vision',
                               'technology_evolution', 'community_building']
+            },
+            {
+                'name': 'project_scan_summary',
+                'description': '项目扫描摘要模板 - 项目结构分析报告',
+                'type': 'project_level', 
+                'layer': 'project',
+                'file_path': '/docs/analysis/project-scan.md',
+                'variables': ['project_name', 'project_type', 'main_framework', 'file_count', 'code_complexity',
+                              'directory_structure', 'key_files_analysis', 'identified_modules', 
+                              'file_distribution', 'documentation_strategy', 'scan_timestamp']
             },
 
         ]

@@ -26,6 +26,7 @@ class TaskPlanGenerator:
     def __init__(self):
         # 模板映射关系
         self.template_mapping = {
+            TaskType.SCAN: "project_scan_summary",  # 添加scan任务模板映射
             TaskType.FILE_SUMMARY: "file_summary",
             TaskType.MODULE_ANALYSIS: "module_analysis",
             TaskType.MODULE_RELATIONS: "module_relations",
@@ -54,13 +55,23 @@ class TaskPlanGenerator:
                        custom_priorities: Dict[str, Any] = None) -> Dict[str, Any]:
         """生成完整的任务计划"""
 
-        # 提取分析结果
-        project_analysis = analysis_result.get("project_analysis", {})
-        plan = analysis_result.get("generation_plan", {})
+        # 提取分析结果 - 修复嵌套JSON结构解析
+        if "data" in analysis_result:
+            # 如果是MCP工具的输出格式
+            data = analysis_result["data"]
+            project_analysis = data.get("project_analysis", {})
+            plan = data.get("generation_plan", {})
+        else:
+            # 如果是直接的分析结果格式
+            project_analysis = analysis_result.get("project_analysis", {})
+            plan = analysis_result.get("generation_plan", {})
 
+        # 生成全局scan任务ID，确保依赖关系一致
+        scan_task_id = f"scan_{int(time.time() * 1000000)}"  # 使用更高精度避免冲突
+        
         # 生成各阶段任务
-        phase_1_tasks = self._generate_phase_1_tasks(project_path, project_analysis)
-        phase_2_tasks = self._generate_phase_2_tasks(project_path, plan, custom_priorities)
+        phase_1_tasks = self._generate_phase_1_tasks(project_path, project_analysis, scan_task_id)
+        phase_2_tasks = self._generate_phase_2_tasks(project_path, plan, scan_task_id, custom_priorities)
         phase_3_tasks = self._generate_phase_3_tasks(project_path, project_analysis, phase_2_tasks)
         phase_4_tasks = self._generate_phase_4_tasks(project_path, project_analysis, phase_3_tasks)
         phase_5_tasks = self._generate_phase_5_tasks(project_path, project_analysis, phase_4_tasks)
@@ -117,16 +128,16 @@ class TaskPlanGenerator:
             }
         }
 
-    def _generate_phase_1_tasks(self, project_path: str, analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _generate_phase_1_tasks(self, project_path: str, analysis: Dict[str, Any], scan_task_id: str) -> List[Dict[str, Any]]:
         """生成第一阶段任务（项目扫描）"""
-        task_id = f"scan_{int(time.time() * 1000)}"
 
         return [{
-            "id": task_id,
+            "id": scan_task_id,
             "type": "scan",
             "description": "扫描项目文件结构和基本信息",
             "phase": "phase_1_scan",
-            "template": None,
+            "template": "project_scan_summary",  # 使用模板而不是None
+            "output_path": "docs/analysis/project-scan.md",  # 添加输出路径
             "dependencies": [],
             "priority": "high",
             "estimated_time": "5 minutes",
@@ -138,14 +149,11 @@ class TaskPlanGenerator:
             }
         }]
 
-    def _generate_phase_2_tasks(self, project_path: str, plan: Dict[str, Any],
+    def _generate_phase_2_tasks(self, project_path: str, plan: Dict[str, Any], scan_task_id: str,
                                 custom_priorities: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """生成第二阶段任务（文件层）"""
         tasks = []
         files_to_process = plan.get("phase_2_files", [])
-
-        # 获取扫描任务ID作为依赖
-        scan_task_id = f"scan_{int(time.time() * 1000)}"
 
         for i, file_path in enumerate(files_to_process):
             task_id = f"file_summary_{int(time.time() * 1000)}_{i}"
@@ -477,6 +485,8 @@ class TaskPlanGenerator:
     def create_tasks_in_manager(self, task_manager: TaskManager, task_plan: Dict[str, Any]) -> int:
         """在任务管理器中创建所有任务"""
         created_count = 0
+        skipped_count = 0
+        error_count = 0
 
         # 按阶段顺序创建任务
         phases = ["phase_1_scan", "phase_2_files", "phase_3_modules", "phase_4_architecture", "phase_5_project"]
@@ -485,33 +495,44 @@ class TaskPlanGenerator:
             if phase in task_plan:
                 phase_data = task_plan[phase]
                 tasks = phase_data.get("tasks", [])
+                print(f"处理阶段 {phase}: {len(tasks)} 个任务")
 
                 for task_data in tasks:
                     # 转换任务类型
                     task_type_str = task_data["type"]
                     try:
                         task_type = TaskType(task_type_str)
-                    except ValueError:
+                    except ValueError as e:
                         # 如果无法转换，跳过此任务
+                        print(f"跳过无效任务类型: {task_type_str} - {e}")
+                        skipped_count += 1
                         continue
 
-                    # 创建任务
-                    task_id = task_manager.create_task(
-                        task_type=task_type,
-                        description=task_data["description"],
-                        phase=task_data["phase"],
-                        target_file=task_data.get("target_file"),
-                        target_module=task_data.get("target_module"),
-                        template_name=task_data.get("template"),
-                        output_path=task_data.get("output_path"),
-                        dependencies=task_data.get("dependencies", []),
-                        priority=task_data.get("priority", "normal"),
-                        estimated_time=task_data.get("estimated_time"),
-                        metadata=task_data.get("metadata", {})
-                    )
+                    try:
+                        # 🔧 根本修复: 传入预定义task_id确保依赖关系一致性
+                        task_id = task_manager.create_task(
+                            task_type=task_type,
+                            description=task_data["description"],
+                            phase=task_data["phase"],
+                            target_file=task_data.get("target_file"),
+                            target_module=task_data.get("target_module"),
+                            template_name=task_data.get("template"),
+                            output_path=task_data.get("output_path"),
+                            dependencies=task_data.get("dependencies", []),
+                            priority=task_data.get("priority", "normal"),
+                            estimated_time=task_data.get("estimated_time"),
+                            metadata=task_data.get("metadata", {}),
+                            task_id=task_data["id"]  # 使用预定义的task_id
+                        )
 
-                    created_count += 1
+                        created_count += 1
+                        
+                    except Exception as e:
+                        print(f"创建任务失败: {task_data.get('description', 'Unknown')} - {e}")
+                        error_count += 1
+                        continue
 
+        print(f"任务创建完成 - 成功: {created_count}, 跳过: {skipped_count}, 错误: {error_count}")
         return created_count
 
 

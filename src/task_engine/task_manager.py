@@ -97,9 +97,30 @@ class TaskManager:
                     target_file: Optional[str] = None, target_module: Optional[str] = None,
                     template_name: Optional[str] = None, output_path: Optional[str] = None,
                     dependencies: List[str] = None, priority: str = "normal",
-                    estimated_time: Optional[str] = None, metadata: Optional[Dict] = None) -> str:
-        """创建新任务"""
-        task_id = f"{task_type.value}_{int(time.time() * 1000)}"
+                    estimated_time: Optional[str] = None, metadata: Optional[Dict] = None,
+                    task_id: Optional[str] = None) -> str:
+        """创建新任务（带去重检查）"""
+        
+        # 🔧 修复1: 添加任务去重检查
+        existing_task_id = self._find_existing_task(task_type, phase, target_file, target_module, description)
+        if existing_task_id:
+            print(f"跳过重复任务: {description} (已存在ID: {existing_task_id})")
+            return existing_task_id
+        
+        # 🔧 根本修复: 统一ID生成逻辑，支持预定义ID
+        if task_id is None:
+            # 没有提供预定义ID，生成新的
+            import uuid
+            task_id = f"{task_type.value}_{int(time.time() * 1000)}_{str(uuid.uuid4())[:8]}"
+            
+            # 确保ID不会冲突
+            while task_id in self.tasks:
+                task_id = f"{task_type.value}_{int(time.time() * 1000)}_{str(uuid.uuid4())[:8]}"
+        else:
+            # 使用预定义ID，检查是否已存在
+            if task_id in self.tasks:
+                print(f"警告: 任务ID {task_id} 已存在，跳过创建")
+                return task_id
 
         task = Task(
             id=task_id,
@@ -119,6 +140,18 @@ class TaskManager:
         self.tasks[task_id] = task
         self.save_tasks()
         return task_id
+    
+    def _find_existing_task(self, task_type: TaskType, phase: str, target_file: Optional[str], 
+                           target_module: Optional[str], description: str) -> Optional[str]:
+        """查找现有的相同任务"""
+        for task_id, task in self.tasks.items():
+            if (task.type == task_type and 
+                task.phase == phase and
+                task.target_file == target_file and
+                task.target_module == target_module and
+                task.description == description):
+                return task_id
+        return None
 
     def get_task(self, task_id: str) -> Optional[Task]:
         """获取指定任务"""

@@ -85,6 +85,10 @@ class TaskExecutor:
         if task.status not in [TaskStatus.PENDING, TaskStatus.FAILED]:
             return {"error": f"Task {task_id} is not in executable state (current: {task.status.value})"}
 
+        # 🔧 修复2: scan任务特殊处理 - 自动执行项目分析
+        if task.type.value == "scan":
+            return self._execute_scan_task(task_id)
+
         # 标记任务为进行中
         if mark_in_progress:
             self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
@@ -100,6 +104,94 @@ class TaskExecutor:
             "instructions": ("Use the provided template and context to generate the documentation. "
                              "Call task_complete when finished.")
         }
+    
+    def _execute_scan_task(self, task_id: str) -> Dict[str, Any]:
+        """自动执行scan任务 - 生成项目分析报告"""
+        task = self.task_manager.get_task(task_id)
+        
+        # 标记为进行中
+        self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
+        self.state_tracker.record_task_event("started", task_id)
+        self.logger.info(f"自动执行scan任务: {task_id}")
+        
+        try:
+            # 使用doc_scan生成项目分析
+            from src.mcp_tools.doc_scan import DocScanTool
+            doc_scan_tool = DocScanTool()
+            
+            scan_result = doc_scan_tool.execute({
+                "project_path": str(self.project_path),
+                "include_content": False,  # scan任务不需要文件内容
+                "config": {"max_files": 100}  # 限制扫描文件数量
+            })
+            
+            if not scan_result.get("success"):
+                error_msg = scan_result.get("error", "Unknown scan error")
+                self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_msg)
+                return {"success": False, "error": f"Scan failed: {error_msg}"}
+            
+            # 生成项目扫描报告并保存
+            scan_data = scan_result["data"]
+            report_content = self._generate_scan_report(scan_data)
+            
+            # 确保输出目录存在
+            output_path = self.project_path / task.output_path
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # 写入报告
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(report_content)
+            
+            # 自动完成任务
+            self.task_manager.update_task_status(task_id, TaskStatus.COMPLETED)
+            self.state_tracker.record_task_event("completed", task_id)
+            self.logger.info(f"Scan任务自动完成: {task_id}")
+            
+            return {
+                "success": True,
+                "message": "Scan task completed automatically",
+                "output_file": str(output_path),
+                "task_completed": True
+            }
+            
+        except Exception as e:
+            error_msg = f"Scan task failed: {str(e)}"
+            self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_msg)
+            self.logger.error(error_msg, exc_info=True)
+            return {"success": False, "error": error_msg}
+    
+    def _generate_scan_report(self, scan_data: Dict[str, Any]) -> str:
+        """生成项目扫描报告内容"""
+        file_tree = scan_data.get("file_tree", {})
+        project_info = scan_data.get("project_info", {})
+        
+        report = f"""# 项目扫描报告
+
+## 项目基本信息
+
+- **项目路径**: {project_info.get('project_path', 'Unknown')}
+- **总文件数**: {project_info.get('total_files', 0)}
+- **Python文件数**: {project_info.get('python_files', 0)}
+- **扫描时间**: {project_info.get('scan_timestamp', 'Unknown')}
+
+## 目录结构
+
+```
+{file_tree.get('tree_structure', 'Directory structure not available')}
+```
+
+## 文件类型分布
+
+"""
+        
+        file_types = project_info.get('file_types', {})
+        for ext, count in file_types.items():
+            ext_name = ext if ext else "无扩展名"
+            report += f"- **{ext_name}**: {count} 个文件\n"
+        
+        report += "\n\n## 扫描完成\n\n此报告由CodeLens自动生成，为后续文档生成提供基础信息。\n"
+        
+        return report
 
     def complete_task(self, task_id: str, success: bool = True, error_message: Optional[str] = None) -> Dict[str, Any]:
         """完成任务"""
@@ -294,7 +386,7 @@ class TaskExecutor:
         # 添加已完成任务的简要信息
         if completed_tasks:
             completed_summaries = []
-            for task in completed_tasks[-10]:  # 最近10个完成的任务
+            for task in completed_tasks[-10:]:  # 最近10个完成的任务
                 completed_summaries.append({
                     "type": task.type.value,
                     "description": task.description,

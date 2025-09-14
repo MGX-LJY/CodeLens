@@ -17,6 +17,7 @@ from src.mcp_tools.doc_guide import DocGuideTool
 from src.mcp_tools.task_init import TaskInitTool
 from src.mcp_tools.task_execute import TaskExecuteTool
 from src.mcp_tools.task_status import TaskStatusTool
+from src.mcp_tools.init_tools import InitTools
 
 # 导入日志系统
 try:
@@ -40,6 +41,7 @@ class CodeLensMCPServer:
     def __init__(self):
         """初始化MCP服务器"""
         self.tools = {
+            "init_tools": InitTools(),
             "doc_scan": DocScanTool(),
             "template_get": TemplateGetTool(),
             "doc_guide": DocGuideTool(),
@@ -71,7 +73,7 @@ class CodeLensMCPServer:
                     "dependency_management": True,
                     "status_tracking": True
                 },
-                "mcp_tools": 6,
+                "mcp_tools": 7,
                 "logging_system": True,
                 "zero_dependencies": True
             }

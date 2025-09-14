@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Dict, Any, List
@@ -302,44 +303,32 @@ class ProjectAnalyzer:
         return best_framework if scores[best_framework] > 0 else "custom"
 
     @staticmethod
-    def _identify_modules(_project_path: Path, file_info: Dict[str, Any], project_type: str) -> List[str]:
-        """识别功能模块"""
-        modules = set()
-
-        # 基于目录结构识别
+    def _identify_modules(project_path: Path, file_info: Dict[str, Any], project_type: str) -> List[str]:
+        """🧠 AI驱动的智能模块识别 - 基于语义理解和业务逻辑"""
+        
+        # 📦 第一步：识别实际Python包（包含__init__.py的目录）
+        real_packages = []
         for directory in file_info["directory_structure"]:
-            parts = directory.split("/")
-            for part in parts:
-                if len(part) > 2 and part not in ["src", "lib", "test", "tests", "dist", "build"]:
-                    modules.add(part.replace("_", " ").title())
-
-        # 基于文件名识别
-        common_modules = {
-            "auth": ["authentication", "login", "user", "session"],
-            "database": ["db", "model", "schema", "migration"],
-            "api": ["api", "endpoint", "route", "controller"],
-            "config": ["config", "setting", "env"],
-            "util": ["util", "helper", "tool", "common"],
-            "test": ["test", "spec", "mock"],
-            "ui": ["ui", "component", "view", "template"],
-            "service": ["service", "business", "logic"],
-            "data": ["data", "model", "entity"]
-        }
-
-        for file_name in file_info["files"]:
-            file_lower = file_name.lower()
-            for module, keywords in common_modules.items():
-                if any(keyword in file_lower for keyword in keywords):
-                    modules.add(module.title())
-
-        # 项目类型特定的模块
-        if project_type == "python":
-            if any("django" in f.lower() for f in file_info["files"]):
-                modules.update(["Models", "Views", "Templates", "Admin"])
-            elif any("flask" in f.lower() for f in file_info["files"]):
-                modules.update(["Routes", "Models", "Templates"])
-
-        return sorted(list(modules))
+            dir_path = project_path / directory
+            if (dir_path / "__init__.py").exists():
+                # 提取包名（去除路径前缀）
+                package_name = directory.split("/")[-1]
+                if package_name not in ["__pycache__", ".pytest_cache"]:
+                    real_packages.append(package_name)
+        
+        # 🔍 第二步：基于文件摘要进行智能模块分析（如果可用）
+        intelligent_modules = []
+        docs_path = project_path / "docs" / "files" / "summaries"
+        if docs_path.exists():
+            intelligent_modules = ProjectModuleAnalyzer.analyze_from_file_summaries(
+                docs_path, real_packages
+            )
+        
+        # 🎯 第三步：回退到实际包结构（确保有实际代码支撑）
+        if intelligent_modules:
+            return intelligent_modules
+        else:
+            return ProjectModuleAnalyzer.map_packages_to_modules(real_packages, project_path)
 
     @staticmethod
     def _assess_complexity(file_info: Dict[str, Any]) -> str:
@@ -559,14 +548,31 @@ class DocGuideTool:
             # 生成具体计划
             plan = self.analyzer.generate_generation_plan(analysis, strategy)
 
-            self.logger.info(f"项目分析完成 - 类型: {analysis['project_type']}, "
+            # 🔧 修复3: 保存analysis.json到项目.codelens目录
+            analysis_data = {
+                "project_analysis": analysis,
+                "documentation_strategy": strategy,
+                "generation_plan": plan,
+                "timestamp": time.time(),
+                "version": "1.0"
+            }
+            
+            codelens_dir = Path(project_path) / ".codelens"
+            codelens_dir.mkdir(exist_ok=True)
+            analysis_file = codelens_dir / "analysis.json"
+            
+            with open(analysis_file, 'w', encoding='utf-8') as f:
+                json.dump(analysis_data, f, indent=2, ensure_ascii=False)
+            
+            self.logger.info(f"项目分析完成并保存至 {analysis_file} - 类型: {analysis['project_type']}, "
                              f"复杂度: {analysis['code_complexity']}, "
                              f"文件数: {analysis['file_count']}")
 
             return self._success_response({
                 "project_analysis": analysis,
                 "documentation_strategy": strategy,
-                "generation_plan": plan
+                "generation_plan": plan,
+                "analysis_file": str(analysis_file)
             })
 
         except (OSError, IOError, ValueError) as e:
