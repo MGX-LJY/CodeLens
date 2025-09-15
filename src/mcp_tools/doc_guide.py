@@ -190,28 +190,20 @@ class ProjectAnalyzer:
         other_files = [f for f in analysis["key_files"] if f not in priority_files]
         phase_2_files = priority_files + other_files[:20]  # 最多处理20个文件
 
-        # Phase 3: 模块层任务
-        identified_modules = analysis["identified_modules"]
-        phase_3_modules = [
-            f"module_{module.lower().replace(' ', '_')}"
-            for module in identified_modules
-        ]
-
-        # Phase 4: 架构层任务
+        # Phase 3: 架构层任务
         project_type = analysis["project_type"]
-        phase_4_architecture = self._get_architecture_components(project_type)
+        phase_3_architecture = self._get_architecture_components(project_type)
 
-        # Phase 5: 项目层任务
-        phase_5_project = ["project_readme"]
+        # Phase 4: 项目层任务
+        phase_4_project = ["project_readme"]
 
         return {
             "phase_1_scan": phase_1_scan,
             "phase_2_files": phase_2_files,
-            "phase_3_modules": phase_3_modules,
-            "phase_4_architecture": phase_4_architecture,
-            "phase_5_project": phase_5_project,
+            "phase_3_architecture": phase_3_architecture,
+            "phase_4_project": phase_4_project,
             "estimated_duration": self._estimate_duration(
-                len(phase_2_files), len(phase_3_modules), len(phase_4_architecture)
+                len(phase_2_files), len(phase_3_architecture)
             )
         }
 
@@ -221,9 +213,34 @@ class ProjectAnalyzer:
         file_patterns = ignore_patterns.get("files", [])
         dir_patterns = ignore_patterns.get("directories", [])
 
-        # 扩展默认忽略模式
-        default_ignore_files = ["*.md", "*.txt", "*.log", "*.tmp", "*.pyc", "*.class"]
-        default_ignore_dirs = ["__pycache__", ".git", "node_modules", ".idea", "venv", "env", "dist", "build"]
+        # 扩展默认忽略模式 - 强化版本，排除所有非代码文件
+        default_ignore_files = [
+            # 文档和文本文件
+            "*.md", "*.txt", "*.log", "*.tmp", "*.cache", "*.temp",
+            # 编译和中间文件  
+            "*.pyc", "*.pyo", "*.class", "*.o", "*.obj", "*.exe", "*.dll", "*.so", "*.dylib",
+            # 图片和媒体文件
+            "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.svg", "*.ico", "*.bmp", "*.tiff",
+            "*.mp4", "*.avi", "*.mov", "*.wmv", "*.mp3", "*.wav", "*.flac",
+            # 数据库文件
+            "*.db", "*.sqlite", "*.sqlite3", "*.db3", "*.s3db", "*.sl3",
+            # 压缩文件
+            "*.zip", "*.tar", "*.gz", "*.rar", "*.7z", "*.bz2",
+            # 系统文件
+            ".DS_Store", "Thumbs.db", "desktop.ini", "*.lnk",
+            # 备份和临时文件
+            "*.bak", "*.backup", "*.swp", "*.swo", "*~"
+        ]
+        default_ignore_dirs = [
+            # 版本控制和IDE
+            "__pycache__", ".git", ".svn", ".hg", ".idea", ".vscode", ".vs",
+            # 依赖和构建
+            "node_modules", "venv", "env", ".venv", ".env", "dist", "build", "target", "out",
+            # 数据和日志目录
+            "data", "logs", ".logs", "backups", ".mg_kiro", ".pytest_cache", ".coverage",
+            # 临时和缓存目录
+            "tmp", "temp", ".tmp", ".temp", "cache", ".cache", "uploads", "downloads"
+        ]
 
         all_ignore_files = list(set(file_patterns + default_ignore_files))
         all_ignore_dirs = list(set(dir_patterns + default_ignore_dirs))
@@ -457,10 +474,10 @@ class ProjectAnalyzer:
         return base_components + specific_components[:3]  # 最多6个组件
 
     @staticmethod
-    def _estimate_duration(file_count: int, module_count: int, arch_count: int) -> str:
+    def _estimate_duration(file_count: int, arch_count: int) -> str:
         """估计完成时间"""
-        # 假设每个文件3分钟，每个模块5分钟，每个架构组件10分钟
-        total_minutes = file_count * 3 + module_count * 5 + arch_count * 10 + 30  # 加30分钟基础时间
+        # 假设每个文件3分钟，每个架构组件10分钟
+        total_minutes = file_count * 3 + arch_count * 10 + 30  # 加30分钟基础时间
 
         hours = total_minutes // 60
         minutes = total_minutes % 60
@@ -480,6 +497,120 @@ class DocGuideTool:
         self.analyzer = ProjectAnalyzer()
         self.logger = get_logger(component="DocGuideTool", operation="init")
         self.logger.info("DocGuideTool 初始化完成")
+        
+        # 响应大小限制配置
+        self.MAX_RESPONSE_TOKENS = 20000  # MCP工具响应的最大token数
+        self.TOKEN_ESTIMATION_RATIO = 4   # 估算：每4个字符约等于1个token
+    
+    def _estimate_response_size(self, data: Dict[str, Any]) -> int:
+        """估算响应数据的token大小"""
+        try:
+            import json
+            json_str = json.dumps(data, ensure_ascii=False)
+            char_count = len(json_str)
+            estimated_tokens = char_count // self.TOKEN_ESTIMATION_RATIO
+            self.logger.debug("响应大小估算", {
+                "char_count": char_count, 
+                "estimated_tokens": estimated_tokens,
+                "max_tokens": self.MAX_RESPONSE_TOKENS
+            })
+            return estimated_tokens
+        except Exception as e:
+            self.logger.warning(f"响应大小估算失败: {e}")
+            return 0
+    
+    def _auto_downgrade_analysis(self, config: Dict[str, Any], file_count: int) -> Dict[str, Any]:
+        """根据文件数量自动降级分析配置"""
+        original_config = config.copy()
+        
+        # 基于文件数量的自动降级策略
+        if file_count > 1000:
+            # 超大项目：最严格过滤
+            config["analysis_depth"] = "basic"
+            config["focus_areas"] = ["architecture"]
+            self.logger.info("检测到超大项目，自动降级到基础分析", {
+                "file_count": file_count,
+                "new_depth": "basic",
+                "new_focus": ["architecture"]
+            })
+        elif file_count > 500:
+            # 大项目：中等过滤
+            config["analysis_depth"] = "basic" if config["analysis_depth"] == "comprehensive" else config["analysis_depth"]
+            config["focus_areas"] = config["focus_areas"][:2]  # 最多2个关注领域
+            self.logger.info("检测到大项目，降级分析深度", {
+                "file_count": file_count,
+                "new_depth": config["analysis_depth"],
+                "new_focus": config["focus_areas"]
+            })
+        elif file_count > 100:
+            # 中等项目：轻度优化
+            if config["analysis_depth"] == "comprehensive":
+                config["analysis_depth"] = "detailed"
+                self.logger.info("中等项目，从comprehensive降级到detailed", {
+                    "file_count": file_count
+                })
+        
+        if original_config != config:
+            self.logger.info("分析配置已自动调整", {
+                "original": original_config,
+                "adjusted": config,
+                "reason": f"file_count={file_count}"
+            })
+        
+        return config
+    
+    def _simplify_response(self, response_data: Dict[str, Any]) -> Dict[str, Any]:
+        """简化响应数据以减少token使用量"""
+        simplified = response_data.copy()
+        
+        try:
+            # 简化项目分析数据
+            if "project_analysis" in simplified:
+                analysis = simplified["project_analysis"]
+                
+                # 限制关键文件列表长度
+                if "key_files" in analysis and len(analysis["key_files"]) > 10:
+                    analysis["key_files"] = analysis["key_files"][:10]
+                    self.logger.debug("限制key_files到前10个")
+                
+                # 简化目录结构信息
+                if "directory_structure" in analysis and len(analysis["directory_structure"]) > 20:
+                    analysis["directory_structure"] = analysis["directory_structure"][:20]
+                    self.logger.debug("限制directory_structure到前20个")
+                
+                # 简化文件分布信息
+                if "file_distribution" in analysis:
+                    file_dist = analysis["file_distribution"]
+                    # 只保留文件数量超过5的扩展名
+                    simplified_dist = {k: v for k, v in file_dist.items() if v >= 5}
+                    if len(simplified_dist) < len(file_dist):
+                        analysis["file_distribution"] = simplified_dist
+                        self.logger.debug("简化file_distribution，只保留主要文件类型")
+            
+            # 简化生成计划
+            if "generation_plan" in simplified:
+                plan = simplified["generation_plan"]
+                
+                # 限制文件任务数量
+                if "phase_2_files" in plan and len(plan["phase_2_files"]) > 15:
+                    plan["phase_2_files"] = plan["phase_2_files"][:15]
+                    self.logger.debug("限制phase_2_files到前15个")
+            
+            self.logger.info("响应数据简化完成")
+            return simplified
+            
+        except Exception as e:
+            self.logger.error(f"响应数据简化失败: {e}")
+            # 如果简化失败，返回最基本的数据
+            return {
+                "project_analysis": {
+                    "project_type": response_data.get("project_analysis", {}).get("project_type", "unknown"),
+                    "main_framework": response_data.get("project_analysis", {}).get("main_framework", "unknown"),
+                    "code_complexity": response_data.get("project_analysis", {}).get("code_complexity", "unknown"),
+                    "file_count": response_data.get("project_analysis", {}).get("file_count", 0)
+                },
+                "analysis_file": response_data.get("analysis_file", "")
+            }
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -569,8 +700,16 @@ class DocGuideTool:
                 "focus_areas": focus_areas
             }
 
+            # 首先快速获取文件数量以进行预判
+            self.logger.info("预扫描项目文件数量")
+            quick_file_info = self.analyzer._get_file_info(Path(project_path), config)
+            file_count = len(quick_file_info["files"])
+            
+            # 根据文件数量自动调整配置
+            config = self._auto_downgrade_analysis(config, file_count)
+
             # 分析项目
-            self.logger.info("开始分析项目", {"project_path": project_path, "config": config})
+            self.logger.info("开始分析项目", {"project_path": project_path, "config": config, "file_count": file_count})
             analysis = self.analyzer.analyze_project(project_path, config)
             self.logger.info("项目分析完成", {"analysis_summary": {
                 "project_type": analysis.get("project_type"),
@@ -611,19 +750,40 @@ class DocGuideTool:
             with open(analysis_file, 'w', encoding='utf-8') as f:
                 json.dump(analysis_data, f, indent=2, ensure_ascii=False)
             
+            # 准备响应数据
+            response_data = {
+                "project_analysis": analysis,
+                "documentation_strategy": strategy,
+                "generation_plan": plan,
+                "analysis_file": str(analysis_file)
+            }
+            
+            # 检查响应大小并进行必要的简化
+            estimated_size = self._estimate_response_size(response_data)
+            if estimated_size > self.MAX_RESPONSE_TOKENS:
+                self.logger.warning("响应数据过大，进行简化", {
+                    "estimated_tokens": estimated_size,
+                    "max_tokens": self.MAX_RESPONSE_TOKENS
+                })
+                response_data = self._simplify_response(response_data)
+                
+                # 重新检查简化后的大小
+                new_size = self._estimate_response_size(response_data)
+                self.logger.info("响应数据已简化", {
+                    "original_tokens": estimated_size,
+                    "simplified_tokens": new_size,
+                    "reduction": estimated_size - new_size
+                })
+
             duration_ms = (time.time() - start_time) * 1000
             self.logger.log_operation_end("execute_doc_guide", operation_id, duration_ms, True,
                                         project_type=analysis['project_type'],
                                         complexity=analysis['code_complexity'],
                                         file_count=analysis['file_count'],
-                                        analysis_file=str(analysis_file))
+                                        analysis_file=str(analysis_file),
+                                        response_tokens=self._estimate_response_size(response_data))
 
-            return self._success_response({
-                "project_analysis": analysis,
-                "documentation_strategy": strategy,
-                "generation_plan": plan,
-                "analysis_file": str(analysis_file)
-            })
+            return self._success_response(response_data)
 
         except (OSError, IOError, ValueError) as e:
             duration_ms = (time.time() - start_time) * 1000

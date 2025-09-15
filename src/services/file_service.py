@@ -6,9 +6,16 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union, Tuple
 
-# 导入日志系统
+# 导入日志系统和大文件处理器
+try:
+    from ..logging import get_logger
+    from .large_file_handler import LargeFileHandler, ChunkingResult, CodeChunk
+    HAS_LARGE_FILE_HANDLER = True
+except ImportError:
+    HAS_LARGE_FILE_HANDLER = False
+    
 try:
     from ..logging import get_logger
 except ImportError:
@@ -31,7 +38,7 @@ except ImportError:
 
 
 class FileService:
-    def __init__(self):
+    def __init__(self, enable_large_file_chunking: bool = True):
         self.default_extensions = ['.py']
         self.default_excludes = [
             '__pycache__',
@@ -58,6 +65,16 @@ class FileService:
 
         # 初始化日志器
         self.logger = get_logger(component="FileService", operation="default")
+        
+        # 初始化大文件处理器
+        self.enable_large_file_chunking = enable_large_file_chunking and HAS_LARGE_FILE_HANDLER
+        if self.enable_large_file_chunking:
+            self.large_file_handler = LargeFileHandler()
+            self.logger.info("Large file chunking enabled")
+        else:
+            self.large_file_handler = None
+            if enable_large_file_chunking:
+                self.logger.warning("Large file chunking requested but dependencies not available")
 
     def scan_source_files(self, project_path: str, extensions: List[str] = None,
                           exclude_patterns: List[str] = None) -> List[str]:
@@ -96,14 +113,88 @@ class FileService:
             # 检查文件大小
             file_size = file_path.stat().st_size
             if file_size > max_size:
-                print(f"Warning: File {file_path} is too large ({file_size} bytes), skipping")
+                self.logger.warning(f"File {file_path} is too large ({file_size} bytes), max_size={max_size}")
                 return None
 
             with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
         except Exception as e:
-            print(f"Error reading file {file_path}: {e}")
+            self.logger.error(f"Error reading file {file_path}: {e}")
             return None
+    
+    def read_file_with_chunking(self, file_path: str, max_size: int = 50000) -> Union[str, ChunkingResult, None]:
+        """读取文件内容，大文件自动分片处理"""
+        try:
+            file_path = Path(file_path)
+            if not file_path.exists():
+                return None
+
+            # 检查文件大小
+            file_size = file_path.stat().st_size
+            
+            # 如果文件小于限制，直接读取
+            if file_size <= max_size:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            
+            # 大文件处理
+            if self.enable_large_file_chunking and self.large_file_handler:
+                self.logger.info(f"Processing large file {file_path} ({file_size} bytes) with chunking")
+                
+                # 读取文件内容
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # 使用大文件处理器分片
+                chunking_result = self.large_file_handler.process_large_file(str(file_path), content)
+                return chunking_result
+            else:
+                self.logger.warning(f"File {file_path} is too large ({file_size} bytes) and chunking is disabled")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error reading file {file_path}: {e}")
+            return None
+    
+    def should_chunk_file(self, file_path: str, max_size: int = 50000) -> bool:
+        """判断文件是否需要分片处理"""
+        if not self.enable_large_file_chunking:
+            return False
+            
+        return self.large_file_handler.should_chunk_file(file_path, max_size)
+    
+    def get_file_processing_info(self, file_path: str, max_size: int = 50000) -> Dict[str, Any]:
+        """获取文件处理信息"""
+        try:
+            file_path = Path(file_path)
+            if not file_path.exists():
+                return {'status': 'not_found', 'file_path': str(file_path)}
+            
+            file_size = file_path.stat().st_size
+            needs_chunking = self.should_chunk_file(str(file_path), max_size)
+            
+            info = {
+                'file_path': str(file_path),
+                'file_size': file_size,
+                'size_mb': round(file_size / (1024 * 1024), 2),
+                'needs_chunking': needs_chunking,
+                'can_process_directly': file_size <= max_size,
+                'chunking_available': self.enable_large_file_chunking
+            }
+            
+            if needs_chunking and self.large_file_handler:
+                language = self.large_file_handler.detect_language(str(file_path))
+                info['detected_language'] = language
+                info['has_chunker'] = language in self.large_file_handler.chunkers
+            
+            return info
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'file_path': str(file_path),
+                'error': str(e)
+            }
 
     def get_relative_path(self, file_path: str, project_path: str) -> str:
         """获取相对于项目根目录的路径"""

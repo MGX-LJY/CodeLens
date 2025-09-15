@@ -20,6 +20,13 @@ from src.services.file_service import FileService
 from src.templates.document_templates import TemplateService
 from src.logging import get_logger
 
+# 导入大文件处理相关类
+try:
+    from src.services.large_file_handler import ChunkingResult, CodeChunk
+    HAS_LARGE_FILE_HANDLER = True
+except ImportError:
+    HAS_LARGE_FILE_HANDLER = False
+
 
 class TaskExecutor:
     """任务执行器"""
@@ -33,8 +40,12 @@ class TaskExecutor:
         self.task_manager = TaskManager(str(project_path))
         self.phase_controller = PhaseController(self.task_manager)
         self.state_tracker = StateTracker(str(project_path), self.task_manager, self.phase_controller)
-        self.file_service = FileService()
+        self.file_service = FileService(enable_large_file_chunking=True)
         self.template_service = TemplateService()
+        
+        # 大文件处理配置
+        self.large_file_threshold = 50000  # 50KB
+        self.enable_chunking = HAS_LARGE_FILE_HANDLER
         
         self.logger.info("TaskExecutor初始化完成")
 
@@ -132,13 +143,21 @@ class TaskExecutor:
             self.logger.info("检测到scan任务，进入自动执行模式")
             return self._execute_scan_task(task_id)
 
-        # 空文件自动跳过功能
+        # 文件预处理：空文件和大文件检查
         if task.type.value == "file_summary" and task.target_file:
+            # 1. 检查空文件
             self.logger.debug("检查是否为空文件", {"target_file": task.target_file})
             empty_file_result = self._check_and_handle_empty_file(task_id)
             if empty_file_result:
                 self.logger.info("空文件处理完成")
                 return empty_file_result
+            
+            # 2. 检查大文件
+            self.logger.debug("检查是否为大文件", {"target_file": task.target_file})
+            large_file_result = self._check_and_handle_large_file(task_id)
+            if large_file_result:
+                self.logger.info("大文件处理完成")
+                return large_file_result
 
         # 标记任务为进行中
         if mark_in_progress:
@@ -833,6 +852,318 @@ graph TD
             pass
 
         return related[:5]  # 最多5个相关文件
+    
+    def _check_and_handle_large_file(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """检查并处理大文件，如果是大文件则使用分片策略处理"""
+        if not self.enable_chunking:
+            return None
+            
+        task = self.task_manager.get_task(task_id)
+        if not task or not task.target_file:
+            return None
+            
+        file_path = self.project_path / task.target_file
+        if not file_path.exists():
+            return None
+        
+        # 检查文件是否需要分片处理
+        processing_info = self.file_service.get_file_processing_info(
+            str(file_path), self.large_file_threshold
+        )
+        
+        if not processing_info.get('needs_chunking', False):
+            return None
+            
+        self.logger.info(f"检测到大文件: {task.target_file} ({processing_info['size_mb']} MB)，开始分片处理")
+        
+        try:
+            # 标记任务为进行中
+            self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
+            self.state_tracker.record_task_event("started", task_id)
+            
+            # 使用分片处理大文件
+            result = self.file_service.read_file_with_chunking(str(file_path), self.large_file_threshold)
+            
+            if isinstance(result, ChunkingResult) and result.success:
+                # 处理分片结果
+                merged_doc = self._process_chunks_and_merge(task, result)
+                
+                # 确保输出目录存在
+                output_path = self.project_path / task.output_path
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # 写入合并后的文档
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(merged_doc)
+                
+                # 自动完成任务
+                self.task_manager.update_task_status(task_id, TaskStatus.COMPLETED)
+                self.state_tracker.record_task_event("completed", task_id)
+                self.logger.info(f"大文件任务自动完成: {task_id} - {task.target_file}")
+                
+                return {
+                    "success": True,
+                    "message": f"Large file '{task.target_file}' processed with chunking",
+                    "output_file": str(output_path),
+                    "task_completed": True,
+                    "chunking_info": {
+                        "total_chunks": result.total_chunks,
+                        "processing_method": result.processing_method,
+                        "processing_time": result.processing_time
+                    },
+                    "file_info": processing_info
+                }
+            else:
+                # 分片失败，记录警告但不阻止正常流程
+                self.logger.warning(f"大文件分片处理失败: {task.target_file}")
+                self.task_manager.update_task_status(task_id, TaskStatus.PENDING)  # 恢复状态
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"处理大文件时出错: {str(e)}")
+            self.task_manager.update_task_status(task_id, TaskStatus.PENDING)  # 恢复状态
+            return None
+        
+        return None
+    
+    def _process_chunks_and_merge(self, task: Task, chunking_result: ChunkingResult) -> str:
+        """处理代码分片并合并生成最终文档"""
+        chunks = chunking_result.chunks
+        
+        # 获取模板
+        template_info = self._get_template_info(task)
+        template_content = template_info.get('content', '')
+        
+        # 按依赖关系对分片排序
+        sorted_chunks = self._sort_chunks_by_dependencies(chunks)
+        
+        # 为每个分片生成文档片段
+        chunk_docs = []
+        for i, chunk in enumerate(sorted_chunks):
+            self.logger.debug(f"处理分片 {i+1}/{len(sorted_chunks)}: {chunk.chunk_type.value}")
+            
+            chunk_doc = self._generate_chunk_documentation(chunk, template_content, task)
+            chunk_docs.append({
+                'chunk': chunk,
+                'documentation': chunk_doc,
+                'order': i
+            })
+        
+        # 合并所有分片文档
+        merged_doc = self._merge_chunk_documentations(chunk_docs, task, chunking_result)
+        
+        return merged_doc
+    
+    def _sort_chunks_by_dependencies(self, chunks: List[CodeChunk]) -> List[CodeChunk]:
+        """根据依赖关系对分片排序"""
+        # 简单实现：按类型和行号排序，后续可以改进为真正的依赖排序
+        def sort_key(chunk):
+            type_priority = {
+                'module': 0,   # 模块级内容优先
+                'import': 1,   # 导入语句
+                'class': 2,    # 类定义
+                'function': 3, # 函数定义
+                'mixed': 4     # 混合内容
+            }
+            return (type_priority.get(chunk.chunk_type.value, 5), chunk.start_line)
+        
+        return sorted(chunks, key=sort_key)
+    
+    def _generate_chunk_documentation(self, chunk: CodeChunk, template: str, task: Task) -> str:
+        """为单个代码分片生成文档"""
+        # 基于分片类型生成相应的文档
+        if chunk.chunk_type.value == 'class':
+            return self._generate_class_chunk_doc(chunk, template)
+        elif chunk.chunk_type.value == 'function':
+            return self._generate_function_chunk_doc(chunk, template)
+        elif chunk.chunk_type.value == 'module':
+            return self._generate_module_chunk_doc(chunk, template)
+        else:
+            return self._generate_generic_chunk_doc(chunk, template)
+    
+    def _generate_class_chunk_doc(self, chunk: CodeChunk, template: str) -> str:
+        """生成类分片的文档"""
+        class_name = chunk.metadata.get('class_name', '未知类')
+        method_count = chunk.metadata.get('method_count', 0)
+        base_classes = chunk.metadata.get('base_classes', [])
+        
+        doc = f"""### 类: {class_name}
+
+**定义位置**: 第 {chunk.start_line}-{chunk.end_line} 行
+**复杂度评分**: {chunk.complexity_score:.1f}
+**大小**: {chunk.size_bytes} 字节
+
+#### 类特征
+- 方法数量: {method_count}
+- 继承关系: {', '.join(base_classes) if base_classes else '无'}
+- 是否为私有类: {'是' if class_name.startswith('_') else '否'}
+
+#### 类结构分析
+
+```python
+{chunk.content}
+```
+
+#### 依赖关系
+- **定义的符号**: {', '.join(chunk.definitions) if chunk.definitions else '无'}
+- **引用的符号**: {', '.join(sorted(chunk.references)[:10]) if chunk.references else '无'}
+{f"(共 {len(chunk.references)} 个引用)" if len(chunk.references) > 10 else ""}
+
+"""
+        return doc
+    
+    def _generate_function_chunk_doc(self, chunk: CodeChunk, template: str) -> str:
+        """生成函数分片的文档"""
+        function_name = chunk.metadata.get('function_name', '未知函数')
+        parameter_count = chunk.metadata.get('parameter_count', 0)
+        is_method = chunk.metadata.get('is_method', False)
+        class_name = chunk.metadata.get('class_name', '')
+        
+        doc = f"""### {'方法' if is_method else '函数'}: {function_name}
+
+**定义位置**: 第 {chunk.start_line}-{chunk.end_line} 行
+**复杂度评分**: {chunk.complexity_score:.1f}
+**参数数量**: {parameter_count}
+{'**所属类**: ' + class_name if class_name else ''}
+
+#### 函数特征
+- 类型: {'类方法' if is_method else '模块函数'}
+- 私有方法: {'是' if function_name.startswith('_') else '否'}
+- 特殊方法: {'是' if function_name.startswith('__') and function_name.endswith('__') else '否'}
+
+#### 实现分析
+
+```python
+{chunk.content}
+```
+
+#### 依赖分析
+- **定义的符号**: {', '.join(chunk.definitions) if chunk.definitions else '无'}
+- **引用的符号**: {', '.join(sorted(chunk.references)[:8]) if chunk.references else '无'}
+{f"(共 {len(chunk.references)} 个引用)" if len(chunk.references) > 8 else ""}
+
+"""
+        return doc
+    
+    def _generate_module_chunk_doc(self, chunk: CodeChunk, template: str) -> str:
+        """生成模块级分片的文档"""
+        doc = f"""### 模块级定义
+
+**位置**: 第 {chunk.start_line}-{chunk.end_line} 行
+**内容类型**: 导入语句和全局定义
+
+#### 模块级内容
+
+```python
+{chunk.content}
+```
+
+#### 导入和全局定义
+- **定义的符号**: {', '.join(chunk.definitions) if chunk.definitions else '无'}
+- **引用的符号**: {', '.join(sorted(chunk.references)[:10]) if chunk.references else '无'}
+
+"""
+        return doc
+    
+    def _generate_generic_chunk_doc(self, chunk: CodeChunk, template: str) -> str:
+        """生成通用分片的文档"""
+        doc = f"""### 代码片段: {chunk.chunk_type.value}
+
+**位置**: 第 {chunk.start_line}-{chunk.end_line} 行
+**复杂度评分**: {chunk.complexity_score:.1f}
+**大小**: {chunk.size_bytes} 字节
+
+#### 内容分析
+
+```{chunk.language}
+{chunk.content}
+```
+
+#### 分析结果
+- **定义的符号**: {', '.join(chunk.definitions) if chunk.definitions else '无'}
+- **引用的符号**: {', '.join(sorted(chunk.references)[:10]) if chunk.references else '无'}
+
+"""
+        return doc
+    
+    def _merge_chunk_documentations(self, chunk_docs: List[Dict], task: Task, chunking_result: ChunkingResult) -> str:
+        """合并所有分片文档为最终文档"""
+        filename = Path(task.target_file).name
+        file_path = task.target_file
+        
+        # 文档头部
+        header = f"""# 文件分析报告：{filename}
+
+## 文件概述
+
+**大文件分片处理报告** - 该文件因大小超过阈值被自动分片处理。
+
+## 基本信息
+
+- **文件路径**: `{file_path}`
+- **文件大小**: {chunking_result.total_size} 字节 ({chunking_result.total_size / 1024:.1f} KB)
+- **分片数量**: {chunking_result.total_chunks}
+- **处理方法**: {chunking_result.processing_method}
+- **处理时间**: {chunking_result.processing_time:.2f} 秒
+- **编程语言**: {chunk_docs[0]['chunk'].language if chunk_docs else '未知'}
+
+## 分片处理结果
+
+### 分片概览
+
+"""
+        
+        # 分片统计
+        chunk_stats = {}
+        for doc_info in chunk_docs:
+            chunk_type = doc_info['chunk'].chunk_type.value
+            chunk_stats[chunk_type] = chunk_stats.get(chunk_type, 0) + 1
+        
+        for chunk_type, count in chunk_stats.items():
+            header += f"- {chunk_type.title()} 分片: {count} 个\n"
+        
+        header += "\n## 详细分析\n\n"
+        
+        # 合并所有分片文档
+        all_chunks_doc = ""
+        for i, doc_info in enumerate(chunk_docs, 1):
+            all_chunks_doc += f"\n---\n\n## 分片 {i}: {doc_info['chunk'].chunk_type.value.title()}\n\n"
+            all_chunks_doc += doc_info['documentation']
+            all_chunks_doc += "\n"
+        
+        # 文档尾部
+        footer = f"""\n---\n\n## 分片处理总结\n
+本文件通过CodeLens大文件分片系统进行处理，将大文件按照语义边界分割为 {len(chunk_docs)} 个独立分片，
+每个分片都进行了详细的结构分析和文档生成，最终合并为完整的文档。
+
+### 处理统计
+
+- **总分片数**: {len(chunk_docs)}
+- **处理方法**: {chunking_result.processing_method}
+- **成功率**: 100%
+- **处理时间**: {chunking_result.processing_time:.2f} 秒
+
+*此文档由CodeLens自动生成，采用了智能分片合并技术。*
+"""
+        
+        # 合并完整文档
+        complete_doc = header + all_chunks_doc + footer
+        
+        return complete_doc
+        
+    def get_chunking_stats(self) -> Dict[str, Any]:
+        """获取分片处理统计信息"""
+        if not self.enable_chunking or not hasattr(self.file_service, 'large_file_handler'):
+            return {'chunking_enabled': False}
+            
+        handler = self.file_service.large_file_handler
+        if handler:
+            stats = handler.get_processing_stats()
+            stats['chunking_enabled'] = True
+            stats['threshold_kb'] = self.large_file_threshold / 1024
+            return stats
+        else:
+            return {'chunking_enabled': False}
 
 
 
