@@ -117,7 +117,7 @@ def convert_tool_definition(tool_def: dict) -> Tool:
     return Tool(
         name=tool_def["name"],
         description=tool_def["description"],
-        inputSchema=tool_def.get("input_schema", {"type": "object", "properties": {}})
+        inputSchema=tool_def.get("inputSchema", {"type": "object", "properties": {}})
     )
 
 @server.list_tools()
@@ -204,7 +204,7 @@ async def main():
             
             info = {
                 "name": "codelens",
-                "version": "1.0.0.2",
+                "version": "1.0.0.3",
                 "description": "CodeLens MCP Server - With Hot Reload Support",
                 "tools": len(codelens_tools),
                 "hot_reload": hot_reload_status

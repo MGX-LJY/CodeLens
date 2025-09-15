@@ -39,7 +39,7 @@ class DocUpdateInitTool:
                         "description": "项目根路径"
                     }
                 },
-                "required": ["project_path"]
+                "required": []
             }
         }
 
@@ -51,10 +51,22 @@ class DocUpdateInitTool:
             # 参数验证
             project_path = arguments.get("project_path")
             
+            # 如果没有提供project_path，使用当前工作目录
+
+            
             if not project_path:
-                error_msg = "project_path is required"
-                self.logger.error(f"{error_msg}: {arguments}")
-                return self._error_response(error_msg)
+
+            
+                project_path = os.getcwd()
+
+            
+                self.logger.info("未提供project_path，使用当前工作目录", {
+
+            
+                    "current_working_directory": project_path
+
+            
+                })
 
             project_path = Path(project_path)
             if not project_path.exists():
@@ -85,7 +97,7 @@ class DocUpdateInitTool:
             return self._error_response(f"初始化失败: {str(e)}")
 
     def _init_file_fingerprints(self, project_path: Path) -> str:
-        """扫描项目文件并记录hash基点"""
+        """扫描项目文件并记录hash基点 - 扫描整个项目除了文档文件"""
         fingerprints = {
             "created_at": datetime.now().isoformat(),
             "files": {}
@@ -93,37 +105,71 @@ class DocUpdateInitTool:
         
         files_processed = 0
         
-        # 扫描src文件夹下的.py文件
-        src_path = project_path / "src"
-        if src_path.exists():
-            for py_file in src_path.rglob("*.py"):
-                try:
-                    content = py_file.read_text(encoding='utf-8')
-                    file_hash = hashlib.md5(content.encode()).hexdigest()
-                    fingerprints["files"][str(py_file.relative_to(project_path))] = {
-                        "hash": file_hash,
-                        "size": py_file.stat().st_size,
-                        "modified_time": datetime.fromtimestamp(py_file.stat().st_mtime).isoformat()
-                    }
-                    files_processed += 1
-                except Exception as e:
-                    self.logger.warning(f"跳过文件 {py_file}: {e}")
+        # 定义需要忽略的目录
+        ignore_dirs = {
+            '.git', '__pycache__', '.pytest_cache', 'node_modules', 
+            '.idea', '.vscode', 'venv', 'env', '.env', 'dist', 'build',
+            'docs',  # 排除文档目录
+            '.codelens'  # 排除codelens工作目录
+        }
         
-        # 也扫描根目录的主要文件
-        for main_file in ["mcp_server.py", "main.py", "app.py"]:
-            main_path = project_path / main_file
-            if main_path.exists():
+        # 定义需要忽略的文件扩展名（文档文件）
+        ignore_extensions = {
+            '.md', '.txt', '.rst', '.doc', '.docx', '.pdf',
+            '.log', '.tmp', '.temp', '.cache', '.bak',
+            '.pyc', '.pyo', '.pyd', '__pycache__'
+        }
+        
+        # 定义需要检测的文件扩展名（代码文件）
+        code_extensions = {
+            '.py', '.js', '.jsx', '.ts', '.tsx', '.json', '.yaml', '.yml',
+            '.toml', '.cfg', '.ini', '.conf', '.sh', '.bat', '.ps1',
+            '.html', '.css', '.scss', '.less', '.vue', '.go', '.rs',
+            '.java', '.kt', '.cpp', '.c', '.h', '.hpp', '.cs', '.php',
+            '.rb', '.swift', '.dart', '.sql', '.r', '.m', '.scala'
+        }
+        
+        # 遍历整个项目目录
+        for file_path in project_path.rglob("*"):
+            if file_path.is_file():
                 try:
-                    content = main_path.read_text(encoding='utf-8')
+                    # 检查是否在忽略的目录中
+                    if any(ignore_dir in file_path.parts for ignore_dir in ignore_dirs):
+                        continue
+                    
+                    # 检查文件扩展名
+                    file_suffix = file_path.suffix.lower()
+                    
+                    # 跳过文档文件和其他忽略的文件
+                    if file_suffix in ignore_extensions:
+                        continue
+                    
+                    # 只处理代码文件或者无扩展名的重要文件
+                    if file_suffix not in code_extensions and file_suffix != '':
+                        # 检查是否是重要的无扩展名文件
+                        important_files = {
+                            'Dockerfile', 'Makefile', 'requirements.txt', 
+                            'package.json', 'Cargo.toml', 'go.mod', 'pom.xml'
+                        }
+                        if file_path.name not in important_files:
+                            continue
+                    
+                    # 读取文件内容并计算哈希
+                    content = file_path.read_text(encoding='utf-8')
                     file_hash = hashlib.md5(content.encode()).hexdigest()
-                    fingerprints["files"][main_file] = {
+                    
+                    relative_path = str(file_path.relative_to(project_path))
+                    fingerprints["files"][relative_path] = {
                         "hash": file_hash,
-                        "size": main_path.stat().st_size,
-                        "modified_time": datetime.fromtimestamp(main_path.stat().st_mtime).isoformat()
+                        "size": file_path.stat().st_size,
+                        "modified_time": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
                     }
                     files_processed += 1
+                    
                 except Exception as e:
-                    self.logger.warning(f"跳过文件 {main_path}: {e}")
+                    self.logger.warning(f"跳过文件 {file_path}: {e}")
+        
+        self.logger.info(f"扫描完成，共检测到 {files_processed} 个代码文件")
         
         # 保存指纹文件
         fingerprints_dir = project_path / ".codelens"

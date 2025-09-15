@@ -37,7 +37,7 @@ class ProjectOverviewTool:
                         "description": "项目根路径"
                     }
                 },
-                "required": ["project_path"]
+                "required": []
             }
         }
 
@@ -49,10 +49,22 @@ class ProjectOverviewTool:
             # 参数验证
             project_path = arguments.get("project_path")
             
+            # 如果没有提供project_path，使用当前工作目录
+
+            
             if not project_path:
-                error_msg = "project_path is required"
-                self.logger.error(f"{error_msg}: {arguments}")
-                return self._error_response(error_msg)
+
+            
+                project_path = os.getcwd()
+
+            
+                self.logger.info("未提供project_path，使用当前工作目录", {
+
+            
+                    "current_working_directory": project_path
+
+            
+                })
 
             project_path = Path(project_path)
             if not project_path.exists():

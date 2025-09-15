@@ -517,7 +517,7 @@ class TaskInitTool:
                 "properties": {
                     "project_path": {
                         "type": "string",
-                        "description": "项目路径"
+                        "description": "项目路径（可选，默认使用当前工作目录）"
                     },
                     "analysis_result": {
                         "type": "object",

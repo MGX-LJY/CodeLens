@@ -59,7 +59,7 @@ class TaskStatusTool:
                         "description": "特定任务ID（用于查询特定任务状态）"
                     }
                 },
-                "required": ["project_path"]
+                "required": []
             }
         }
 

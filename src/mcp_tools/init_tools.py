@@ -286,10 +286,10 @@ Phase 5: 文档验证确认 (doc_verify) - 验证最终结果
                 "properties": {
                     "project_path": {
                         "type": "string",
-                        "description": "项目根目录的绝对路径"
+                        "description": "项目根目录的绝对路径（可选，默认使用当前工作目录）"
                     }
                 },
-                "required": ["project_path"]
+                "required": []
             }
         }
     
@@ -299,20 +299,13 @@ Phase 5: 文档验证确认 (doc_verify) - 验证最终结果
                                                        project_path=arguments.get("project_path"))
         
         try:
+            # 如果没有提供project_path，使用当前工作目录
             project_path = arguments.get("project_path")
             if not project_path:
-                self.logger.error("缺少必需参数", {
-                    "missing_parameter": "project_path",
-                    "provided_args": list(arguments.keys())
+                project_path = os.getcwd()
+                self.logger.info("未提供project_path，使用当前工作目录", {
+                    "current_working_directory": project_path
                 })
-                
-                result = {
-                    "success": False,
-                    "error": "缺少必需参数: project_path"
-                }
-                
-                self.logger.log_operation_end("execute_init_tools", operation_id, success=False, error="缺少必需参数")
-                return result
             
             self.logger.info("开始生成工作流指导", {
                 "project_path": project_path

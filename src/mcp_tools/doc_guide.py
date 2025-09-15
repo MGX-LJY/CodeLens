@@ -532,7 +532,7 @@ class DocGuideTool:
                         "description": "重点关注的领域"
                     }
                 },
-                "required": ["project_path"]
+                "required": []
             }
         }
 
@@ -546,14 +546,15 @@ class DocGuideTool:
         try:
             self.logger.info("开始执行doc_guide工具", {"arguments": arguments, "operation_id": operation_id})
             
-            # 参数验证
+            # 参数验证 - 如果没有提供project_path，使用当前工作目录
             project_path = arguments.get("project_path")
-            self.logger.debug("验证project_path参数", {"project_path": project_path})
-            
             if not project_path:
-                error_msg = "project_path参数缺失"
-                self.logger.error(error_msg, {"arguments": arguments})
-                return self._error_response("Invalid project path")
+                project_path = os.getcwd()
+                self.logger.info("未提供project_path，使用当前工作目录", {
+                    "current_working_directory": project_path
+                })
+            
+            self.logger.debug("验证project_path参数", {"project_path": project_path})
                 
             if not os.path.exists(project_path):
                 error_msg = f"项目路径不存在: {project_path}"

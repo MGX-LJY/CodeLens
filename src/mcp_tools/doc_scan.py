@@ -37,7 +37,7 @@ class DocScanTool:
                 "properties": {
                     "project_path": {
                         "type": "string",
-                        "description": "要扫描的项目路径"
+                        "description": "要扫描的项目路径（可选，默认使用当前工作目录）"
                     },
                     "include_content": {
                         "type": "boolean",
@@ -141,7 +141,7 @@ class DocScanTool:
                         }
                     }
                 },
-                "required": ["project_path"]
+                "required": []
             }
         }
 
@@ -159,14 +159,15 @@ class DocScanTool:
         })
 
         try:
-            # 参数验证
+            # 参数验证 - 如果没有提供project_path，使用当前工作目录
             project_path = arguments.get("project_path")
-            self.logger.debug("验证project_path参数", {"project_path": project_path})
-            
             if not project_path:
-                error_msg = "project_path is required"
-                self.logger.error(f"{error_msg}: {arguments}")
-                return self._error_response(error_msg)
+                project_path = os.getcwd()
+                self.logger.info("未提供project_path，使用当前工作目录", {
+                    "current_working_directory": project_path
+                })
+            
+            self.logger.debug("验证project_path参数", {"project_path": project_path})
 
             if not os.path.exists(project_path):
                 error_msg = f"Project path does not exist: {project_path}"
