@@ -41,7 +41,7 @@ class TemplateServiceV05:
         self.file_templates = FileTemplates()
         self.project_templates = ProjectTemplates()
         
-        # 模板注册表 - 10个模板
+        # 模板注册表 - 8个模板
         self.template_registry = {
             # 架构层模板 (6个)
             'architecture': self.arch_templates.OVERVIEW_TEMPLATE,
@@ -54,10 +54,9 @@ class TemplateServiceV05:
             # 文件层模板 (1个)
             'file_summary': self.file_templates.SUMMARY_TEMPLATE,
             
-            # 项目层模板 (3个)
+            # 项目层模板 (2个)
             'project_readme': self.project_templates.README_TEMPLATE,
-            'changelog': self.project_templates.CHANGELOG_TEMPLATE,
-            'roadmap': self.project_templates.ROADMAP_TEMPLATE
+            'changelog': self.project_templates.CHANGELOG_TEMPLATE
         }
         
         # 初始化日志器
@@ -66,7 +65,7 @@ class TemplateServiceV05:
             "template_count": len(self.template_registry),
             "architecture_templates": 6,
             "file_templates": 1,
-            "project_templates": 3
+            "project_templates": 2
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:

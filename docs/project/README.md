@@ -38,7 +38,6 @@ python src/mcp_tools/task_execute.py /path/to/your/project --task-id <project_ta
 
 # 传统工具 (兼容)
 python src/mcp_tools/doc_scan.py /path/to/your/project
-python src/mcp_tools/template_get.py --list-all
 python src/mcp_tools/doc_verify.py /path/to/your/project
 ```
 
@@ -84,7 +83,7 @@ CodeLens  引入了Task Engine智能任务管理层，实现4阶段工作流程�
 └── StateTracker - 状态跟踪器 (持久化、进度监控、健康检查)
 
 🔧 7个智能MCP工具
-├── 基础工具 (3个): doc_scan, template_get, doc_verify
+├── 基础工具 (2个): doc_scan, doc_verify
 └── Task Engine工具 (4个): doc_guide, task_init, task_execute, task_status
 
 🛠️ 服务支撑层

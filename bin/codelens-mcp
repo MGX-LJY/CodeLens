@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+// 获取包的根目录
+const packageRoot = path.dirname(__dirname);
+const serverPath = path.join(packageRoot, 'mcp_server.py');
+
+// 检查Python是否可用
+function checkPython() {
+    const pythonCommands = ['python3', 'python'];
+    
+    for (const cmd of pythonCommands) {
+        try {
+            const result = require('child_process').execSync(`${cmd} --version`, { stdio: 'pipe' });
+            const version = result.toString().match(/Python (\d+)\.(\d+)/);
+            if (version && parseInt(version[1]) >= 3 && parseInt(version[2]) >= 9) {
+                return cmd;
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+    throw new Error('Python 3.9+ required but not found');
+}
+
+// 启动MCP服务器
+function startServer(args = []) {
+    try {
+        const pythonCmd = checkPython();
+        const serverProcess = spawn(pythonCmd, [serverPath, ...args], {
+            cwd: packageRoot,
+            env: {
+                ...process.env,
+                PYTHONPATH: packageRoot
+            },
+            stdio: 'inherit'
+        });
+
+        serverProcess.on('error', (error) => {
+            console.error('CodeLens MCP Server failed to start:', error.message);
+            process.exit(1);
+        });
+
+        serverProcess.on('exit', (code) => {
+            if (code !== 0) {
+                console.error(`CodeLens MCP Server exited with code ${code}`);
+                process.exit(code);
+            }
+        });
+
+        // 优雅关闭
+        process.on('SIGINT', () => {
+            console.log('\nShutting down CodeLens MCP Server...');
+            serverProcess.kill('SIGINT');
+        });
+
+        process.on('SIGTERM', () => {
+            serverProcess.kill('SIGTERM');
+        });
+
+    } catch (error) {
+        console.error('Error:', error.message);
+        console.error('\nPlease ensure Python 3.9+ is installed and available in PATH');
+        process.exit(1);
+    }
+}
+
+// 解析命令行参数
+const args = process.argv.slice(2);
+
+if (args.includes('--help') || args.includes('-h')) {
+    console.log(`
+CodeLens MCP Server v1.0.0.1
+Usage: codelens-mcp [options]
+
+Options:
+  --help, -h     Show this help message
+  --version, -v  Show version
+  test [path]    Test server with optional project path
+  info          Show server information
+
+Examples:
+  codelens-mcp                    # Start MCP server
+  codelens-mcp test /path/project # Test with project
+  codelens-mcp info               # Show server info
+    `);
+    process.exit(0);
+}
+
+if (args.includes('--version') || args.includes('-v')) {
+    const packageJson = require(path.join(packageRoot, 'package.json'));
+    console.log(`CodeLens MCP Server v${packageJson.version}`);
+    process.exit(0);
+}
+
+// 启动服务器
+startServer(args);

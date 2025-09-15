@@ -18,7 +18,7 @@ import sys, json, time, traceback  # 系统基础模块
 from typing import Dict, Any, List  # 类型注解
 # 7个MCP工具导入
 from src.mcp_tools.doc_scan import DocScanTool
-from src.mcp_tools.template_get import TemplateGetTool  
+  
 from src.mcp_tools.doc_guide import DocGuideTool
 from src.mcp_tools.task_init import TaskInitTool
 from src.mcp_tools.task_execute import TaskExecuteTool
@@ -151,7 +151,6 @@ graph LR
 **MCP工具集**:
 - **init_tools**: 一键项目初始化
 - **doc_scan**: 项目文件扫描和元数据提取
-- **template_get**: 10个专业模板的获取和管理
 - **doc_guide**: 智能项目分析和策略生成
 - **task_init**: 任务计划初始化和依赖解析
 - **task_execute**: 任务执行引擎和模板集成

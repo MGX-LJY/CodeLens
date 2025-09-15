@@ -7,27 +7,43 @@
       "env": {
         "PYTHONPATH": "."
       },
-      "description": "CodeLens MCP服务器 - 提供项目文档生成的信息和模板服务",
+      "description": "CodeLens MCP服务器 v1.0.0.1 - 智能任务引擎驱动的4阶段文档生成系统",
       "capabilities": ["tools"],
       "tools": [
+        {
+          "name": "init_tools",
+          "description": "一键项目初始化，自动识别项目规模和复杂度"
+        },
         {
           "name": "doc_scan",
           "description": "扫描项目文件并返回结构化信息和内容"
         },
         {
-          "name": "template_get", 
-          "description": "获取文档模板资源"
+          "name": "doc_guide",
+          "description": "智能项目分析，自动识别项目类型、框架、模块"
         },
         {
-          "name": "doc_verify",
-          "description": "验证文档生成状态和完整性"
+          "name": "task_init",
+          "description": "基于项目分析结果生成完整的4阶段任务计划"
+        },
+        {
+          "name": "task_execute",
+          "description": "执行单个任务，提供模板和上下文信息"
+        },
+        {
+          "name": "task_status",
+          "description": "实时监控任务执行状态和进度"
+        },
+        {
+          "name": "task_complete",
+          "description": "完成任务并验证输出质量"
         }
       ]
     }
   },
   "serverOptions": {
     "codelens": {
-      "timeout": 30000,
+      "timeout": 60000,
       "retries": 3,
       "logLevel": "info"
     }

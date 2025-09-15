@@ -16,7 +16,6 @@ CodeLens operates as a **Claude Code collaboration assistant** with two main ser
 
 ### MCP Interface Layer
 - **doc_scan**: Scans project files and returns structured information
-- **template_get**: Provides document templates for various documentation levels
 - **doc_guide**: Intelligent project analysis with framework detection and documentation strategy
 - **task_init**: Generates complete 4-phase task plans with dependency management
 - **task_status**: Real-time task progress monitoring and phase control
@@ -49,8 +48,6 @@ python mcp_server.py info
 # Test doc_scan tool
 python src/mcp_tools/doc_scan.py /path/to/project --no-content
 
-# Test template system
-python src/mcp_tools/template_get.py --list-all
 
 # Test project analysis
 python src/mcp_tools/doc_guide.py /path/to/project
@@ -66,11 +63,6 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id <ID>
 # Run template system tests
 python test_template_system_v05.py
 
-# Get specific template with metadata
-python src/mcp_tools/template_get.py --template project_scan_summary --metadata
-
-# List templates by layer
-python src/mcp_tools/template_get.py --layer architecture
 ```
 
 ### Development Workflow
@@ -111,7 +103,6 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789  
 │   └── __init__.py
 ├── mcp_tools/
 │   ├── doc_scan.py         # Project scanning MCP tool
-│   ├── template_get.py     # Template retrieval MCP tool
 │   ├── doc_guide.py        # Intelligent project analysis
 │   ├── task_init.py        # Complete task plan generation
 │   ├── task_status.py      # Real-time progress monitoring

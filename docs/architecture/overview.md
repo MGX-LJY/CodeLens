@@ -60,7 +60,6 @@ CodeLens是专为Claude Code设计的智能化任务驱动MCP服务器，实现�
 - **task_execute**: 任务执行管理器，提供模板、上下文和执行指导
 - **task_status**: 状态监控中心，实时进度跟踪和健康诊断
 - **doc_scan**: 项目文件扫描工具，智能过滤和结构化数据提取
-- **template_get**: 文档模板获取工具，支持多维度查询和格式化
 - **doc_verify**: 文档验证工具，完整性检查和状态报告
 
 ### 4. 协作流程层 (Collaboration Layer)
@@ -196,7 +195,6 @@ python src/mcp_tools/task_status.py /path/to/project --type overall_status
 
 # 文件和模板操作
 python src/mcp_tools/doc_scan.py /path/to/project --no-content
-python src/mcp_tools/template_get.py --list-all
 python src/mcp_tools/doc_verify.py /path/to/project
 ```
 

@@ -17,8 +17,8 @@
 │   doc_guide     │    task_init    │    task_execute         │
 │ DocGuideTool    │ TaskInitTool    │  TaskExecuteTool        │
 ├─────────────────┼─────────────────┼─────────────────────────┤
-│  task_status    │    doc_scan     │   template_get          │
-│TaskStatusTool   │ DocScanTool     │ TemplateGetTool         │
+│  task_status    │    doc_scan     │                         │
+│TaskStatusTool   │ DocScanTool     │                         │
 ├─────────────────┼─────────────────┼─────────────────────────┤
 │   doc_verify    │                 │                         │
 │ DocVerifyTool   │                 │                         │
@@ -58,7 +58,6 @@
 - **TaskExecuteTool**: 任务执行管理器，提供模板、上下文和执行指导
 - **TaskStatusTool**: 状态监控中心，实时进度跟踪和健康诊断
 - **DocScanTool**: 项目文件扫描工具，智能过滤和结构化数据提取
-- **TemplateGetTool**: 模板获取工具，支持多维度查询和格式化
 - **DocVerifyTool**: 文档验证工具，完整性检查和改进建议
 
 ### 2. **任务引擎组件** - 智能化任务驱动核心
@@ -95,7 +94,6 @@ TaskStatusTool ────────────→ TaskManager + PhaseContro
 DocScanTool ───────────────→ FileService
                                 │
                                 ▼
-TemplateGetTool ───────────→ TemplateService
                                 │
                                 ▼
 DocVerifyTool ─────────────→ ValidationService

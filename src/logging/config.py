@@ -59,7 +59,6 @@ class LoggingConfig:
                 "ValidationService": "INFO",
                 "MCP_Tools": "DEBUG",
                 # MCP Tools组件
-                "TemplateGetTool": "DEBUG",
                 "DocScanTool": "DEBUG",
                 "DocGuideTool": "DEBUG",
                 "TaskInitTool": "DEBUG",

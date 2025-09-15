@@ -42,6 +42,31 @@ class TaskCompleteTool:
         self.logger = get_logger(component="TaskCompleteTool", operation="init")
         self.logger.info("TaskCompleteTool 初始化完成")
     
+    def get_tool_definition(self) -> Dict[str, Any]:
+        """获取MCP工具定义"""
+        return {
+            "name": "task_complete",
+            "description": "完成任务并验证输出质量",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "project_path": {
+                        "type": "string",
+                        "description": "项目路径"
+                    },
+                    "task_id": {
+                        "type": "string",
+                        "description": "要完成的任务ID"
+                    },
+                    "output_file": {
+                        "type": "string",
+                        "description": "输出文件路径（可选，用于验证）"
+                    }
+                },
+                "required": ["project_path", "task_id"]
+            }
+        }
+    
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """
         完成任务并验证输出文件

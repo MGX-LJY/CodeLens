@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "codelens": {
+      "command": "/Users/martinezdavid/.virtualenvs/CodeLens/bin/python3",
+      "args": ["/Users/martinezdavid/Documents/MG/code/CodeLens/mcp_server.py"],
+      "cwd": "/Users/martinezdavid/Documents/MG/code/CodeLens",
+      "env": {
+        "PYTHONPATH": "/Users/martinezdavid/Documents/MG/code/CodeLens"
+      },
+      "description": "CodeLens MCP服务器 v1.0.0.1 - 智能任务引擎驱动的7工具文档生成系统"
+    }
+  }
+}
