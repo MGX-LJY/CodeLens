@@ -8,11 +8,19 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/MCP-Protocol-orange" alt="MCP Protocol">
   <img src="https://img.shields.io/badge/status-Production%20Ready-success" alt="Status">
+  <img src="https://img.shields.io/github/stars/MGX-LJY/CodeLens?style=social" alt="GitHub Stars">
 </p>
 
 <p align="center">
   <strong>🚀 智能化任务驱动的Claude Code协作平台</strong><br>
   五层架构 • 热重载支持 • 10个专业工具 • 16个模板系统
+</p>
+
+<p align="center">
+  <a href="https://github.com/MGX-LJY/CodeLens">🏠 项目主页</a> •
+  <a href="https://github.com/MGX-LJY/CodeLens/issues">🐛 问题反馈</a> •
+  <a href="https://github.com/MGX-LJY/CodeLens/discussions">💬 讨论交流</a> •
+  <a href="https://github.com/MGX-LJY">👤 开发者主页</a>
 </p>
 
 ---
@@ -715,7 +723,7 @@ gantt
 - 功能建议？我们很感兴趣
 - 文档问题？帮我们改进
 
-**[→ 提交Issue](https://github.com/your-repo/issues)**
+**[→ 提交Issue](https://github.com/MGX-LJY/CodeLens/issues)**
 
 </td>
 <td width="33%">
@@ -759,10 +767,10 @@ gantt
 <tr>
 <td align="center" width="33%">
 
-<a href="https://github.com/contributor1">
-  <img src="https://images.weserv.nl/?url=avatars.githubusercontent.com/u/placeholder?v=4&h=60&w=60&fit=cover&mask=circle&maxage=7d" width="60px" alt="Contributor 1"/>
+<a href="https://github.com/MGX-LJY">
+  <img src="https://avatars.githubusercontent.com/u/MGX-LJY?v=4&s=60" width="60px" alt="MGX-LJY"/>
   <br>
-  <sub><b>@martinezdavid</b></sub>
+  <sub><b>@MGX-LJY</b></sub>
 </a>
 <br>
 <sub>🏗️ 架构设计 | 🔥 热重载系统</sub>
@@ -795,7 +803,7 @@ gantt
 
 **🎉 感谢所有为CodeLens做出贡献的开发者们！**
 
-[![Contributors](https://contrib.rocks/image?repo=your-username/CodeLens)](https://github.com/your-username/CodeLens/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=MGX-LJY/CodeLens)](https://github.com/MGX-LJY/CodeLens/graphs/contributors)
 
 </div>
 
@@ -838,9 +846,9 @@ gitgraph
 
 ### 💬 社区交流
 
-- 💬 **问题讨论**: [GitHub Discussions](https://github.com/your-repo/discussions)
-- 🐛 **Bug报告**: [GitHub Issues](https://github.com/your-repo/issues)
-- 📢 **功能建议**: [Feature Requests](https://github.com/your-repo/issues/new?template=feature_request.md)
+- 💬 **问题讨论**: [GitHub Discussions](https://github.com/MGX-LJY/CodeLens/discussions)
+- 🐛 **Bug报告**: [GitHub Issues](https://github.com/MGX-LJY/CodeLens/issues)
+- 📢 **功能建议**: [Feature Requests](https://github.com/MGX-LJY/CodeLens/issues/new?template=feature_request.md)
 - 📧 **邮件联系**: codelens@example.com
 
 ---
@@ -863,7 +871,7 @@ gitgraph
 </p>
 
 <p align="center">
-  <a href="#codelens---智能文档协作平台">回到顶部 ⬆️</a>
+  <a href="#-codelens---智能文档协作平台">回到顶部 ⬆️</a>
 </p>
 
 </div>
