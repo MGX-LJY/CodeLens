@@ -865,7 +865,6 @@ class TaskExecuteTool:
                     "execution_mode": {
                         "type": "string",
                         "enum": ["prepare", "execute", "complete"],
-                        "default": "execute",
                         "description": "执行模式"
                     },
                     "context_enhancement": {
@@ -881,7 +880,7 @@ class TaskExecuteTool:
                         "properties": {
                             "success": {
                                 "type": "boolean"
-                                },
+                            },
                             "error_message": {
                                 "type": "string"
                             }

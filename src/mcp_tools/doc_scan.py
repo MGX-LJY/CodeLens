@@ -49,13 +49,11 @@ class DocScanTool:
                             "file_extensions": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "default": [".py"],
                                 "description": "要分析的文件扩展名"
                             },
                             "exclude_patterns": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "default": ["__pycache__", ".git", "node_modules", ".idea", ".vscode"],
                                 "description": "排除的目录或文件模式"
                             },
                             "max_file_size": {
@@ -72,19 +70,16 @@ class DocScanTool:
                                     "files": {
                                         "type": "array",
                                         "items": {"type": "string"},
-                                        "default": ["*.md", "*.txt", "*.log", "*.tmp"],
                                         "description": "忽略的文件模式"
                                     },
                                     "directories": {
                                         "type": "array",
                                         "items": {"type": "string"},
-                                        "default": ["__pycache__", ".git", "node_modules", ".idea", "venv"],
                                         "description": "忽略的目录模式"
                                     },
                                     "content_based": {
                                         "type": "array",
                                         "items": {"type": "string"},
-                                        "default": ["empty_files", "generated_files", "binary_files"],
                                         "description": "基于内容的过滤规则"
                                     }
                                 }
@@ -99,7 +94,6 @@ class DocScanTool:
                                     "project_type": {
                                         "type": "string",
                                         "enum": ["auto_detect", "python", "javascript", "java", "go", "rust"],
-                                        "default": "auto_detect",
                                         "description": "项目类型"
                                     },
                                     "keep_config_files": {

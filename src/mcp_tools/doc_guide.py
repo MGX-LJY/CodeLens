@@ -496,13 +496,11 @@ class DocGuideTool:
                     "project_type": {
                         "type": "string",
                         "enum": ["auto", "python", "javascript", "java", "go", "rust"],
-                        "default": "auto",
                         "description": "项目类型，auto为自动检测"
                     },
                     "analysis_depth": {
                         "type": "string",
                         "enum": ["basic", "detailed", "comprehensive"],
-                        "default": "detailed",
                         "description": "分析深度"
                     },
                     "ignore_patterns": {
@@ -511,13 +509,11 @@ class DocGuideTool:
                             "files": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "default": ["*.md", "*.txt", "*.log"],
                                 "description": "忽略的文件模式"
                             },
                             "directories": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "default": ["__pycache__", ".git", "node_modules"],
                                 "description": "忽略的目录模式"
                             }
                         }
@@ -528,7 +524,6 @@ class DocGuideTool:
                             "type": "string",
                             "enum": ["architecture", "modules", "files", "project"]
                         },
-                        "default": ["architecture", "modules", "files", "project"],
                         "description": "重点关注的领域"
                     }
                 },

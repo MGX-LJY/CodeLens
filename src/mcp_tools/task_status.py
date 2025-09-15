@@ -41,7 +41,6 @@ class TaskStatusTool:
                     "check_type": {
                         "type": "string",
                         "enum": ["current_task", "phase_progress", "overall_status", "next_actions", "health_check"],
-                        "default": "overall_status",
                         "description": "检查类型"
                     },
                     "phase_filter": {

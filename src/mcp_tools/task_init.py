@@ -521,13 +521,11 @@ class TaskInitTool:
                     },
                     "analysis_result": {
                         "type": "object",
-                        "description": "doc_guide的分析结果",
-                        "required": True
+                        "description": "doc_guide的分析结果"
                     },
                     "task_granularity": {
                         "type": "string",
                         "enum": ["file", "batch", "module"],
-                        "default": "file",
                         "description": "任务粒度"
                     },
                     "parallel_tasks": {
@@ -544,7 +542,7 @@ class TaskInitTool:
                         "description": "是否在任务管理器中创建任务"
                     }
                 },
-                "required": ["project_path", "analysis_result"]
+                "required": ["analysis_result"]
             }
         }
 
