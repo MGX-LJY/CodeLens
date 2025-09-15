@@ -870,21 +870,18 @@ class TaskExecuteTool:
                     },
                     "context_enhancement": {
                         "type": "boolean",
-                        "default": True,
                         "description": "是否启用上下文增强"
                     },
                     "mark_in_progress": {
                         "type": "boolean",
-                        "default": True,
                         "description": "是否标记任务为进行中"
                     },
                     "completion_data": {
                         "type": "object",
                         "properties": {
                             "success": {
-                                "type": "boolean",
-                                "default": True
-                            },
+                                "type": "boolean"
+                                },
                             "error_message": {
                                 "type": "string"
                             }

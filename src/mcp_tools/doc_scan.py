@@ -41,7 +41,6 @@ class DocScanTool:
                     },
                     "include_content": {
                         "type": "boolean",
-                        "default": True,
                         "description": "是否包含文件内容"
                     },
                     "config": {
@@ -61,12 +60,10 @@ class DocScanTool:
                             },
                             "max_file_size": {
                                 "type": "number",
-                                "default": 50000,
                                 "description": "单个文件最大字符数限制"
                             },
                             "max_depth": {
                                 "type": "number",
-                                "default": 3,
                                 "description": "目录树扫描最大深度"
                             },
                             "ignore_patterns": {
@@ -97,7 +94,6 @@ class DocScanTool:
                                 "properties": {
                                     "enabled": {
                                         "type": "boolean",
-                                        "default": True,
                                         "description": "启用智能过滤"
                                     },
                                     "project_type": {
@@ -108,12 +104,10 @@ class DocScanTool:
                                     },
                                     "keep_config_files": {
                                         "type": "boolean",
-                                        "default": True,
                                         "description": "保留配置文件"
                                     },
                                     "keep_test_files": {
                                         "type": "boolean",
-                                        "default": True,
                                         "description": "保留测试文件"
                                     }
                                 }
@@ -123,17 +117,14 @@ class DocScanTool:
                                 "properties": {
                                     "main_source_only": {
                                         "type": "boolean",
-                                        "default": False,
                                         "description": "仅分析主要源代码文件"
                                     },
                                     "exclude_examples": {
                                         "type": "boolean",
-                                        "default": True,
                                         "description": "排除示例文件"
                                     },
                                     "exclude_migrations": {
                                         "type": "boolean",
-                                        "default": True,
                                         "description": "排除数据库迁移文件"
                                     }
                                 }

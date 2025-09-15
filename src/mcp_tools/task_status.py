@@ -51,7 +51,6 @@ class TaskStatusTool:
                     },
                     "detailed_analysis": {
                         "type": "boolean",
-                        "default": True,
                         "description": "是否包含详细分析"
                     },
                     "task_id": {

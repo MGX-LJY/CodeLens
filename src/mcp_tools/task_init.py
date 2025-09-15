@@ -532,7 +532,6 @@ class TaskInitTool:
                     },
                     "parallel_tasks": {
                         "type": "boolean",
-                        "default": False,
                         "description": "是否支持并行任务"
                     },
                     "custom_priorities": {
@@ -542,7 +541,6 @@ class TaskInitTool:
                     },
                     "create_in_manager": {
                         "type": "boolean",
-                        "default": False,
                         "description": "是否在任务管理器中创建任务"
                     }
                 },
