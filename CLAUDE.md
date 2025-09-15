@@ -198,7 +198,7 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789 -
 
 ### For Large Projects (50+ files)
 
-**Recommended Workflow:**
+**Workflow:**
 1. **Initialize**: `python src/mcp_tools/init_tools.py /path/to/project`
 2. **Monitor Progress**: `python src/mcp_tools/task_status.py /path/to/project --type current_task`  
 3. **Execute Tasks**: `python src/mcp_tools/task_execute.py /path/to/project --task-id <ID>`

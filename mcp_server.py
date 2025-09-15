@@ -227,7 +227,7 @@ def main():
                     if guide_result.get("success"):
                         analysis = guide_result["data"]["project_analysis"]
                         print(f"✅ 项目分析: 识别 {len(analysis.get('identified_modules', []))} 个模块")
-                        print(f"📄 推荐文档: {len(analysis.get('recommended_docs', []))} 类")
+                        print(f"📄 文档类型: {len(analysis.get('document_types', []))} 类")
                         
                         # 测试任务初始化
                         print(f"\n⚙️ 测试任务计划生成:")

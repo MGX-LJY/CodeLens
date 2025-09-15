@@ -137,14 +137,10 @@ class StateTracker:
         # 计算执行统计
         execution_stats = self._calculate_execution_stats()
         
-        # 获取推荐操作
-        recommendations = self._get_recommendations()
-        
         return {
             "snapshot": current_snapshot,
             "phase_overview": overview,
             "execution_statistics": execution_stats,
-            "recommendations": recommendations,
             "health_check": self._perform_health_check()
         }
 
@@ -293,33 +289,6 @@ class StateTracker:
         else:
             return f"{minutes} minutes"
 
-    def _get_recommendations(self) -> List[str]:
-        """获取状态推荐"""
-        recommendations = []
-        current_phase = self.phase_controller.get_current_phase()
-        
-        if current_phase:
-            phase_recommendations = self.phase_controller.get_phase_recommendations(current_phase)
-            recommendations.extend(phase_recommendations)
-        
-        # 检查失败任务
-        failed_tasks = self.task_manager.get_failed_tasks()
-        if failed_tasks:
-            recommendations.append(f"有 {len(failed_tasks)} 个任务失败，建议检查并重试")
-        
-        # 检查阻塞任务
-        blocked_tasks = self.task_manager.get_blocked_tasks()
-        if blocked_tasks:
-            recommendations.append(f"有 {len(blocked_tasks)} 个任务被阻塞，需要解决依赖问题")
-        
-        # 检查活跃任务
-        active_tasks = [t for t in self.task_manager.tasks.values() if t.status == TaskStatus.IN_PROGRESS]
-        if not active_tasks and current_phase:
-            next_task = self.task_manager.get_next_task(current_phase.value)
-            if next_task:
-                recommendations.append(f"建议开始执行任务: {next_task.description}")
-        
-        return recommendations
 
     def _perform_health_check(self) -> Dict[str, Any]:
         """执行健康检查"""
@@ -410,6 +379,5 @@ class StateTracker:
             "current_phase": current_status["snapshot"].current_phase,
             "health_status": current_status["health_check"]["overall_health"],
             "performance_metrics": performance,
-            "recommendations": current_status["recommendations"],
             "phase_summary": current_status["phase_overview"]["phases"]
         }

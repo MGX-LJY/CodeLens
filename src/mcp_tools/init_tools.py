@@ -164,7 +164,7 @@ class InitToolsCore:
         }
     
     def _get_execution_tips(self) -> List[str]:
-        """获取执行建议"""
+        """获取执行提示"""
         return [
             "💡 严格按照步骤顺序执行：doc_guide → task_init → task_status → task_execute(循环) → doc_verify",
             "💡 Step 4(task_execute)是循环过程，需要重复执行直到所有任务完成",
