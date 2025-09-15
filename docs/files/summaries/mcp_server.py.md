@@ -1,159 +1,208 @@
 # 文件分析报告：mcp_server.py
 
 ## 文件概述
-
-**文件路径**: `/mcp_server.py`  
-**文件类型**: Python可执行脚本  
-**主要作用**: CodeLens MCP协议服务器的核心实现，为Claude Code提供4阶段文档生成系统  
-**代码行数**: 约200行  
-**复杂度**: 高
-
-这个文件是CodeLens项目的主入口，实现了标准的MCP（Model Context Protocol）服务器，集成了7个核心MCP工具和10个专业模板，为Claude Code提供智能任务引擎驱动的文档生成服务。它通过JSON-RPC通信协议，实现了完整的4阶段文档生成流程。
+CodeLens MCP服务器主文件，实现了标准MCP协议，为Claude Code提供项目文档生成服务。集成了热重载功能，支持开发时的实时代码更新。作为整个系统的入口点，负责工具注册、请求路由和服务管理。
 
 ## 代码结构分析
 
 ### 导入依赖
 ```python
-import sys, json, time, traceback  # 系统基础模块
-from typing import Dict, Any, List  # 类型注解
-# 7个MCP工具导入
+# 系统库
+import sys, asyncio, json, os
+from typing import Any, Sequence, Optional
+from pathlib import Path
+
+# MCP SDK
+from mcp.server import Server
+from mcp.server.stdio import stdio_server  
+from mcp.types import Tool, TextContent
+
+# CodeLens工具模块
 from src.mcp_tools.doc_scan import DocScanTool
-  
 from src.mcp_tools.doc_guide import DocGuideTool
 from src.mcp_tools.task_init import TaskInitTool
 from src.mcp_tools.task_execute import TaskExecuteTool
 from src.mcp_tools.task_status import TaskStatusTool
 from src.mcp_tools.init_tools import InitTools
-from src.logging import get_logger  # 可选日志系统
+from src.mcp_tools.task_complete import TaskCompleteTool
+
+# 热重载功能
+from src.hot_reload import HotReloadManager
 ```
 
 ### 全局变量和常量
-- **VERSION**: "0.6.2.0" - 服务器版本标识
-- **SERVER_NAME**: "codelens" - MCP服务器名称
-- **SUPPORTED_METHODS**: MCP协议支持的方法列表
+```python
+# MCP服务器实例
+server = Server("codelens")
+
+# 热重载管理器（全局实例）
+hot_reload_manager: Optional[HotReloadManager] = None
+
+# CodeLens工具实例字典
+codelens_tools = create_tool_instances()
+```
 
 ### 配置和设置
-- **MCP协议**: 标准JSON-RPC通信协议
-- **工具集成**: 7个MCP工具的统一管理
-- **错误处理**: 完整的异常捕获和错误响应机制
+```python
+# 环境变量配置
+CODELENS_HOT_RELOAD = 'true'  # 热重载开关
+
+# 热重载参数
+debounce_seconds = 0.5        # 防抖延迟
+batch_reload_window = 2.0     # 批量重载时间窗口
+```
 
 ## 函数详细分析
 
 ### 函数概览表
-| 函数名 | 参数数量 | 返回类型 | 主要功能 |
-|--------|----------|----------|----------|
-| __init__ | 0 | None | 初始化MCP服务器和工具集 |
-| handle_request | 2 | Dict[str, Any] | 处理MCP请求的核心路由函数 |
-| list_tools | 0 | Dict[str, Any] | 返回可用工具列表 |
-| call_tool | 2 | Dict[str, Any] | 执行指定工具并返回结果 |
-| run | 0 | None | 启动MCP服务器主循环 |
-| main | 0 | None | 程序主入口函数 |
+| 函数名 | 类型 | 行数 | 复杂度 | 描述 |
+|--------|------|------|--------|------|
+| create_tool_instances | 工厂函数 | 37-47 | 低 | 创建并返回工具实例字典 |
+| setup_hot_reload | 初始化函数 | 52-80 | 中 | 设置和初始化热重载功能 |
+| on_module_reloaded | 回调函数 | 82-89 | 低 | 处理模块重载事件 |
+| refresh_tool_instances | 管理函数 | 91-107 | 中 | 刷新工具实例 |
+| convert_tool_definition | 转换函数 | 109-115 | 低 | 转换工具定义格式 |
+| list_tools | MCP处理函数 | 117-125 | 低 | 列出所有可用工具 |
+| call_tool | MCP处理函数 | 127-155 | 高 | 执行工具调用 |
+| main | 主入口函数 | 157-241 | 高 | 程序主入口和路由 |
 
 ### 函数详细说明
 
-**handle_request(method, params)**
-- 核心的MCP请求路由处理函数
-- 支持initialize、tools/list、tools/call三种方法
-- 包含完整的错误处理和响应格式化
+#### create_tool_instances()
+**功能**: 工具实例工厂函数  
+**参数**: 无  
+**返回**: Dict[str, Tool] - 工具实例字典  
+**逻辑**: 创建所有CodeLens工具的实例并返回字典映射
 
-**call_tool(tool_name, arguments)**
-- 动态调用指定的MCP工具
-- 统一的参数传递和结果处理
-- 工具执行时间监控和错误捕获
+#### setup_hot_reload()  
+**功能**: 热重载系统初始化  
+**参数**: 无  
+**返回**: None  
+**逻辑**: 
+- 检查环境变量确定是否启用热重载
+- 创建HotReloadManager实例
+- 注册工具实例和回调函数
+- 处理初始化异常
 
-**run()**
-- MCP服务器主循环，处理stdin/stdout通信
-- JSON-RPC协议的完整实现
-- 持续监听和响应Claude Code的请求
+#### on_module_reloaded(reload_event)
+**功能**: 模块重载事件回调  
+**参数**: reload_event - 重载事件对象  
+**返回**: None  
+**逻辑**: 根据重载结果打印状态信息并刷新工具实例
+
+#### refresh_tool_instances()
+**功能**: 工具实例刷新管理  
+**参数**: 无  
+**返回**: None  
+**逻辑**: 
+- 重新创建工具实例
+- 更新全局工具字典
+- 重新注册到热重载管理器
+
+#### convert_tool_definition(tool_def: dict) -> Tool
+**功能**: 工具定义格式转换  
+**参数**: tool_def - CodeLens工具定义字典  
+**返回**: Tool - MCP标准工具对象  
+**逻辑**: 将内部工具定义转换为MCP协议要求的格式
+
+#### list_tools() -> list[Tool] 
+**功能**: MCP工具列表接口  
+**装饰器**: @server.list_tools()  
+**参数**: 无  
+**返回**: list[Tool] - MCP工具列表  
+**逻辑**: 遍历注册工具，转换格式后返回
+
+#### call_tool(name: str, arguments: dict) -> Sequence[TextContent]
+**功能**: MCP工具调用接口  
+**装饰器**: @server.call_tool()  
+**参数**: name - 工具名, arguments - 调用参数  
+**返回**: Sequence[TextContent] - 执行结果  
+**逻辑**: 
+- 验证工具名有效性
+- 执行工具并捕获异常
+- 将结果转换为MCP文本内容格式
+
+#### main()
+**功能**: 程序主入口函数  
+**参数**: 无  
+**返回**: None  
+**逻辑**: 
+- 初始化热重载系统
+- 处理命令行参数(test/info/reload模式)
+- 启动MCP stdio服务器
+- 管理热重载生命周期
 
 ## 类详细分析
 
 ### 类概览表
-| 类名 | 继承关系 | 主要属性 | 主要方法 | 核心功能 |
-|------|----------|----------|----------|----------|
-| CodeLensMCPServer | - | tools字典, logger | 6个核心方法 | MCP服务器核心 |
-| DummyLogger | - | 空方法集 | debug, info等 | 日志系统备用实现 |
+本文件未定义自定义类，主要使用外部导入的类：
+- Server (MCP库)
+- HotReloadManager (热重载模块)
+- 各种Tool类 (MCP工具模块)
 
 ### 类详细说明
-
-**CodeLensMCPServer类**
-- **核心属性**：
-  - `tools`: 7个MCP工具的字典映射
-  - `logger`: 日志管理器实例
-- **设计模式**: 服务器模式，统一管理工具调用和请求处理
-- **关键特性**: JSON-RPC协议支持、工具动态调用、错误处理
+本文件主要作为服务层，使用组合模式集成各个功能模块，未定义复杂的类结构。
 
 ## 函数调用流程图
-
 ```mermaid
 graph TD
-    A[mcp_server.py启动] --> B[CodeLensMCPServer初始化]
-    B --> C[加载7个MCP工具]
-    C --> D[run()主循环启动]
-    D --> E[监听stdin请求]
-    E --> F[handle_request处理]
-    F --> G{请求类型}
-    G -->|initialize| H[返回服务器信息]
-    G -->|tools/list| I[list_tools返回工具列表]
-    G -->|tools/call| J[call_tool执行工具]
-    
-    J --> K[选择对应工具]
-    K --> L[工具执行]
-    L --> M[返回结果到stdout]
-    M --> E
-    
-    style A fill:#e1f5fe
-    style G fill:#fff3e0
-    style M fill:#f3e5f5
+    A[main] --> B[setup_hot_reload]
+    B --> C[create_tool_instances]
+    A --> D[处理命令行参数]
+    D --> E[test模式]
+    D --> F[info模式]
+    D --> G[reload模式]
+    E --> H[list_tools]
+    E --> I[call_tool]
+    G --> J[force_reload_all]
+    A --> K[启动MCP服务器]
+    K --> L[list_tools]
+    K --> M[call_tool]
+    M --> N[tool_instance.execute]
+    B --> O[on_module_reloaded]
+    O --> P[refresh_tool_instances]
+    P --> C
 ```
 
 ## 变量作用域分析
+```python
+# 全局作用域
+server: Server                              # MCP服务器实例
+hot_reload_manager: Optional[HotReloadManager] # 热重载管理器
+codelens_tools: Dict[str, Tool]             # 工具实例字典
 
-| 变量类型 | 作用域 | 生命周期 | 访问权限 |
-|----------|--------|----------|----------|
-| tools | 实例属性 | 服务器生命周期 | private |
-| logger | 实例属性 | 服务器生命周期 | private |
-| request_data | 局部变量 | 请求处理期间 | private |
-| tool_instance | 局部变量 | 工具调用期间 | private |
+# 函数局部作用域
+main():
+  - tools: List[Tool]                       # 工具列表
+  - project_path: str                       # 项目路径
+  - result: Sequence[TextContent]           # 调用结果
 
-## 函数依赖关系
-
-```mermaid
-graph LR
-    A[main] --> B[CodeLensMCPServer]
-    B --> C[run]
-    C --> D[handle_request]
-    D --> E[list_tools]
-    D --> F[call_tool]
-    F --> G[7个MCP工具]
-    G --> H[TaskEngine系统]
-    G --> I[Template系统]
-    
-    style A fill:#e8f5e8
-    style G fill:#fff3e0
-    style H fill:#f3e5f5
+call_tool():
+  - tool_instance: Tool                     # 工具实例
+  - result: Dict                            # 执行结果
+  - content: str                            # 内容字符串
 ```
 
-### 在4阶段文档生成系统中的作用
+## 函数依赖关系
+```
+create_tool_instances
+└── (创建工具实例)
 
-1. **Phase 1 (项目扫描)**: 通过doc_scan和doc_guide工具支持项目分析
-2. **Phase 2 (文件分析)**: 通过task_execute工具执行文件分析任务
-3. **Phase 3 (架构分析)**: 通过task_execute工具执行架构分析任务
-4. **Phase 4 (项目文档)**: 通过task_execute工具执行项目文档生成任务
+setup_hot_reload  
+├── create_tool_instances
+└── on_module_reloaded
+    └── refresh_tool_instances
+        └── create_tool_instances
 
-**核心价值**:
-- **统一入口**: 为Claude Code提供标准化的MCP服务接口
-- **工具集成**: 统一管理7个专业MCP工具的调用和协调
-- **协议标准**: 完整实现MCP协议，确保与Claude Code的兼容性
-- **错误处理**: 提供健壮的错误处理和恢复机制
-- **任务协调**: 协调4阶段文档生成流程的执行
+list_tools
+└── convert_tool_definition
 
-**MCP工具集**:
-- **init_tools**: 一键项目初始化
-- **doc_scan**: 项目文件扫描和元数据提取
-- **doc_guide**: 智能项目分析和策略生成
-- **task_init**: 任务计划初始化和依赖解析
-- **task_execute**: 任务执行引擎和模板集成
-- **task_status**: 实时任务状态监控和进度跟踪
+call_tool
+└── tool_instance.execute
 
-这是整个CodeLens系统的"神经中枢"，负责接收Claude Code的请求，协调各个组件的工作，确保4阶段文档生成流程的顺利执行。它体现了CodeLens作为Document-Driven MCP Server的核心设计理念。
+main
+├── setup_hot_reload
+├── list_tools  
+├── call_tool
+└── hot_reload_manager.start/stop
+```

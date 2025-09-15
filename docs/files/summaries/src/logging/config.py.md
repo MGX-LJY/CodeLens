@@ -12,7 +12,7 @@ CodeLens日志系统的配置管理核心模块，提供完整的企业级配置
 
 ### 全局变量和常量
 - **VALID_LEVELS**: {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"} - 支持的日志级别
-- **VALID_ROTATION**: {"size", "time"} - 支持的文件轮转策略
+- **VALID_ROTATION**: {"size", "time", "lines"} - 支持的文件轮转策略
 - **VALID_FORMATS**: {"structured", "simple"} - 支持的日志格式
 - **_default_config**: 全局默认配置实例缓存
 
@@ -95,7 +95,7 @@ CodeLens日志系统的配置管理核心模块，提供完整的企业级配置
 
 **`FileConfig`**
 - **设计目的**: 封装文件日志相关的所有配置项
-- **核心属性**: enabled、path、max_size_mb、backup_count、rotation
+- **核心属性**: enabled、path、max_size_mb、backup_count、rotation、clear_on_restart
 - **默认策略**: 启用文件日志，10MB大小限制，5个备份文件
 
 **`ConsoleConfig`**
@@ -111,7 +111,7 @@ CodeLens日志系统的配置管理核心模块，提供完整的企业级配置
 **`LoggingConfig`**
 - **设计目的**: 作为所有配置的顶层容器
 - **初始化逻辑**: __post_init__方法确保子配置对象的正确初始化
-- **组件支持**: 内置常见组件的默认日志级别配置
+- **组件支持**: 内置常见组件的默认日志级别配置，包括所有MCP Tools组件(DocScanTool、DocGuideTool、TaskInitTool、TaskExecuteTool、TaskStatusTool、TaskCompleteTool、InitTools等)
 
 **`LogConfig`**
 - **设计目的**: 提供配置管理的完整API
