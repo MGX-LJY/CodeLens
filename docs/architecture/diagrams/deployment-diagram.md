@@ -3,57 +3,108 @@
 
 ## 部署拓扑
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        开发环境                             │
-├─────────────────────────────────────────────────────────────┤
-│                      Claude Code                           │
-│                 (智能化文档生成客户端)                      │
-└─────────────────────┬───────────────────────────────────────┘
-                      │ MCP 协议调用 (7个专业工具)
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      本地主机                              │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │           CodeLens 智能化任务驱动 MCP 服务器            │ │
-│  ├─────────────────────────────────────────────────────────┤ │
-│  │  MCP 工具层 (7个专业工具)                              │ │
-│  │  ├── doc_guide.py    (智能项目分析)                   │ │
-│  │  ├── task_init.py    (任务计划生成)                   │ │
-│  │  ├── task_execute.py (任务执行管理)                   │ │
-│  │  ├── task_status.py  (状态监控中心)                   │ │
-│  │  ├── doc_scan.py     (项目文件扫描)                   │ │
-│  │  ├── template_get.py (模板获取)                       │ │
-│  │  └── doc_verify.py   (文档验证)                       │ │
-│  ├─────────────────────────────────────────────────────────┤ │
-│  │  任务引擎层 (Task Engine)                             │ │
-│  │  ├── TaskManager     (14种任务类型管理)               │ │
-│  │  ├── PhaseController (5阶段严格控制)                  │ │
-│  │  └── StateTracker    (状态跟踪监控)                   │ │
-│  ├─────────────────────────────────────────────────────────┤ │
-│  │  服务层 (Services)                                    │ │
-│  │  ├── FileService     (智能文件分析)                   │ │
-│  │  ├── TemplateService (16个核心模板)                   │ │
-│  │  └── ValidationService (完整性验证)                   │ │
-│  └─────────────────────────────────────────────────────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│                      文件系统                              │
-│  ├── 项目源代码目录                                         │
-│  ├── 文档输出目录 (/docs)                                  │
-│  │   ├── architecture/   (架构层文档)                     │
-│  │   ├── files/          (文件层文档)                     │
-│  │   └── project/        (项目层文档)                     │
-│  └── 任务状态存储 (.codelens/)                             │
-│      ├── tasks.json      (任务状态文件)                    │
-│      └── execution_history.json (执行历史)                │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "开发环境"
+        CC[Claude Code<br/>智能化文档生成客户端]
+    end
+    
+    subgraph "本地主机"
+        subgraph "CodeLens 智能化任务驱动 MCP 服务器"
+            subgraph "MCP 工具层 - 7个专业工具"
+                IT[init_tools.py<br/>工作流指导]
+                DG[doc_guide.py<br/>智能项目分析]
+                TI[task_init.py<br/>任务计划生成]
+                TE[task_execute.py<br/>任务执行管理]
+                TS[task_status.py<br/>状态监控中心]
+                TC[task_complete.py<br/>任务完成工具]
+                DS[doc_scan.py<br/>项目文件扫描]
+            end
+            
+            subgraph "任务引擎层 - Task Engine"
+                TM[TaskManager<br/>14种任务类型管理]
+                PC[PhaseController<br/>5阶段严格控制]
+                ST[StateTracker<br/>状态跟踪监控]
+            end
+            
+            subgraph "热重载系统层 - Hot Reload System"
+                HRM[HotReloadManager<br/>热重载协调管理]
+                FW[FileWatcher<br/>文件监控组件]
+                MR[ModuleReloader<br/>模块重载组件]
+            end
+            
+            subgraph "服务层 - Services"
+                FS[FileService<br/>智能文件分析]
+                TmS[TemplateService<br/>16个核心模板]
+                VS[ValidationService<br/>完整性验证]
+            end
+        end
+        
+        subgraph "文件系统"
+            subgraph "项目源代码目录"
+                SRC[Source Code]
+            end
+            
+            subgraph "文档输出目录 /docs"
+                ARCH[architecture/<br/>架构层文档]
+                FILES[files/<br/>文件层文档]
+                PROJ[project/<br/>项目层文档]
+            end
+            
+            subgraph "任务状态存储 .codelens/"
+                TASKS[tasks.json<br/>任务状态文件]
+                HIST[execution_history.json<br/>执行历史]
+            end
+        end
+    end
+    
+    CC -->|MCP 协议调用<br/>7个专业工具| IT
+    CC -->|MCP 协议调用| DG
+    CC -->|MCP 协议调用| TI
+    CC -->|MCP 协议调用| TE
+    CC -->|MCP 协议调用| TS
+    CC -->|MCP 协议调用| TC
+    CC -->|MCP 协议调用| DS
+    
+    IT --> TM
+    DG --> TM
+    TI --> TM
+    TE --> TM
+    TS --> TM
+    TC --> TM
+    DS --> TM
+    
+    TM --> PC
+    PC --> ST
+    ST --> HRM
+    
+    HRM --> FW
+    HRM --> MR
+    
+    FW --> FS
+    MR --> TmS
+    TmS --> VS
+    
+    FS --> SRC
+    TmS --> ARCH
+    TmS --> FILES
+    TmS --> PROJ
+    VS --> TASKS
+    VS --> HIST
+    
+    style CC fill:#e3f2fd
+    style TM fill:#fff3e0
+    style HRM fill:#fce4ec
+    style FS fill:#e8f5e8
 ```
 
 ## 部署方式
 
 ### 1. **命令行部署** - 直接工具调用
 ```bash
+# 工作流指导
+python src/mcp_tools/init_tools.py /path/to/project
+
 # 智能项目分析
 python src/mcp_tools/doc_guide.py /path/to/project
 
@@ -66,14 +117,11 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode
 # 状态监控检查
 python src/mcp_tools/task_status.py /path/to/project --type overall_status
 
+# 任务完成标记
+python src/mcp_tools/task_complete.py /path/to/project --task-id <task_id>
+
 # 项目文件扫描
 python src/mcp_tools/doc_scan.py /path/to/project --no-content
-
-# 模板获取
-python src/mcp_tools/template_get.py --list-all
-
-# 文档验证
-python src/mcp_tools/doc_verify.py /path/to/project
 ```
 
 ### 2. **MCP 协议部署** - Claude Code 集成
@@ -89,13 +137,13 @@ python src/mcp_tools/doc_verify.py /path/to/project
 ```
 
 **支持的7个MCP工具**:
+- `init_tools.py`: 工作流指导
 - `doc_guide.py`: 智能项目分析
 - `task_init.py`: 任务计划生成  
 - `task_execute.py`: 任务执行管理
 - `task_status.py`: 状态监控中心
+- `task_complete.py`: 任务完成工具
 - `doc_scan.py`: 项目文件扫描
-- `template_get.py`: 模板获取
-- `doc_verify.py`: 文档验证
 
 ### 3. **智能化工作流部署** - 完整5阶段流程
 ```bash
@@ -112,8 +160,8 @@ python src/mcp_tools/task_status.py /path/to/project --type current_task
 # 4. 任务执行 (循环执行直到完成)
 python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode execute
 
-# 5. 文档验证
-python src/mcp_tools/doc_verify.py /path/to/project --type full_status
+# 5. 任务完成标记
+python src/mcp_tools/task_complete.py /path/to/project --task-id <final_task_id>
 ```
 
 ## 运行环境要求
@@ -130,7 +178,8 @@ python src/mcp_tools/doc_verify.py /path/to/project --type full_status
 - **网络权限**: 不需要网络访问（纯本地操作）
 
 ### **依赖要求**
-- **零外部依赖**: 仅使用 Python 标准库
+- **核心零依赖**: 核心功能仅使用 Python 标准库
+- **可选增强依赖**: 热重载功能可选依赖 watchdog 库（提供轮询备用方案）
 - **模块化设计**: 各组件可独立部署
 
 ## 任务状态存储部署
