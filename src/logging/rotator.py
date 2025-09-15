@@ -46,10 +46,6 @@ class FileRotator:
         """确保日志目录存在"""
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
-        # 创建归档目录
-        archive_dir = self.log_dir / "archived"
-        archive_dir.mkdir(exist_ok=True)
-
     def should_rotate(self) -> bool:
         """检查是否需要轮转文件
         
@@ -65,6 +61,8 @@ class FileRotator:
             return self._should_rotate_by_size()
         elif file_config.rotation == "time":
             return self._should_rotate_by_time()
+        elif file_config.rotation == "lines":
+            return self._should_rotate_by_lines()
 
         return False
 
@@ -100,6 +98,22 @@ class FileRotator:
         # 如果文件不是今天创建的，需要轮转
         return file_date < current_date
 
+    def _should_rotate_by_lines(self) -> bool:
+        """检查是否需要按行数轮转
+        
+        Returns:
+            是否需要轮转
+        """
+        if not self.log_path.exists():
+            return False
+
+        try:
+            with open(self.log_path, 'r', encoding='utf-8') as f:
+                line_count = sum(1 for _ in f)
+            return line_count >= 1000
+        except Exception:
+            return False
+
     def rotate_file(self) -> bool:
         """执行文件轮转
         
@@ -110,19 +124,27 @@ class FileRotator:
             return True
 
         try:
-            # 移动现有的备份文件
-            self._shift_backup_files()
+            file_config = self.config.get_config().file
+            
+            if file_config.rotation == "lines":
+                # 对于行数轮转，直接清空文件
+                with open(self.log_path, 'w', encoding='utf-8') as f:
+                    f.write('')
+            else:
+                # 对于大小和时间轮转，使用备份机制
+                # 移动现有的备份文件
+                self._shift_backup_files()
 
-            # 将当前文件重命名为.1
-            backup_path = self._get_backup_path(1)
-            shutil.move(str(self.log_path), str(backup_path))
+                # 将当前文件重命名为.1
+                backup_path = self._get_backup_path(1)
+                shutil.move(str(self.log_path), str(backup_path))
 
-            # 压缩备份文件（如果启用）
-            if self.config.get_config().retention.compress:
-                self._compress_file(backup_path)
+                # 压缩备份文件（如果启用）
+                if self.config.get_config().retention.compress:
+                    self._compress_file(backup_path)
 
-            # 清理过期文件
-            self._cleanup_old_files()
+                # 清理过期文件
+                self._cleanup_old_files()
 
             return True
 
@@ -188,11 +210,6 @@ class FileRotator:
         # 清理主日志目录中的过期文件
         self._cleanup_directory(self.log_dir, cutoff_date)
 
-        # 清理归档目录中的过期文件
-        archive_dir = self.log_dir / "archived"
-        if archive_dir.exists():
-            self._cleanup_directory(archive_dir, cutoff_date)
-
     def _cleanup_directory(self, directory: Path, cutoff_date: datetime.datetime) -> None:
         """清理指定目录中的过期文件
         
@@ -243,43 +260,7 @@ class FileRotator:
         """
         return self.get_current_file_size() / (1024 * 1024)
 
-    def archive_current_file(self) -> bool:
-        """归档当前日志文件到归档目录
-        
-        Returns:
-            归档是否成功
-        """
-        if not self.log_path.exists():
-            return True
 
-        try:
-            # 创建归档目录
-            current_date = datetime.datetime.now()
-            archive_dir = self.log_dir / "archived" / current_date.strftime("%Y-%m")
-            archive_dir.mkdir(parents=True, exist_ok=True)
-
-            # 生成归档文件名
-            archive_name = f"{self.log_name}-{current_date.strftime('%Y%m%d')}{self.log_ext}"
-            archive_path = archive_dir / archive_name
-
-            # 如果文件已存在，添加时间戳
-            if archive_path.exists():
-                timestamp = current_date.strftime("%H%M%S")
-                archive_name = f"{self.log_name}-{current_date.strftime('%Y%m%d')}-{timestamp}{self.log_ext}"
-                archive_path = archive_dir / archive_name
-
-            # 移动文件到归档目录
-            shutil.move(str(self.log_path), str(archive_path))
-
-            # 压缩归档文件
-            if self.config.get_config().retention.compress:
-                self._compress_file(archive_path)
-
-            return True
-
-        except Exception as e:
-            print(f"Error archiving file: {e}")
-            return False
 
     def get_backup_files(self) -> List[Path]:
         """获取所有备份文件列表
@@ -320,14 +301,6 @@ class FileRotator:
         for backup_file in self.get_backup_files():
             total_size += backup_file.stat().st_size
             file_count += 1
-
-        # 归档文件
-        archive_dir = self.log_dir / "archived"
-        if archive_dir.exists():
-            for file_path in archive_dir.rglob("*"):
-                if file_path.is_file() and self._is_log_file(file_path):
-                    total_size += file_path.stat().st_size
-                    file_count += 1
 
         return {
             "total_size_bytes": total_size,

@@ -95,8 +95,23 @@ class AsyncLogWriter:
         self.shutdown_flag = threading.Event()
         self.file_handle = None
 
+        # 如果启用了重启时清空，先清空日志文件
+        if config.is_file_logging_enabled() and config.get_config().file.clear_on_restart:
+            self._clear_log_file_on_restart()
+
         if config.is_async_enabled():
             self._start_worker()
+
+    def _clear_log_file_on_restart(self) -> None:
+        """重启时清空日志文件"""
+        try:
+            log_path = self.config.get_absolute_file_path()
+            if log_path.exists():
+                # 清空文件内容，但保留文件
+                with open(log_path, 'w', encoding='utf-8') as f:
+                    f.write('')
+        except Exception as e:
+            print(f"Error clearing log file on restart: {e}", file=sys.stderr)
 
     def _start_worker(self) -> None:
         """启动后台写入线程"""

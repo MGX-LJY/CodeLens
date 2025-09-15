@@ -19,7 +19,8 @@ class FileConfig:
     path: str = "logs/codelens.log"
     max_size_mb: int = 10
     backup_count: int = 5
-    rotation: str = "size"  # "size" 或 "time"
+    rotation: str = "lines"  # "size", "time", 或 "lines"
+    clear_on_restart: bool = True  # 重启时清空日志文件
 
 
 @dataclass
@@ -90,7 +91,7 @@ class LogConfig:
     VALID_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
     
     # 有效的轮转策略
-    VALID_ROTATION = {"size", "time"}
+    VALID_ROTATION = {"size", "time", "lines"}
     
     # 有效的格式
     VALID_FORMATS = {"structured", "simple"}
@@ -140,7 +141,8 @@ class LogConfig:
                 path=file_config.get("path", "logs/codelens.log"),
                 max_size_mb=file_config.get("max_size_mb", 10),
                 backup_count=file_config.get("backup_count", 5),
-                rotation=file_config.get("rotation", "size")
+                rotation=file_config.get("rotation", "lines"),
+                clear_on_restart=file_config.get("clear_on_restart", True)
             )
         
         # 控制台配置
@@ -274,7 +276,8 @@ class LogConfig:
                         path=value.get("path", current_file.path),
                         max_size_mb=value.get("max_size_mb", current_file.max_size_mb),
                         backup_count=value.get("backup_count", current_file.backup_count),
-                        rotation=value.get("rotation", current_file.rotation)
+                        rotation=value.get("rotation", current_file.rotation),
+                        clear_on_restart=value.get("clear_on_restart", current_file.clear_on_restart)
                     )
                 elif key == "console" and isinstance(value, dict):
                     # 更新控制台配置
