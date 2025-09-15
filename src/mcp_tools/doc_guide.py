@@ -4,7 +4,6 @@ MCP doc_guide 工具实现
 """
 import argparse
 import json
-import logging
 import os
 import sys
 import time
@@ -18,6 +17,7 @@ sys.path.insert(0, project_root)
 
 # 必须在sys.path修改后再导入
 from src.services.file_service import FileService  # noqa: E402
+from src.logging import get_logger  # noqa: E402
 
 
 class ProjectAnalyzer:
@@ -25,6 +25,8 @@ class ProjectAnalyzer:
 
     def __init__(self):
         self.file_service = FileService()
+        self.logger = get_logger(component="ProjectAnalyzer", operation="init")
+        self.logger.info("ProjectAnalyzer 初始化完成")
 
         # 项目类型特征模式
         self.project_patterns = {
@@ -74,27 +76,47 @@ class ProjectAnalyzer:
 
     def analyze_project(self, project_path: str, config: Dict[str, Any]) -> Dict[str, Any]:
         """分析项目特征"""
+        operation_id = self.logger.log_operation_start("analyze_project", project_path=str(project_path))
+        start_time = time.time()
+        
         project_path = Path(project_path)
+        self.logger.info("开始分析项目", {
+            "project_path": str(project_path),
+            "config": config,
+            "operation_id": operation_id
+        })
 
         # 获取项目文件信息
+        self.logger.debug("开始获取项目文件信息")
         file_info = self._get_file_info(project_path, config)
+        self.logger.debug("文件信息获取完成", {"file_count": len(file_info["files"])})
 
         # 检测项目类型
+        self.logger.debug("开始检测项目类型")
         project_type = self._detect_project_type(project_path, file_info)
+        self.logger.info("项目类型检测完成", {"project_type": project_type})
 
         # 检测主要框架
+        self.logger.debug("开始检测主要框架")
         main_framework = self._detect_framework(project_path, file_info, project_type)
+        self.logger.info("主要框架检测完成", {"main_framework": main_framework})
 
         # 识别功能模块
+        self.logger.debug("开始识别功能模块")
         identified_modules = self._identify_modules(project_path, file_info, project_type)
+        self.logger.info("功能模块识别完成", {"modules_count": len(identified_modules), "modules": identified_modules})
 
         # 评估代码复杂度
+        self.logger.debug("开始评估代码复杂度")
         complexity = self._assess_complexity(file_info)
+        self.logger.info("代码复杂度评估完成", {"complexity": complexity})
 
         # 识别关键文件
+        self.logger.debug("开始识别关键文件")
         key_files = self._identify_key_files(project_path, file_info, project_type)
+        self.logger.info("关键文件识别完成", {"key_files_count": len(key_files)})
 
-        return {
+        analysis_result = {
             "project_type": project_type,
             "main_framework": main_framework,
             "identified_modules": identified_modules,
@@ -104,12 +126,29 @@ class ProjectAnalyzer:
             "file_distribution": file_info["file_distribution"],
             "directory_structure": file_info["directory_structure"]
         }
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self.logger.log_operation_end("analyze_project", operation_id, duration_ms, True, **analysis_result)
+        
+        return analysis_result
 
     def generate_documentation_strategy(self, analysis: Dict[str, Any], focus_areas: List[str]) -> Dict[str, Any]:
         """生成文档策略"""
+        operation_id = self.logger.log_operation_start("generate_documentation_strategy", 
+                                                       project_type=analysis.get("project_type"),
+                                                       complexity=analysis.get("code_complexity"),
+                                                       file_count=analysis.get("file_count"))
+        
         project_type = analysis["project_type"]
         complexity = analysis["code_complexity"]
         file_count = analysis["file_count"]
+        
+        self.logger.info("开始生成文档策略", {
+            "project_type": project_type,
+            "complexity": complexity,
+            "file_count": file_count,
+            "focus_areas": focus_areas
+        })
 
         # 确定执行阶段顺序
         if complexity == "simple" and file_count < 20:
@@ -129,13 +168,17 @@ class ProjectAnalyzer:
         estimated_files = min(file_count, 30)  # 文件层最多30个
         estimated_templates = estimated_files + 6 + 4  # 文件+架构+项目
 
-        return {
+        strategy_result = {
             "execution_phases": execution_phases,
             "priority_strategy": priority_strategy,
             "priority_files": priority_files,
             "estimated_templates": estimated_templates,
             "complexity_level": complexity
         }
+        
+        self.logger.log_operation_end("generate_documentation_strategy", operation_id, success=True, **strategy_result)
+        
+        return strategy_result
 
     def generate_generation_plan(self, analysis: Dict[str, Any], strategy: Dict[str, Any]) -> Dict[str, Any]:
         """生成具体的生成计划"""
@@ -336,6 +379,10 @@ class ProjectAnalyzer:
         """识别关键文件"""
         key_files = []
 
+        # 系统文件排除列表
+        system_files = {'.DS_Store', 'Thumbs.db', '.gitignore', '.gitkeep'}
+        system_patterns = {'*.log', '*.tmp', '*.temp'}
+
         # 项目类型特定的关键文件
         type_specific = {
             "python": ["main.py", "app.py", "__init__.py", "models.py", "views.py", "settings.py"],
@@ -351,8 +398,18 @@ class ProjectAnalyzer:
         scored_files = []
 
         for file_name in file_info["files"]:
-            score = 0
             file_lower = file_name.lower()
+            file_basename = file_name.split('/')[-1]  # 获取文件名部分
+            
+            # 排除系统文件
+            if file_basename in system_files:
+                continue
+                
+            # 排除匹配系统模式的文件
+            if any(file_basename.endswith(pattern.replace('*', '')) for pattern in system_patterns):
+                continue
+            
+            score = 0
 
             # 主文件得分最高
             if any(pattern.lower() in file_lower for pattern in important_patterns):
@@ -421,7 +478,8 @@ class DocGuideTool:
         self.tool_name = "doc_guide"
         self.description = "智能分析项目特征，为AI提供文档生成策略"
         self.analyzer = ProjectAnalyzer()
-        self.logger = logging.getLogger('doc_guide')
+        self.logger = get_logger(component="DocGuideTool", operation="init")
+        self.logger.info("DocGuideTool 初始化完成")
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -480,10 +538,26 @@ class DocGuideTool:
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行doc_guide工具"""
+        operation_id = self.logger.log_operation_start("execute_doc_guide", 
+                                                       project_path=arguments.get("project_path"),
+                                                       create_analysis_file=arguments.get("create_analysis_file", True))
+        start_time = time.time()
+        
         try:
+            self.logger.info("开始执行doc_guide工具", {"arguments": arguments, "operation_id": operation_id})
+            
             # 参数验证
             project_path = arguments.get("project_path")
-            if not project_path or not os.path.exists(project_path):
+            self.logger.debug("验证project_path参数", {"project_path": project_path})
+            
+            if not project_path:
+                error_msg = "project_path参数缺失"
+                self.logger.error(error_msg, {"arguments": arguments})
+                return self._error_response("Invalid project path")
+                
+            if not os.path.exists(project_path):
+                error_msg = f"项目路径不存在: {project_path}"
+                self.logger.error(error_msg)
                 return self._error_response("Invalid project path")
 
             # 获取参数
@@ -500,16 +574,29 @@ class DocGuideTool:
             }
 
             # 分析项目
-            self.logger.info(f"开始分析项目: {project_path}")
+            self.logger.info("开始分析项目", {"project_path": project_path, "config": config})
             analysis = self.analyzer.analyze_project(project_path, config)
+            self.logger.info("项目分析完成", {"analysis_summary": {
+                "project_type": analysis.get("project_type"),
+                "file_count": analysis.get("file_count"),
+                "complexity": analysis.get("code_complexity")
+            }})
 
             # 生成文档策略
+            self.logger.info("开始生成文档策略", {"focus_areas": focus_areas})
             strategy = self.analyzer.generate_documentation_strategy(analysis, focus_areas)
+            self.logger.info("文档策略生成完成", {"strategy_summary": {
+                "priority_strategy": strategy.get("priority_strategy"),
+                "estimated_templates": strategy.get("estimated_templates")
+            }})
 
             # 生成具体计划
+            self.logger.info("开始生成具体计划")
             plan = self.analyzer.generate_generation_plan(analysis, strategy)
+            self.logger.info("具体计划生成完成")
 
-            # 🔧 修复3: 保存analysis.json到项目.codelens目录
+            # 保存analysis.json到项目.codelens目录
+            self.logger.info("开始保存分析结果到.codelens目录")
             analysis_data = {
                 "project_analysis": analysis,
                 "documentation_strategy": strategy,
@@ -519,15 +606,21 @@ class DocGuideTool:
             }
             
             codelens_dir = Path(project_path) / ".codelens"
+            self.logger.debug("创建.codelens目录", {"dir_path": str(codelens_dir)})
             codelens_dir.mkdir(exist_ok=True)
+            
             analysis_file = codelens_dir / "analysis.json"
+            self.logger.debug("写入分析文件", {"file_path": str(analysis_file)})
             
             with open(analysis_file, 'w', encoding='utf-8') as f:
                 json.dump(analysis_data, f, indent=2, ensure_ascii=False)
             
-            self.logger.info(f"项目分析完成并保存至 {analysis_file} - 类型: {analysis['project_type']}, "
-                             f"复杂度: {analysis['code_complexity']}, "
-                             f"文件数: {analysis['file_count']}")
+            duration_ms = (time.time() - start_time) * 1000
+            self.logger.log_operation_end("execute_doc_guide", operation_id, duration_ms, True,
+                                        project_type=analysis['project_type'],
+                                        complexity=analysis['code_complexity'],
+                                        file_count=analysis['file_count'],
+                                        analysis_file=str(analysis_file))
 
             return self._success_response({
                 "project_analysis": analysis,
@@ -537,11 +630,19 @@ class DocGuideTool:
             })
 
         except (OSError, IOError, ValueError) as e:
+            duration_ms = (time.time() - start_time) * 1000
+            self.logger.log_operation_end("execute_doc_guide", operation_id, duration_ms, False, error=str(e))
             self.logger.error(f"项目分析失败: {str(e)}", exc_info=e)
             return self._error_response(f"Analysis failed: {str(e)}")
+        except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            self.logger.log_operation_end("execute_doc_guide", operation_id, duration_ms, False, error=str(e))
+            self.logger.error(f"doc_guide工具执行失败: {str(e)}", exc_info=e)
+            return self._error_response(f"Tool execution failed: {str(e)}")
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""
+        self.logger.debug("生成成功响应", {"data_keys": list(data.keys()) if data else []})
         return {
             "success": True,
             "tool": self.tool_name,
@@ -550,6 +651,7 @@ class DocGuideTool:
 
     def _error_response(self, message: str) -> Dict[str, Any]:
         """错误响应"""
+        self.logger.error("生成错误响应", {"error_message": message})
         return {
             "success": False,
             "tool": self.tool_name,

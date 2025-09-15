@@ -11,28 +11,74 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
+# 导入日志系统
+try:
+    # 添加项目根目录到path
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    sys.path.insert(0, project_root)
+    from src.logging import get_logger
+except ImportError:
+    # 如果日志系统不可用，创建一个空日志器
+    class DummyLogger:
+        def debug(self, msg, context=None): pass
+        def info(self, msg, context=None): pass
+        def warning(self, msg, context=None): pass
+        def error(self, msg, context=None, exc_info=None): pass
+        def log_operation_start(self, operation, *args, **kwargs): return "dummy_id"
+        def log_operation_end(self, operation, operation_id, success=True, **kwargs): pass
+
+    get_logger = lambda **kwargs: DummyLogger()
+
 class InitToolsCore:
     """CodeLens 初始化指导工具 - 简化版本，只提供操作指导"""
     
     def __init__(self, project_path: str):
         """初始化"""
+        self.logger = get_logger(component="InitToolsCore", operation="init")
         self.project_path = Path(project_path).resolve()
+        
+        self.logger.info("InitToolsCore 初始化", {
+            "project_path": str(self.project_path)
+        })
         
     def get_workflow_guidance(self) -> Dict[str, Any]:
         """获取标准CodeLens 5阶段工作流指导"""
+        operation_id = self.logger.log_operation_start("get_workflow_guidance", 
+            project_path=str(self.project_path)
+        )
+        
+        self.logger.debug("开始生成工作流指导", {
+            "operation_id": operation_id
+        })
         
         # 检查项目路径
         if not self.project_path.exists() or not self.project_path.is_dir():
-            return {
+            self.logger.error("项目路径无效", {
+                "project_path": str(self.project_path),
+                "exists": self.project_path.exists(),
+                "is_dir": self.project_path.is_dir() if self.project_path.exists() else False
+            })
+            
+            result = {
                 "success": False,
                 "error": f"项目路径无效: {self.project_path}",
                 "solution": "请检查项目路径是否正确"
             }
+            
+            self.logger.log_operation_end("get_workflow_guidance", operation_id, success=False, error="项目路径无效")
+            return result
+        
+        self.logger.debug("项目路径验证通过")
         
         # 获取项目基本信息
+        self.logger.debug("开始获取项目基本信息")
         project_info = self._get_project_info()
+        self.logger.debug("项目信息获取完成", project_info)
         
-        return {
+        self.logger.debug("开始生成完整指导文档")
+        
+        result = {
             "success": True,
             "tool": "init_tools",
             "timestamp": datetime.now().isoformat(),
@@ -47,12 +93,27 @@ class InitToolsCore:
                 "workflow_features": self._get_workflow_features()
             }
         }
+        
+        self.logger.info("工作流指导生成完成", {
+            "phases_count": len(result["guidance"]["phases"]),
+            "steps_count": len(result["guidance"]["detailed_steps"]),
+            "project_scale": project_info.get("项目规模", "未知")
+        })
+        
+        self.logger.log_operation_end("get_workflow_guidance", operation_id, success=True)
+        return result
     
     def _get_project_info(self) -> Dict[str, Any]:
         """获取项目基本信息"""
         try:
+            self.logger.debug("扫描项目文件")
             python_files = list(self.project_path.glob("**/*.py"))
             all_files = [f for f in self.project_path.glob("**/*") if f.is_file()]
+            
+            self.logger.debug("文件扫描完成", {
+                "python_files_count": len(python_files),
+                "total_files_count": len(all_files)
+            })
             
             # 简单项目规模评估
             total_files = len(all_files)
@@ -66,13 +127,20 @@ class InitToolsCore:
                 scale = "大型项目"
                 time_estimate = "1-3小时"
             
-            return {
+            result = {
                 "总文件数": total_files,
                 "Python文件数": len(python_files),
                 "项目规模": scale,
                 "预计耗时": time_estimate
             }
-        except Exception:
+            
+            self.logger.debug("项目规模评估完成", result)
+            return result
+            
+        except Exception as e:
+            self.logger.warning("项目信息获取失败", {
+                "error": str(e)
+            })
             return {"项目规模": "未知", "预计耗时": "视项目而定"}
     
     def _get_workflow_phases(self) -> List[Dict[str, str]]:
@@ -189,6 +257,10 @@ class InitToolsCore:
 class InitTools:
     """init_tools MCP工具封装类"""
     
+    def __init__(self):
+        self.logger = get_logger(component="InitTools", operation="init")
+        self.logger.info("InitTools MCP工具初始化完成")
+    
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取工具定义"""
         return {
@@ -223,22 +295,52 @@ Phase 5: 文档验证确认 (doc_verify) - 验证最终结果
     
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行init_tools"""
+        operation_id = self.logger.log_operation_start("execute_init_tools", 
+                                                       project_path=arguments.get("project_path"))
+        
         try:
             project_path = arguments.get("project_path")
             if not project_path:
-                return {
+                self.logger.error("缺少必需参数", {
+                    "missing_parameter": "project_path",
+                    "provided_args": list(arguments.keys())
+                })
+                
+                result = {
                     "success": False,
                     "error": "缺少必需参数: project_path"
                 }
+                
+                self.logger.log_operation_end("execute_init_tools", operation_id, success=False, error="缺少必需参数")
+                return result
+            
+            self.logger.info("开始生成工作流指导", {
+                "project_path": project_path
+            })
             
             core = InitToolsCore(project_path)
-            return core.get_workflow_guidance()
+            result = core.get_workflow_guidance()
+            
+            self.logger.info("工作流指导生成完成", {
+                "success": result["success"]
+            })
+            
+            self.logger.log_operation_end("execute_init_tools", operation_id, success=True)
+            return result
             
         except Exception as e:
-            return {
+            self.logger.error("init_tools执行失败", {
+                "error": str(e),
+                "project_path": arguments.get("project_path")
+            }, exc_info=e)
+            
+            result = {
                 "success": False,
                 "error": f"init_tools执行失败: {str(e)}"
             }
+            
+            self.logger.log_operation_end("execute_init_tools", operation_id, success=False, error=str(e))
+            return result
 
 
 def create_mcp_tool() -> InitTools:

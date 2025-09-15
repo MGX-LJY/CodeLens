@@ -4,7 +4,6 @@ MCP template_get 工具实现
 """
 import argparse
 import json
-import logging
 import os
 import sys
 from typing import Dict, Any, List
@@ -15,6 +14,24 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 # 必须在sys.path修改后再导入
 from templates.document_templates import TemplateService  # noqa: E402
 
+# 导入日志系统
+try:
+    # 添加项目根目录到path
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    sys.path.insert(0, project_root)
+    from src.logging import get_logger
+except ImportError:
+    # 如果日志系统不可用，创建一个空日志器
+    class DummyLogger:
+        def debug(self, msg, context=None): pass
+        def info(self, msg, context=None): pass
+        def warning(self, msg, context=None): pass
+        def error(self, msg, context=None, exc_info=None): pass
+        def log_operation_start(self, operation, *args, **kwargs): return "dummy_id"
+        def log_operation_end(self, operation, operation_id, success=True, **kwargs): pass
+
+    get_logger = lambda **kwargs: DummyLogger()
+
 
 class TemplateGetTool:
     """MCP template_get 工具类 - 为Claude Code提供文档模板"""
@@ -23,7 +40,12 @@ class TemplateGetTool:
         self.tool_name = "template_get"
         self.description = "获取指定类型的文档模板"
         self.template_service = TemplateService()
-        self.logger = logging.getLogger('template_get')
+        self.logger = get_logger(component="TemplateGetTool", operation="init")
+        
+        self.logger.info("TemplateGetTool 初始化完成", {
+            "tool_name": self.tool_name,
+            "description": self.description
+        })
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -65,54 +87,131 @@ class TemplateGetTool:
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行template_get工具"""
+        operation_id = self.logger.log_operation_start("execute_template_get", 
+                                                       template_name=arguments.get("template_name"),
+                                                       template_type=arguments.get("template_type"),
+                                                       format_type=arguments.get("format", "with_metadata"),
+                                                       list_all=arguments.get("list_all", False))
+        
         try:
             template_name = arguments.get("template_name")
             template_type = arguments.get("template_type")
             format_type = arguments.get("format", "with_metadata")
             list_all = arguments.get("list_all", False)
+            
+            self.logger.debug("开始执行模板获取操作", {
+                "template_name": template_name,
+                "template_type": template_type,
+                "format_type": format_type,
+                "list_all": list_all
+            })
 
             # 如果请求列出所有模板
             if list_all:
-                return self._success_response({
-                    "action": "list_all_templates",
-                    "templates": self.template_service.get_template_list(),
-                    "total_count": len(self.template_service.get_template_list())
+                self.logger.info("获取所有模板列表")
+                templates = self.template_service.get_template_list()
+                
+                self.logger.debug("所有模板列表获取完成", {
+                    "template_count": len(templates)
                 })
+                
+                result = self._success_response({
+                    "action": "list_all_templates",
+                    "templates": templates,
+                    "total_count": len(templates)
+                })
+                
+                self.logger.log_operation_end("execute_template_get", operation_id, success=True, action="list_all_templates")
+                return result
 
             # 如果按类型筛选
             if template_type and not template_name:
+                self.logger.info("按类型筛选模板", {
+                    "template_type": template_type
+                })
+                
                 templates = self.template_service.get_template_by_type(template_type)
-                return self._success_response({
+                
+                self.logger.debug("按类型筛选完成", {
+                    "template_type": template_type,
+                    "found_count": len(templates)
+                })
+                
+                result = self._success_response({
                     "action": "get_templates_by_type",
                     "template_type": template_type,
                     "templates": templates,
                     "count": len(templates)
                 })
+                
+                self.logger.log_operation_end("execute_template_get", operation_id, success=True, action="get_templates_by_type")
+                return result
 
             # 获取特定模板
             if template_name:
-                return self._get_specific_template(template_name, format_type)
+                self.logger.info("获取特定模板", {
+                    "template_name": template_name,
+                    "format_type": format_type
+                })
+                
+                result = self._get_specific_template(template_name, format_type)
+                
+                self.logger.log_operation_end("execute_template_get", operation_id, 
+                                               success=result["success"], 
+                                               action="get_specific_template")
+                return result
 
-            return self._error_response("必须指定 template_name、template_type 或设置 list_all=true")
+            self.logger.error("缺少必需参数", {
+                "template_name_provided": bool(template_name),
+                "template_type_provided": bool(template_type),
+                "list_all": list_all
+            })
+            
+            result = self._error_response("必须指定 template_name、template_type 或设置 list_all=true")
+            self.logger.log_operation_end("execute_template_get", operation_id, success=False, error="缺少必需参数")
+            return result
 
         except (KeyError, ValueError, AttributeError) as e:
-            return self._error_response(f"获取模板失败: {str(e)}")
+            self.logger.error("模板获取异常", {
+                "error": str(e),
+                "error_type": type(e).__name__
+            }, exc_info=True)
+            
+            result = self._error_response(f"获取模板失败: {str(e)}")
+            self.logger.log_operation_end("execute_template_get", operation_id, success=False, error=str(e))
+            return result
 
     def _get_specific_template(self, template_name: str, format_type: str) -> Dict[str, Any]:
         """获取特定模板的详细信息"""
+        self.logger.debug("开始获取特定模板内容", {
+            "template_name": template_name,
+            "format_type": format_type
+        })
+        
         template_info = self.template_service.get_template_content(template_name)
 
         if not template_info['success']:
+            self.logger.error("模板内容获取失败", {
+                "template_name": template_name,
+                "error": template_info['error']
+            })
             return self._error_response(template_info['error'])
+        
+        self.logger.debug("模板内容获取成功", {
+            "template_name": template_name,
+            "content_length": len(template_info['content'])
+        })
 
         # 根据格式要求返回不同的信息
         if format_type == "content_only":
+            self.logger.debug("返回纯内容格式")
             return self._success_response({
                 "action": "get_template_content",
                 "template_name": template_name,
                 "content": template_info['content']
             })
         elif format_type == "with_metadata":
+            self.logger.debug("返回包含元数据格式")
             return self._success_response({
                 "action": "get_template_with_metadata",
                 "template_name": template_name,
@@ -120,10 +219,21 @@ class TemplateGetTool:
                 "metadata": template_info['metadata']
             })
         elif format_type == "full_info":
+            self.logger.debug("返回完整信息格式，开始获取验证信息")
+            
             # 获取模板变量验证信息
             validation_info = self.template_service.validate_template_variables(
                 template_name, {}
             )
+            
+            self.logger.debug("获取使用示例和相关模板")
+            usage_example = self._generate_usage_example(template_name)
+            related_templates = self._get_related_templates(template_name)
+            
+            self.logger.debug("完整信息收集完成", {
+                "validation_valid": validation_info.get('validation_result', {}).get('is_valid', False),
+                "related_templates_count": len(related_templates)
+            })
 
             return self._success_response({
                 "action": "get_template_full_info",
@@ -131,10 +241,15 @@ class TemplateGetTool:
                 "content": template_info['content'],
                 "metadata": template_info['metadata'],
                 "validation_info": validation_info.get('validation_result', {}),
-                "usage_example": self._generate_usage_example(template_name),
-                "related_templates": self._get_related_templates(template_name)
+                "usage_example": usage_example,
+                "related_templates": related_templates
             })
 
+        self.logger.error("不支持的格式类型", {
+            "format_type": format_type,
+            "supported_types": ["content_only", "with_metadata", "full_info"]
+        })
+        
         return self._error_response(f"不支持的格式类型: {format_type}")
 
     def _generate_usage_example(self, template_name: str) -> Dict[str, Any]:

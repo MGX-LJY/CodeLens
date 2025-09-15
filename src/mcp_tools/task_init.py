@@ -15,15 +15,15 @@ sys.path.insert(0, project_root)
 
 from src.task_engine.task_manager import TaskManager, TaskType, TaskStatus
 from src.task_engine.phase_controller import PhaseController, Phase
-
-# 导入日志系统
-import logging
+from src.logging import get_logger
 
 
 class TaskPlanGenerator:
     """任务计划生成器"""
 
     def __init__(self):
+        self.logger = get_logger(component="TaskPlanGenerator", operation="init")
+        self.logger.info("TaskPlanGenerator 初始化开始")
         # 模板映射关系
         self.template_mapping = {
             TaskType.SCAN: "project_scan_summary",  # 添加scan任务模板映射
@@ -43,13 +43,31 @@ class TaskPlanGenerator:
             "normal": ["config", "model", "service", "controller", "handler"],
             "low": ["util", "helper", "test", "spec"]
         }
+        
+        self.logger.info("TaskPlanGenerator 初始化完成", {
+            "template_mapping_count": len(self.template_mapping),
+            "priority_levels": len(self.priority_mapping)
+        })
 
     def generate_tasks(self, project_path: str, analysis_result: Dict[str, Any],
                        task_granularity: str = "file", parallel_tasks: bool = False,
                        custom_priorities: Dict[str, Any] = None) -> Dict[str, Any]:
         """生成完整的任务计划"""
+        operation_id = self.logger.log_operation_start("generate_tasks", 
+                                                       project_path=project_path,
+                                                       task_granularity=task_granularity,
+                                                       parallel_tasks=parallel_tasks)
+        
+        self.logger.info("开始生成任务计划", {
+            "project_path": project_path,
+            "task_granularity": task_granularity,
+            "parallel_tasks": parallel_tasks,
+            "has_custom_priorities": custom_priorities is not None,
+            "operation_id": operation_id
+        })
 
         # 提取分析结果 - 修复嵌套JSON结构解析
+        self.logger.debug("解析分析结果结构")
         if "data" in analysis_result:
             # 如果是MCP工具的输出格式
             data = analysis_result["data"]
@@ -62,15 +80,38 @@ class TaskPlanGenerator:
 
         # 生成全局scan任务ID，确保依赖关系一致
         scan_task_id = f"scan_{int(time.time() * 1000000)}"  # 使用更高精度避免冲突
+        self.logger.debug("生成scan任务ID", {"scan_task_id": scan_task_id})
         
         # 生成各阶段任务 (4阶段架构)
+        self.logger.info("开始生成各阶段任务")
+        
+        self.logger.debug("生成Phase 1任务（扫描阶段）")
         phase_1_tasks = self._generate_phase_1_tasks(project_path, project_analysis, scan_task_id)
+        self.logger.info("Phase 1任务生成完成", {"task_count": len(phase_1_tasks)})
+        
+        self.logger.debug("生成Phase 2任务（文件层）")
         phase_2_tasks = self._generate_phase_2_tasks(project_path, plan, scan_task_id, custom_priorities)
+        self.logger.info("Phase 2任务生成完成", {"task_count": len(phase_2_tasks)})
+        
+        self.logger.debug("生成Phase 3任务（架构层）")
         phase_3_tasks = self._generate_phase_3_tasks(project_path, project_analysis, phase_2_tasks)  # 架构层
+        self.logger.info("Phase 3任务生成完成", {"task_count": len(phase_3_tasks)})
+        
+        self.logger.debug("生成Phase 4任务（项目层）")
         phase_4_tasks = self._generate_phase_4_tasks(project_path, project_analysis, phase_3_tasks)  # 项目层
+        self.logger.info("Phase 4任务生成完成", {"task_count": len(phase_4_tasks)})
 
         # 计算总体统计
         all_tasks = phase_1_tasks + phase_2_tasks + phase_3_tasks + phase_4_tasks
+        self.logger.info("任务计划生成完成", {
+            "total_tasks": len(all_tasks),
+            "phase_breakdown": {
+                "phase_1": len(phase_1_tasks),
+                "phase_2": len(phase_2_tasks),
+                "phase_3": len(phase_3_tasks),
+                "phase_4": len(phase_4_tasks)
+            }
+        })
 
         task_plan = {
             "total_phases": 4,
@@ -86,7 +127,7 @@ class TaskPlanGenerator:
         }
 
         # 构建完整响应
-        return {
+        result = {
             "task_plan": task_plan,
             "phase_1_scan": {
                 "description": "项目扫描和分析",
@@ -113,6 +154,9 @@ class TaskPlanGenerator:
                 "tasks": phase_4_tasks
             }
         }
+
+        self.logger.log_operation_end("generate_tasks", operation_id, success=True)
+        return result
 
     def _generate_phase_1_tasks(self, project_path: str, analysis: Dict[str, Any], scan_task_id: str) -> List[Dict[str, Any]]:
         """生成第一阶段任务（项目扫描）"""
@@ -351,6 +395,20 @@ class TaskPlanGenerator:
 
     def create_tasks_in_manager(self, task_manager: TaskManager, task_plan: Dict[str, Any]) -> int:
         """在任务管理器中创建所有任务"""
+        operation_id = self.logger.log_operation_start("create_tasks_in_manager")
+        
+        # 检查task_plan是否有效
+        if task_plan is None:
+            self.logger.error("task_plan为None，无法创建任务")
+            self.logger.log_operation_end("create_tasks_in_manager", operation_id, success=False, 
+                                         error="task_plan is None")
+            return 0
+        
+        self.logger.info("开始在任务管理器中创建任务", {
+            "operation_id": operation_id,
+            "total_phases": len([p for p in task_plan.keys() if p.startswith("phase_")])
+        })
+        
         created_count = 0
         skipped_count = 0
         error_count = 0
@@ -362,21 +420,23 @@ class TaskPlanGenerator:
             if phase in task_plan:
                 phase_data = task_plan[phase]
                 tasks = phase_data.get("tasks", [])
-                print(f"处理阶段 {phase}: {len(tasks)} 个任务")
+                self.logger.info(f"处理阶段 {phase}", {"task_count": len(tasks)})
 
                 for task_data in tasks:
                     # 转换任务类型
                     task_type_str = task_data["type"]
+                    self.logger.debug("处理任务", {"task_type": task_type_str, "task_id": task_data.get("id")})
+                    
                     try:
                         task_type = TaskType(task_type_str)
                     except ValueError as e:
                         # 如果无法转换，跳过此任务
-                        print(f"跳过无效任务类型: {task_type_str} - {e}")
+                        self.logger.warning(f"跳过无效任务类型: {task_type_str}", {"error": str(e)})
                         skipped_count += 1
                         continue
 
                     try:
-                        # 🔧 根本修复: 传入预定义task_id确保依赖关系一致性
+                        # 传入预定义task_id确保依赖关系一致性
                         task_id = task_manager.create_task(
                             task_type=task_type,
                             description=task_data["description"],
@@ -393,13 +453,28 @@ class TaskPlanGenerator:
                         )
 
                         created_count += 1
+                        self.logger.debug("任务创建成功", {"task_id": task_id, "type": task_type_str})
                         
                     except Exception as e:
-                        print(f"创建任务失败: {task_data.get('description', 'Unknown')} - {e}")
+                        self.logger.error("创建任务失败", {
+                            "task_description": task_data.get('description', 'Unknown'),
+                            "error": str(e)
+                        })
                         error_count += 1
                         continue
 
-        print(f"任务创建完成 - 成功: {created_count}, 跳过: {skipped_count}, 错误: {error_count}")
+        self.logger.log_operation_end("create_tasks_in_manager", operation_id, success=True,
+                                     created_count=created_count,
+                                     skipped_count=skipped_count,
+                                     error_count=error_count)
+        
+        self.logger.info("任务创建完成", {
+            "created": created_count,
+            "skipped": skipped_count,
+            "errors": error_count,
+            "total_processed": created_count + skipped_count + error_count
+        })
+        
         return created_count
 
 
@@ -410,7 +485,8 @@ class TaskInitTool:
         self.tool_name = "task_init"
         self.description = "基于项目分析结果，生成完整的阶段性任务列表"
         self.generator = TaskPlanGenerator()
-        self.logger = logging.getLogger('task_init')
+        self.logger = get_logger(component="TaskInitTool", operation="init")
+        self.logger.info("TaskInitTool 初始化完成")
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -457,16 +533,28 @@ class TaskInitTool:
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行task_init工具"""
+        operation_id = self.logger.log_operation_start("execute_task_init",
+                                                       project_path=arguments.get("project_path"),
+                                                       has_analysis_result=bool(arguments.get("analysis_result")))
+        
         try:
+            self.logger.info("开始执行task_init工具", {"arguments": arguments, "operation_id": operation_id})
+            
             # 参数验证
             project_path = arguments.get("project_path")
             analysis_result = arguments.get("analysis_result")
+            
+            self.logger.debug("验证参数", {"project_path": project_path, "has_analysis_result": analysis_result is not None})
 
             if not project_path or not os.path.exists(project_path):
-                return self._error_response("Invalid project path")
+                error_msg = "Invalid project path"
+                self.logger.error(error_msg, {"project_path": project_path})
+                return self._error_response(error_msg)
 
             if not analysis_result:
-                return self._error_response("Analysis result is required")
+                error_msg = "Analysis result is required"
+                self.logger.error(error_msg)
+                return self._error_response(error_msg)
 
             # 获取参数
             task_granularity = arguments.get("task_granularity", "file")
@@ -474,9 +562,16 @@ class TaskInitTool:
             custom_priorities = arguments.get("custom_priorities", {})
             create_in_manager = arguments.get("create_in_manager", False)
 
-            self.logger.info(f"开始生成任务计划: {project_path}, 粒度: {task_granularity}")
+            self.logger.info("开始生成任务计划", {
+                "project_path": project_path,
+                "task_granularity": task_granularity,
+                "parallel_tasks": parallel_tasks,
+                "has_custom_priorities": bool(custom_priorities),
+                "create_in_manager": create_in_manager
+            })
 
             # 生成任务计划
+            self.logger.debug("调用TaskPlanGenerator生成任务")
             task_plan = self.generator.generate_tasks(
                 project_path=project_path,
                 analysis_result=analysis_result,
@@ -484,16 +579,32 @@ class TaskInitTool:
                 parallel_tasks=parallel_tasks,
                 custom_priorities=custom_priorities
             )
+            self.logger.debug("任务计划生成完成")
+
+            # 检查任务计划是否生成成功
+            if task_plan is None:
+                self.logger.error("任务计划生成失败，返回None")
+                self.logger.log_operation_end("execute_task_init", operation_id, success=False, 
+                                             error="Task plan generation failed")
+                return self._error_response("Task plan generation failed: generate_tasks returned None")
 
             # 如果需要，在任务管理器中创建任务
             created_count = 0
             if create_in_manager:
+                self.logger.info("开始在任务管理器中创建任务")
                 task_manager = TaskManager(project_path)
                 created_count = self.generator.create_tasks_in_manager(task_manager, task_plan)
-                self.logger.info(f"任务已创建在管理器中: {created_count} 个")
+                self.logger.info("任务已创建在管理器中", {"created_count": created_count})
 
-            self.logger.info(f"任务计划生成完成 - 总任务: {task_plan['task_plan']['total_tasks']}, "
-                             f"阶段: {task_plan['task_plan']['total_phases']}")
+            # 安全地访问task_plan数据
+            total_tasks = task_plan.get('task_plan', {}).get('total_tasks', 0) if task_plan else 0
+            total_phases = task_plan.get('task_plan', {}).get('total_phases', 0) if task_plan else 0
+            
+            self.logger.log_operation_end("execute_task_init", operation_id, success=True,
+                                        total_tasks=total_tasks,
+                                        total_phases=total_phases,
+                                        created_in_manager=create_in_manager,
+                                        created_count=created_count)
 
             response_data = task_plan.copy()
             if create_in_manager:
@@ -505,11 +616,13 @@ class TaskInitTool:
             return self._success_response(response_data)
 
         except Exception as e:
+            self.logger.log_operation_end("execute_task_init", operation_id, success=False, error=str(e))
             self.logger.error(f"任务计划生成失败: {str(e)}", exc_info=e)
             return self._error_response(f"Task initialization failed: {str(e)}")
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""
+        self.logger.debug("生成成功响应", {"data_keys": list(data.keys()) if data else []})
         return {
             "success": True,
             "tool": self.tool_name,
@@ -518,6 +631,7 @@ class TaskInitTool:
 
     def _error_response(self, message: str) -> Dict[str, Any]:
         """错误响应"""
+        self.logger.error("生成错误响应", {"error_message": message})
         return {
             "success": False,
             "tool": self.tool_name,

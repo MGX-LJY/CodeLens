@@ -18,9 +18,7 @@ from src.task_engine.phase_controller import PhaseController, Phase
 from src.task_engine.state_tracker import StateTracker
 from src.services.file_service import FileService
 from src.templates.document_templates import TemplateService
-
-# 导入日志系统
-import logging
+from src.logging import get_logger
 
 
 class TaskExecutor:
@@ -28,44 +26,73 @@ class TaskExecutor:
 
     def __init__(self, project_path: str):
         self.project_path = Path(project_path)
+        self.logger = get_logger(component="TaskExecutor", operation="init")
+        
+        self.logger.info("初始化TaskExecutor", {"project_path": str(project_path)})
+        
         self.task_manager = TaskManager(str(project_path))
         self.phase_controller = PhaseController(self.task_manager)
         self.state_tracker = StateTracker(str(project_path), self.task_manager, self.phase_controller)
         self.file_service = FileService()
         self.template_service = TemplateService()
-
-        self.logger = logging.getLogger('task_executor')
+        
+        self.logger.info("TaskExecutor初始化完成")
 
     def prepare_task_execution(self, task_id: str, context_enhancement: bool = True) -> Dict[str, Any]:
         """准备任务执行上下文"""
+        operation_id = self.logger.log_operation_start("prepare_task_execution", task_id=task_id, context_enhancement=context_enhancement)
+        
+        self.logger.info("开始准备任务执行上下文", {
+            "task_id": task_id,
+            "context_enhancement": context_enhancement,
+            "operation_id": operation_id
+        })
 
         # 获取任务信息
+        self.logger.debug("获取任务信息", {"task_id": task_id})
         task = self.task_manager.get_task(task_id)
         if not task:
-            return {"error": f"Task {task_id} not found"}
+            error_msg = f"Task {task_id} not found"
+            self.logger.error(error_msg)
+            return {"error": error_msg}
 
         # 检查依赖
+        self.logger.debug("检查任务依赖")
         dependencies_check = self._check_dependencies(task)
         if not dependencies_check["all_satisfied"]:
+            self.logger.warning("任务依赖未满足", {
+                "task_id": task_id,
+                "missing_dependencies": dependencies_check["missing_dependencies"]
+            })
             return {
                 "error": "Dependencies not satisfied",
                 "task_info": self._get_task_info(task),
                 "dependencies_check": dependencies_check
             }
+        
+        self.logger.debug("任务依赖检查通过")
 
         # 获取模板内容
+        self.logger.debug("获取模板内容")
         template_info = self._get_template_info(task)
+        self.logger.debug("模板内容获取完成", {"template_available": template_info.get("available", False)})
 
         # 获取执行上下文
+        self.logger.debug("构建执行上下文")
         execution_context = self._build_execution_context(task, context_enhancement)
+        self.logger.debug("执行上下文构建完成")
 
         # 获取生成指导
+        self.logger.debug("获取生成指导")
         generation_guidance = self._get_generation_guidance(task)
+        self.logger.debug("生成指导获取完成")
 
         # 获取下一个任务
+        self.logger.debug("获取下一个任务")
         next_task = self._get_next_task(task)
+        self.logger.debug("下一个任务获取完成", {"has_next_task": next_task is not None})
 
-        return {
+        result = {
             "task_info": self._get_task_info(task),
             "dependencies_check": dependencies_check,
             "template_info": template_info,
@@ -73,40 +100,64 @@ class TaskExecutor:
             "generation_guidance": generation_guidance,
             "next_task": next_task
         }
+        
+        self.logger.log_operation_end("prepare_task_execution", operation_id, success=True, task_id=task_id)
+        return result
 
     def execute_task(self, task_id: str, mark_in_progress: bool = True) -> Dict[str, Any]:
         """执行任务（标记为进行中并提供执行上下文）"""
+        operation_id = self.logger.log_operation_start("execute_task", task_id=task_id, mark_in_progress=mark_in_progress)
+        
+        self.logger.info("开始执行任务", {
+            "task_id": task_id,
+            "mark_in_progress": mark_in_progress,
+            "operation_id": operation_id
+        })
 
         task = self.task_manager.get_task(task_id)
         if not task:
-            return {"error": f"Task {task_id} not found"}
+            error_msg = f"Task {task_id} not found"
+            self.logger.error(error_msg)
+            return {"error": error_msg}
 
         # 检查任务状态
+        self.logger.debug("检查任务状态", {"current_status": task.status.value})
         if task.status not in [TaskStatus.PENDING, TaskStatus.FAILED]:
-            return {"error": f"Task {task_id} is not in executable state (current: {task.status.value})"}
+            error_msg = f"Task {task_id} is not in executable state (current: {task.status.value})"
+            self.logger.error(error_msg)
+            return {"error": error_msg}
 
-        # 🔧 修复2: scan任务特殊处理 - 自动执行项目分析
+        # scan任务特殊处理 - 自动执行项目分析
         if task.type.value == "scan":
+            self.logger.info("检测到scan任务，进入自动执行模式")
             return self._execute_scan_task(task_id)
 
-        # 🔧 新增: 空文件自动跳过功能
+        # 空文件自动跳过功能
         if task.type.value == "file_summary" and task.target_file:
+            self.logger.debug("检查是否为空文件", {"target_file": task.target_file})
             empty_file_result = self._check_and_handle_empty_file(task_id)
             if empty_file_result:
+                self.logger.info("空文件处理完成")
                 return empty_file_result
 
         # 标记任务为进行中
         if mark_in_progress:
+            self.logger.info("标记任务为进行中", {"task_id": task_id})
             self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
             self.state_tracker.record_task_event("started", task_id)
-            self.logger.info(f"任务开始执行: {task_id} - {task.description}")
+            self.logger.info("任务开始执行", {"task_id": task_id, "description": task.description})
 
         # 准备执行上下文
+        self.logger.debug("准备执行上下文")
         execution_data = self.prepare_task_execution(task_id, context_enhancement=True)
+        self.logger.debug("执行上下文准备完成")
 
         # 获取任务信息以提供具体指令
         task = self.task_manager.get_task(task_id)
         output_path = self.project_path / task.output_path
+        
+        self.logger.log_operation_end("execute_task", operation_id, success=True, 
+                                    task_id=task_id, task_type=task.type.value, output_path=str(output_path))
         
         return {
             "success": True,
@@ -157,45 +208,60 @@ class TaskExecutor:
     
     def _execute_scan_task(self, task_id: str) -> Dict[str, Any]:
         """自动执行scan任务 - 生成项目分析报告"""
+        operation_id = self.logger.log_operation_start("execute_scan_task", task_id=task_id)
+        
         task = self.task_manager.get_task(task_id)
         
         # 标记为进行中
+        self.logger.info("开始自动执行scan任务", {"task_id": task_id})
         self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
         self.state_tracker.record_task_event("started", task_id)
-        self.logger.info(f"自动执行scan任务: {task_id}")
+        self.logger.info("自动执行scan任务", {"task_id": task_id})
         
         try:
             # 使用doc_scan生成项目分析
+            self.logger.debug("初始化DocScanTool")
             from src.mcp_tools.doc_scan import DocScanTool
             doc_scan_tool = DocScanTool()
+            self.logger.debug("DocScanTool初始化完成")
             
+            self.logger.info("开始执行doc_scan", {"project_path": str(self.project_path)})
             scan_result = doc_scan_tool.execute({
                 "project_path": str(self.project_path),
                 "include_content": False,  # scan任务不需要文件内容
                 "config": {"max_files": 100}  # 限制扫描文件数量
             })
+            self.logger.info("doc_scan执行完成", {"success": scan_result.get("success")})
             
             if not scan_result.get("success"):
                 error_msg = scan_result.get("error", "Unknown scan error")
+                self.logger.error("doc_scan执行失败", {"error": error_msg})
                 self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_msg)
+                self.logger.log_operation_end("execute_scan_task", operation_id, success=False, error=error_msg)
                 return {"success": False, "error": f"Scan failed: {error_msg}"}
             
             # 生成项目扫描报告并保存
             scan_data = scan_result["data"]
+            self.logger.debug("开始生成扫描报告")
             report_content = self._generate_scan_report(scan_data)
+            self.logger.debug("扫描报告生成完成", {"content_length": len(report_content)})
             
             # 确保输出目录存在
             output_path = self.project_path / task.output_path
+            self.logger.debug("创建输出目录", {"output_path": str(output_path)})
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
             # 写入报告
+            self.logger.debug("写入扫描报告", {"file_path": str(output_path)})
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(report_content)
+            self.logger.debug("扫描报告写入完成")
             
             # 自动完成任务
+            self.logger.info("自动完成scan任务", {"task_id": task_id})
             self.task_manager.update_task_status(task_id, TaskStatus.COMPLETED)
             self.state_tracker.record_task_event("completed", task_id)
-            self.logger.info(f"Scan任务自动完成: {task_id}")
+            self.logger.log_operation_end("execute_scan_task", operation_id, success=True, task_id=task_id, output_file=str(output_path))
             
             return {
                 "success": True,
@@ -206,6 +272,7 @@ class TaskExecutor:
             
         except Exception as e:
             error_msg = f"Scan task failed: {str(e)}"
+            self.logger.log_operation_end("execute_scan_task", operation_id, success=False, error=str(e))
             self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_msg)
             self.logger.error(error_msg, exc_info=True)
             return {"success": False, "error": error_msg}
@@ -433,9 +500,29 @@ graph TD
             return {"error": f"Task {task_id} not found"}
 
         if success:
-            self.task_manager.update_task_status(task_id, TaskStatus.COMPLETED)
-            self.state_tracker.record_task_event("completed", task_id)
-            self.logger.info(f"任务完成: {task_id} - {task.description}")
+            # 验证输出文件是否存在且有效（防止虚假完成）
+            output_path = getattr(task, 'output_path', None)
+            if output_path:
+                full_output_path = self.project_path / output_path
+                if not full_output_path.exists():
+                    self.logger.warning(f"任务 {task_id} 声称完成但输出文件不存在: {output_path}")
+                    success = False
+                    error_message = f"验证失败 - 输出文件不存在: {output_path}"
+                elif full_output_path.stat().st_size < 100:  # 少于100字节认为内容不足
+                    self.logger.warning(f"任务 {task_id} 输出文件过小: {full_output_path.stat().st_size} bytes")
+                    success = False  
+                    error_message = f"验证失败 - 输出文件内容不足: {output_path} ({full_output_path.stat().st_size} bytes)"
+                else:
+                    self.logger.info(f"任务输出验证通过: {output_path} ({full_output_path.stat().st_size} bytes)")
+            
+            if success:
+                self.task_manager.update_task_status(task_id, TaskStatus.COMPLETED)
+                self.state_tracker.record_task_event("completed", task_id)
+                self.logger.info(f"任务完成: {task_id} - {task.description}")
+            else:
+                self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_message)
+                self.state_tracker.record_task_event("validation_failed", task_id, {"error": error_message})
+                self.logger.error(f"任务验证失败: {task_id} - {error_message}")
         else:
             self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_message)
             self.state_tracker.record_task_event("failed", task_id, {"error": error_message})
@@ -756,7 +843,8 @@ class TaskExecuteTool:
     def __init__(self):
         self.tool_name = "task_execute"
         self.description = "执行单个或批量任务，提供模板和上下文信息"
-        self.logger = logging.getLogger('task_execute')
+        self.logger = get_logger(component="TaskExecuteTool", operation="init")
+        self.logger.info("TaskExecuteTool初始化完成")
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -810,16 +898,30 @@ class TaskExecuteTool:
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行task_execute工具"""
+        operation_id = self.logger.log_operation_start("execute_task_execute_tool",
+                                                       project_path=arguments.get("project_path"),
+                                                       task_id=arguments.get("task_id"),
+                                                       execution_mode=arguments.get("execution_mode", "execute"),
+                                                       context_enhancement=arguments.get("context_enhancement", True))
+        
         try:
+            self.logger.info("开始执行task_execute工具", {"arguments": arguments, "operation_id": operation_id})
+            
             # 参数验证
             project_path = arguments.get("project_path")
             task_id = arguments.get("task_id")
+            
+            self.logger.debug("验证参数", {"project_path": project_path, "task_id": task_id})
 
             if not project_path or not os.path.exists(project_path):
-                return self._error_response("Invalid project path")
+                error_msg = "Invalid project path"
+                self.logger.error(error_msg, {"project_path": project_path})
+                return self._error_response(error_msg)
 
             if not task_id:
-                return self._error_response("Task ID is required")
+                error_msg = "Task ID is required"
+                self.logger.error(error_msg)
+                return self._error_response(error_msg)
 
             # 获取参数
             execution_mode = arguments.get("execution_mode", "execute")
@@ -828,9 +930,11 @@ class TaskExecuteTool:
             completion_data = arguments.get("completion_data", {})
 
             # 创建任务执行器
+            self.logger.debug("创建任务执行器", {"project_path": project_path})
             executor = TaskExecutor(project_path)
+            self.logger.debug("任务执行器创建完成")
 
-            self.logger.info(f"开始执行任务: {task_id}, 模式: {execution_mode}")
+            self.logger.info("开始执行任务", {"task_id": task_id, "execution_mode": execution_mode})
 
             # 根据执行模式处理
             if execution_mode == "prepare":
@@ -844,17 +948,20 @@ class TaskExecuteTool:
             else:
                 return self._error_response(f"Invalid execution mode: {execution_mode}")
 
-            self.logger.info(f"任务执行完成: {task_id}, 模式: {execution_mode}, "
-                             f"成功: {'error' not in result}")
+            success = 'error' not in result
+            self.logger.log_operation_end("execute_task_execute_tool", operation_id, success=success, 
+                                        task_id=task_id, execution_mode=execution_mode)
 
             return self._success_response(result)
 
         except Exception as e:
+            self.logger.log_operation_end("execute_task_execute_tool", operation_id, success=False, error=str(e))
             self.logger.error(f"任务执行失败: {str(e)}", exc_info=e)
             return self._error_response(f"Task execution failed: {str(e)}")
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""
+        self.logger.debug("生成成功响应", {"data_keys": list(data.keys()) if data else []})
         return {
             "success": True,
             "tool": self.tool_name,
@@ -863,6 +970,7 @@ class TaskExecuteTool:
 
     def _error_response(self, message: str) -> Dict[str, Any]:
         """错误响应"""
+        self.logger.error("生成错误响应", {"error_message": message})
         return {
             "success": False,
             "tool": self.tool_name,

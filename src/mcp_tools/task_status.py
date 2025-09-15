@@ -14,9 +14,7 @@ sys.path.insert(0, project_root)
 from src.task_engine.task_manager import TaskManager, TaskStatus
 from src.task_engine.phase_controller import PhaseController, Phase
 from src.task_engine.state_tracker import StateTracker
-
-# 导入日志系统
-import logging
+from src.logging import get_logger
 
 
 class TaskStatusTool:
@@ -25,7 +23,8 @@ class TaskStatusTool:
     def __init__(self):
         self.tool_name = "task_status"
         self.description = "检查任务完成状态，管理阶段性进展"
-        self.logger = logging.getLogger('task_status')
+        self.logger = get_logger(component="TaskStatusTool", operation="init")
+        self.logger.info("TaskStatusTool 初始化完成")
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -66,11 +65,24 @@ class TaskStatusTool:
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行task_status工具"""
+        operation_id = self.logger.log_operation_start("execute_task_status",
+                                                       project_path=arguments.get("project_path"),
+                                                       check_type=arguments.get("check_type", "overall_status"),
+                                                       phase_filter=arguments.get("phase_filter"),
+                                                       detailed_analysis=arguments.get("detailed_analysis", True),
+                                                       task_id=arguments.get("task_id"))
+        
         try:
+            self.logger.info("开始执行task_status工具", {"arguments": arguments, "operation_id": operation_id})
+            
             # 参数验证
             project_path = arguments.get("project_path")
+            self.logger.debug("验证project_path参数", {"project_path": project_path})
+            
             if not project_path or not os.path.exists(project_path):
-                return self._error_response("Invalid project path")
+                error_msg = "Invalid project path"
+                self.logger.error(error_msg, {"project_path": project_path})
+                return self._error_response(error_msg)
 
             # 获取参数
             check_type = arguments.get("check_type", "overall_status")
@@ -79,13 +91,23 @@ class TaskStatusTool:
             task_id = arguments.get("task_id")
 
             # 创建管理器实例
+            self.logger.debug("创建管理器实例")
             task_manager = TaskManager(project_path)
             phase_controller = PhaseController(task_manager)
             state_tracker = StateTracker(project_path, task_manager, phase_controller)
+            self.logger.debug("管理器实例创建完成")
 
-            self.logger.info(f"开始状态检查: {project_path}, 检查类型: {check_type}")
+            self.logger.info("开始状态检查", {
+                "project_path": project_path,
+                "check_type": check_type,
+                "phase_filter": phase_filter,
+                "detailed_analysis": detailed_analysis,
+                "task_id": task_id
+            })
 
             # 根据检查类型执行不同的检查
+            self.logger.debug(f"执行{check_type}类型检查")
+            
             if check_type == "current_task":
                 result = self._check_current_task(task_manager, phase_controller, phase_filter)
             elif check_type == "phase_progress":
@@ -99,20 +121,31 @@ class TaskStatusTool:
             elif check_type == "task_detail" and task_id:
                 result = self._check_task_detail(task_manager, task_id)
             else:
-                return self._error_response(f"Invalid check type: {check_type}")
+                error_msg = f"Invalid check type: {check_type}"
+                self.logger.error(error_msg)
+                return self._error_response(error_msg)
+            
+            self.logger.debug(f"{check_type}检查完成")
 
-            self.logger.info(f"状态检查完成: {check_type}, 成功: {'error' not in result}")
+            success = 'error' not in result
+            self.logger.log_operation_end("execute_task_status", operation_id, success=success,
+                                        check_type=check_type,
+                                        has_result_data=bool(result))
 
             return self._success_response(result)
 
         except Exception as e:
+            self.logger.log_operation_end("execute_task_status", operation_id, success=False, error=str(e))
             self.logger.error(f"状态检查失败: {str(e)}", exc_info=e)
             return self._error_response(f"Status check failed: {str(e)}")
 
     def _check_current_task(self, task_manager: TaskManager, phase_controller: PhaseController,
                             phase_filter: Optional[str]) -> Dict[str, Any]:
         """检查当前任务"""
+        self.logger.debug("开始检查当前任务", {"phase_filter": phase_filter})
+        
         current_phase = phase_controller.get_current_phase()
+        self.logger.debug("获取当前阶段", {"current_phase": current_phase.value if current_phase else None})
 
         if phase_filter:
             target_phase = phase_filter
@@ -122,12 +155,16 @@ class TaskStatusTool:
             return {"error": "No active phase found"}
 
         # 获取当前任务
+        self.logger.debug("获取目标阶段的当前任务", {"target_phase": target_phase})
         current_task = task_manager.get_next_task(target_phase)
+        self.logger.debug("当前任务获取结果", {"has_current_task": current_task is not None})
 
         if not current_task:
             # 检查是否有进行中的任务
+            self.logger.debug("未找到待执行任务，检查进行中的任务")
             in_progress_tasks = [t for t in task_manager.tasks.values()
                                  if t.status == TaskStatus.IN_PROGRESS and t.phase == target_phase]
+            self.logger.debug("进行中任务检查结果", {"in_progress_count": len(in_progress_tasks)})
 
             if in_progress_tasks:
                 current_task = in_progress_tasks[0]
@@ -149,10 +186,12 @@ class TaskStatusTool:
             status = "ready_to_execute"
 
         # 检查依赖状态
+        self.logger.debug("检查任务依赖状态", {"dependencies_count": len(current_task.dependencies)})
         dependencies_satisfied = all(
             task_manager.get_task(dep_id) and task_manager.get_task(dep_id).status == TaskStatus.COMPLETED
             for dep_id in current_task.dependencies
         )
+        self.logger.debug("依赖检查结果", {"dependencies_satisfied": dependencies_satisfied})
 
         return {
             "current_phase": target_phase,
@@ -175,19 +214,27 @@ class TaskStatusTool:
     def _check_phase_progress(self, phase_controller: PhaseController, phase_filter: Optional[str],
                               detailed: bool) -> Dict[str, Any]:
         """检查阶段进度"""
+        self.logger.debug("开始检查阶段进度", {"phase_filter": phase_filter, "detailed": detailed})
+        
         if phase_filter:
             try:
+                self.logger.debug("检查特定阶段进度", {"phase_filter": phase_filter})
                 phase = Phase(phase_filter)
                 progress = phase_controller.get_phase_progress_detailed(phase)
+                self.logger.debug("特定阶段进度检查完成")
                 return {
                     "phase_filter": phase_filter,
                     "phase_progress": progress
                 }
             except ValueError:
-                return {"error": f"Invalid phase: {phase_filter}"}
+                error_msg = f"Invalid phase: {phase_filter}"
+                self.logger.error(error_msg)
+                return {"error": error_msg}
         else:
             # 获取所有阶段概览
+            self.logger.debug("获取所有阶段概览")
             overview = phase_controller.get_all_phases_overview()
+            self.logger.debug("所有阶段概览获取完成")
 
             if detailed:
                 return {
@@ -211,11 +258,15 @@ class TaskStatusTool:
     def _check_overall_status(self, task_manager: TaskManager, phase_controller: PhaseController,
                               state_tracker: StateTracker, detailed: bool) -> Dict[str, Any]:
         """检查总体状态"""
+        self.logger.debug("开始检查总体状态", {"detailed": detailed})
+        
         # 获取基本统计
+        self.logger.debug("获取总体进度和当前阶段")
         overall_progress = task_manager.get_overall_progress()
         current_phase = phase_controller.get_current_phase()
 
         # 获取任务统计
+        self.logger.debug("计算任务统计信息")
         all_tasks = list(task_manager.tasks.values())
         task_stats = {
             "total": len(all_tasks),
@@ -225,6 +276,7 @@ class TaskStatusTool:
             "failed": len([t for t in all_tasks if t.status == TaskStatus.FAILED]),
             "blocked": len([t for t in all_tasks if t.status == TaskStatus.BLOCKED])
         }
+        self.logger.debug("任务统计计算完成", task_stats)
 
         result = {
             "overall_progress": overall_progress,
@@ -235,19 +287,24 @@ class TaskStatusTool:
 
         if detailed:
             # 添加详细信息
+            self.logger.debug("获取详细状态信息")
             current_status = state_tracker.get_current_status()
             result.update({
                 "phase_overview": current_status["phase_overview"],
                 "execution_statistics": current_status["execution_statistics"],
                 "health_status": current_status["health_check"]
             })
+            self.logger.debug("详细状态信息获取完成")
 
         return result
 
     def _get_next_actions(self, task_manager: TaskManager, phase_controller: PhaseController) -> Dict[str, Any]:
         """获取下一步行动分析"""
+        self.logger.debug("开始分析下一步行动")
+        
         actions = []
         current_phase = phase_controller.get_current_phase()
+        self.logger.debug("获取当前阶段", {"current_phase": current_phase.value if current_phase else None})
 
         if not current_phase:
             actions.append("所有阶段已完成！")
@@ -256,17 +313,22 @@ class TaskStatusTool:
         # 获取下一个任务
         next_task = task_manager.get_next_task(current_phase.value)
         if next_task:
+            self.logger.debug("找到下一个任务", {"task_id": next_task.id, "description": next_task.description})
             actions.append(f"执行任务: {next_task.description}")
             actions.append(f"使用命令: task_execute --task-id {next_task.id}")
+        else:
+            self.logger.debug("当前阶段未找到待执行任务")
 
         # 检查失败任务
         failed_tasks = task_manager.get_failed_tasks()
         if failed_tasks:
+            self.logger.debug("检测到失败任务", {"failed_count": len(failed_tasks)})
             actions.append(f"重试 {len(failed_tasks)} 个失败的任务")
 
         # 检查阻塞任务
         blocked_tasks = task_manager.get_blocked_tasks()
         if blocked_tasks:
+            self.logger.debug("检测到阻塞任务", {"blocked_count": len(blocked_tasks)})
             actions.append(f"解决 {len(blocked_tasks)} 个被阻塞任务的依赖问题")
 
         # 阶段转换检查
@@ -287,15 +349,23 @@ class TaskStatusTool:
     def _perform_health_check(self, state_tracker: StateTracker, task_manager: TaskManager,
                               phase_controller: PhaseController) -> Dict[str, Any]:
         """执行健康检查"""
+        self.logger.debug("开始执行健康检查")
+        
         current_status = state_tracker.get_current_status()
         health_check = current_status["health_check"]
+        
+        self.logger.debug("获取基本健康检查结果")
 
         # 添加更多健康检查项
         issues = health_check["issues"].copy()
         warnings = health_check["warnings"].copy()
+        
+        self.logger.debug("开始扩展健康检查项")
 
         # 检查任务分布
         all_tasks = list(task_manager.tasks.values())
+        self.logger.debug("检查任务分布", {"total_tasks": len(all_tasks)})
+        
         if len(all_tasks) == 0:
             issues.append("没有创建任何任务，请先运行task_init")
 
@@ -336,11 +406,17 @@ class TaskStatusTool:
 
     def _check_task_detail(self, task_manager: TaskManager, task_id: str) -> Dict[str, Any]:
         """检查特定任务详情"""
+        self.logger.debug("开始检查任务详情", {"task_id": task_id})
+        
         task = task_manager.get_task(task_id)
         if not task:
-            return {"error": f"Task {task_id} not found"}
+            error_msg = f"Task {task_id} not found"
+            self.logger.error(error_msg)
+            return {"error": error_msg}
 
         # 检查依赖状态
+        self.logger.debug("检查任务依赖状态", {"dependencies_count": len(task.dependencies)})
+        
         dependency_status = []
         for dep_id in task.dependencies:
             dep_task = task_manager.get_task(dep_id)
@@ -357,6 +433,9 @@ class TaskStatusTool:
                     "status": "not_found",
                     "completed": False
                 })
+        
+
+        self.logger.debug("依赖检查完成", {"dependencies_satisfied": dependencies_satisfied})
 
         dependencies_satisfied = all(dep["completed"] for dep in dependency_status)
 
@@ -406,6 +485,7 @@ class TaskStatusTool:
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""
+        self.logger.debug("生成成功响应", {"data_keys": list(data.keys()) if data else []})
         return {
             "success": True,
             "tool": self.tool_name,
@@ -414,6 +494,7 @@ class TaskStatusTool:
 
     def _error_response(self, message: str) -> Dict[str, Any]:
         """错误响应"""
+        self.logger.error("生成错误响应", {"error_message": message})
         return {
             "success": False,
             "tool": self.tool_name,

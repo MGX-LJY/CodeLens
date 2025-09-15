@@ -14,9 +14,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, project_root)
 
 from src.services.file_service import FileService
-
-# 导入日志系统
-import logging
+from src.logging import get_logger
 
 
 class DocScanTool:
@@ -26,7 +24,8 @@ class DocScanTool:
         self.tool_name = "doc_scan"
         self.description = "扫描项目文件并返回结构化信息供Claude Code使用"
         self.file_service = FileService()
-        self.logger = logging.getLogger('doc_scan')
+        self.logger = get_logger(component="DocScanTool", operation="init")
+        self.logger.info("DocScanTool 初始化完成")
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -148,12 +147,22 @@ class DocScanTool:
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """执行doc_scan工具"""
+        operation_id = self.logger.log_operation_start("execute_doc_scan", 
+                                                       project_path=arguments.get("project_path"),
+                                                       include_content=arguments.get("include_content", False),
+                                                       max_depth=arguments.get("config", {}).get("max_depth", 3))
         start_time = time.time()
-        self.logger.info(f"开始doc_scan操作: {arguments.get('project_path', 'unknown')}")
+        
+        self.logger.info("开始doc_scan操作", {
+            "arguments": arguments, 
+            "operation_id": operation_id
+        })
 
         try:
             # 参数验证
             project_path = arguments.get("project_path")
+            self.logger.debug("验证project_path参数", {"project_path": project_path})
+            
             if not project_path:
                 error_msg = "project_path is required"
                 self.logger.error(f"{error_msg}: {arguments}")
@@ -170,11 +179,16 @@ class DocScanTool:
                 return self._error_response(error_msg)
 
             # 记录开始扫描
-            self.logger.info(f"开始扫描项目: {project_path}")
+            self.logger.info("开始扫描项目", {"project_path": project_path})
 
             # 获取参数
             include_content = arguments.get("include_content", True)
             config = arguments.get("config", {})
+            
+            self.logger.debug("扫描配置参数", {
+                "include_content": include_content,
+                "config": config
+            })
 
             # 提取配置参数
             file_extensions = config.get("file_extensions", [".py"])
@@ -189,11 +203,22 @@ class DocScanTool:
             analysis_focus = config.get("analysis_focus", {})
 
             # 应用智能过滤逻辑
+            self.logger.debug("开始应用智能过滤逻辑")
             enhanced_exclude_patterns = self._apply_smart_filtering(
                 project_path, exclude_patterns, ignore_patterns, smart_filtering, analysis_focus
             )
+            self.logger.debug("智能过滤逻辑应用完成", {
+                "original_patterns_count": len(exclude_patterns),
+                "enhanced_patterns_count": len(enhanced_exclude_patterns)
+            })
 
             # 使用FileService获取项目信息
+            self.logger.info("开始使用FileService获取项目信息", {
+                "extensions": file_extensions,
+                "exclude_patterns_count": len(enhanced_exclude_patterns),
+                "max_file_size": max_file_size
+            })
+            
             project_info = self.file_service.get_project_files_info(
                 project_path=project_path,
                 include_content=include_content,
@@ -201,13 +226,28 @@ class DocScanTool:
                 exclude_patterns=enhanced_exclude_patterns,
                 max_file_size=max_file_size
             )
+            
+            self.logger.info("FileService项目信息获取完成", {
+                "files_found": project_info.get('statistics', {}).get('total_files', 0),
+                "total_size": project_info.get('statistics', {}).get('total_size', 0)
+            })
 
             # 应用内容过滤
             if smart_filtering.get("enabled", True):
+                self.logger.debug("开始应用内容过滤")
+                original_file_count = len(project_info.get('files', []))
                 project_info = self._apply_content_filtering(project_info, ignore_patterns, analysis_focus)
+                filtered_file_count = len(project_info.get('files', []))
+                self.logger.debug("内容过滤完成", {
+                    "original_files": original_file_count,
+                    "filtered_files": filtered_file_count,
+                    "filtered_out": original_file_count - filtered_file_count
+                })
 
             # 获取目录树（使用指定的深度）
+            self.logger.debug("开始获取目录树", {"max_depth": max_depth})
             directory_tree = self.file_service.get_directory_tree(project_path, max_depth)
+            self.logger.debug("目录树获取完成")
 
             # 更新directory_tree到project_info中
             project_info['directory_tree'] = directory_tree
@@ -220,10 +260,11 @@ class DocScanTool:
                 "file_types": project_info['statistics']['file_types']
             }
 
-            self.logger.info(f"项目扫描成功完成: {project_path}, "
-                             f"用时: {duration_ms}ms, "
-                             f"文件数: {summary.get('files_scanned', 0)}, "
-                             f"目录数: {summary.get('directories_scanned', 0)}")
+            self.logger.log_operation_end("execute_doc_scan", operation_id, duration_ms, True,
+                                        project_path=project_path,
+                                        total_files=summary['total_files'],
+                                        total_size=summary['total_size'],
+                                        file_types_count=len(summary['file_types']))
 
             return self._success_response({
                 "scan_result": project_info,
@@ -242,6 +283,7 @@ class DocScanTool:
         except Exception as e:
             # 记录失败完成
             duration_ms = (time.time() - start_time) * 1000
+            self.logger.log_operation_end("execute_doc_scan", operation_id, duration_ms, False, error=str(e))
             self.logger.error(f"项目扫描失败: {arguments.get('project_path')}, "
                               f"用时: {duration_ms}ms, 错误: {str(e)}", exc_info=e)
 
@@ -249,6 +291,7 @@ class DocScanTool:
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""
+        self.logger.debug("生成成功响应", {"data_keys": list(data.keys()) if data else []})
         return {
             "success": True,
             "tool": self.tool_name,
@@ -259,6 +302,11 @@ class DocScanTool:
                                ignore_patterns: Dict[str, Any], smart_filtering: Dict[str, Any],
                                analysis_focus: Dict[str, Any]) -> list:
         """应用智能过滤逻辑"""
+        self.logger.debug("开始智能过滤处理", {
+            "base_patterns_count": len(base_exclude_patterns),
+            "smart_filtering_enabled": smart_filtering.get("enabled", True)
+        })
+        
         enhanced_patterns = base_exclude_patterns.copy()
 
         # 添加基本忽略模式
@@ -269,10 +317,16 @@ class DocScanTool:
         # 项目类型特定过滤
         project_type = smart_filtering.get("project_type", "auto_detect")
         if project_type == "auto_detect":
+            self.logger.debug("自动检测项目类型")
             project_type = self._detect_project_type(project_path)
+            self.logger.debug("项目类型检测完成", {"detected_type": project_type})
 
         type_specific_patterns = self._get_type_specific_excludes(project_type)
         enhanced_patterns.extend(type_specific_patterns)
+        self.logger.debug("项目类型特定模式添加完成", {
+            "project_type": project_type,
+            "added_patterns_count": len(type_specific_patterns)
+        })
 
         # 分析焦点过滤
         if analysis_focus.get("exclude_examples", True):
@@ -321,6 +375,7 @@ class DocScanTool:
 
     def _detect_project_type(self, project_path: str) -> str:
         """检测项目类型"""
+        self.logger.debug("开始检测项目类型", {"project_path": project_path})
         project_path = Path(project_path)
 
         # 检查特征文件
@@ -335,19 +390,26 @@ class DocScanTool:
         elif (project_path / "Cargo.toml").exists():
             return "rust"
 
-        return "unknown"
+        detected_type = "unknown"
+        self.logger.debug("项目类型检测结果", {"type": detected_type})
+        return detected_type
 
     def _get_type_specific_excludes(self, project_type: str) -> list:
         """获取项目类型特定的排除模式"""
+        # 通用系统文件排除（所有项目类型都适用）
+        common_excludes = [".DS_Store", "Thumbs.db", "*.log", ".gitignore", ".gitkeep", "*.tmp", "*.temp"]
+        
         type_patterns = {
-            "python": ["*.pyc", "*.pyo", "*.pyd", "__pycache__", ".pytest_cache", "venv", "env", ".venv"],
+            "python": ["*.pyc", "*.pyo", "*.pyd", "__pycache__", ".pytest_cache", "venv", "env", ".venv", ".coverage"],
             "javascript": ["node_modules", "dist", "build", "*.min.js", ".next", ".nuxt"],
             "java": ["target", "build", "*.class", "*.jar", "*.war"],
             "go": ["vendor", "*.exe"],
             "rust": ["target", "Cargo.lock"]
         }
 
-        return type_patterns.get(project_type, [])
+        # 合并通用排除和项目特定排除
+        project_specific = type_patterns.get(project_type, [])
+        return common_excludes + project_specific
 
     def _is_generated_file(self, file_info: Dict[str, Any]) -> bool:
         """检查是否为生成文件"""
@@ -416,6 +478,7 @@ class DocScanTool:
 
     def _error_response(self, message: str) -> Dict[str, Any]:
         """错误响应"""
+        self.logger.error("生成错误响应", {"error_message": message})
         return {
             "success": False,
             "tool": self.tool_name,

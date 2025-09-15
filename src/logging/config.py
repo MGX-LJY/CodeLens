@@ -39,7 +39,7 @@ class RetentionConfig:
 @dataclass
 class LoggingConfig:
     """日志系统主配置"""
-    level: str = "INFO"
+    level: str = "DEBUG"
     format: str = "structured"
     async_enabled: bool = True
     file: FileConfig = None
@@ -57,7 +57,21 @@ class LoggingConfig:
                 "FileService": "INFO",
                 "TemplateService": "INFO",
                 "ValidationService": "INFO",
-                "MCP_Tools": "DEBUG"
+                "MCP_Tools": "DEBUG",
+                # MCP Tools组件
+                "TemplateGetTool": "DEBUG",
+                "DocScanTool": "DEBUG",
+                "DocGuideTool": "DEBUG",
+                "TaskInitTool": "DEBUG",
+                "TaskExecuteTool": "DEBUG",
+                "TaskStatusTool": "DEBUG",
+                "TaskCompleteTool": "DEBUG",
+                "InitTools": "DEBUG",
+                "InitToolsCore": "DEBUG",
+                "TaskPlanGenerator": "DEBUG",
+                "TaskExecutor": "DEBUG",
+                "ProjectAnalyzer": "DEBUG",
+                "TestComponent": "DEBUG"
             }
         if self.retention is None:
             self.retention = RetentionConfig()

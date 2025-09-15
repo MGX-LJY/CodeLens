@@ -44,7 +44,16 @@ class FileService:
             '.env',
             'dist',
             'build',
-            '*.egg-info'
+            '*.egg-info',
+            '.DS_Store',
+            'Thumbs.db',
+            '*.log',
+            '.gitignore',
+            '.gitkeep',
+            '.pytest_cache',
+            '.coverage',
+            '*.tmp',
+            '*.temp'
         ]
 
         # 初始化日志器
