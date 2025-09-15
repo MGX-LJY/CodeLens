@@ -89,6 +89,12 @@ class TaskExecutor:
         if task.type.value == "scan":
             return self._execute_scan_task(task_id)
 
+        # 🔧 新增: 空文件自动跳过功能
+        if task.type.value == "file_summary" and task.target_file:
+            empty_file_result = self._check_and_handle_empty_file(task_id)
+            if empty_file_result:
+                return empty_file_result
+
         # 标记任务为进行中
         if mark_in_progress:
             self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
@@ -98,11 +104,55 @@ class TaskExecutor:
         # 准备执行上下文
         execution_data = self.prepare_task_execution(task_id, context_enhancement=True)
 
+        # 获取任务信息以提供具体指令
+        task = self.task_manager.get_task(task_id)
+        output_path = self.project_path / task.output_path
+        
         return {
             "success": True,
             "task_execution": execution_data,
-            "instructions": ("Use the provided template and context to generate the documentation. "
-                             "Call task_complete when finished.")
+            "action_required": {
+                "type": "generate_and_save_documentation",
+                "task_id": task_id,
+                "description": f"为 {task.target_file or '项目'} 生成 {task.type.value} 类型的文档",
+                "steps": [
+                    "1. 仔细分析提供的文件内容和模板结构",
+                    "2. 根据模板生成高质量的文档内容",
+                    "3. 使用Write工具将文档保存到指定路径",
+                    "4. 使用task_complete工具验证并完成任务"
+                ],
+                "required_tools": ["Write", "task_complete"],
+                "output_path": str(output_path),
+                "quality_requirements": [
+                    "文档必须包含模板中的所有主要章节",
+                    "内容不能包含TODO、PLACEHOLDER等占位符",
+                    "分析必须准确且详细",
+                    "文档长度至少500字符"
+                ]
+            },
+            "next_steps": {
+                "step_1": {
+                    "action": "生成文档内容",
+                    "details": "根据提供的模板和文件内容，生成完整的文档"
+                },
+                "step_2": {
+                    "action": "保存文档",
+                    "tool": "Write",
+                    "parameters": {
+                        "file_path": str(output_path),
+                        "content": "[生成的文档内容]"
+                    }
+                },
+                "step_3": {
+                    "action": "完成任务",
+                    "tool": "task_complete",
+                    "parameters": {
+                        "project_path": str(self.project_path),
+                        "task_id": task_id
+                    }
+                }
+            },
+            "instructions": f"请为文件 '{task.target_file or '项目'}' 生成详细的 {task.type.value} 文档。使用提供的模板结构，分析文件内容，生成高质量文档后保存到 {output_path}，然后调用task_complete工具完成任务。"
         }
     
     def _execute_scan_task(self, task_id: str) -> Dict[str, Any]:
@@ -162,36 +212,218 @@ class TaskExecutor:
     
     def _generate_scan_report(self, scan_data: Dict[str, Any]) -> str:
         """生成项目扫描报告内容"""
-        file_tree = scan_data.get("file_tree", {})
-        project_info = scan_data.get("project_info", {})
+        scan_result = scan_data.get("scan_result", {})
+        project_info = scan_result.get("project_info", {})
+        files = scan_result.get("files", [])
+        
+        # 统计文件信息
+        total_files = len(files)
+        python_files = len([f for f in files if f.get("extension", "") == ".py"])
+        
+        # 统计文件类型分布
+        file_types = {}
+        for file in files:
+            ext = file.get("extension", "")
+            file_types[ext] = file_types.get(ext, 0) + 1
+        
+        # 生成目录结构
+        directories = set()
+        for file in files:
+            rel_path = file.get("relative_path", "")
+            if "/" in rel_path:
+                dir_path = "/".join(rel_path.split("/")[:-1])
+                directories.add(dir_path)
+        
+        dir_structure = "\n".join(sorted(directories)) if directories else "根目录"
         
         report = f"""# 项目扫描报告
 
 ## 项目基本信息
 
-- **项目路径**: {project_info.get('project_path', 'Unknown')}
-- **总文件数**: {project_info.get('total_files', 0)}
-- **Python文件数**: {project_info.get('python_files', 0)}
-- **扫描时间**: {project_info.get('scan_timestamp', 'Unknown')}
+- **项目名称**: {project_info.get('name', 'Unknown')}
+- **项目路径**: {project_info.get('path', 'Unknown')}
+- **总文件数**: {total_files}
+- **Python文件数**: {python_files}
+- **扫描时间**: {time.strftime('%Y-%m-%d %H:%M:%S')}
 
 ## 目录结构
 
 ```
-{file_tree.get('tree_structure', 'Directory structure not available')}
+{dir_structure}
 ```
 
 ## 文件类型分布
 
 """
         
-        file_types = project_info.get('file_types', {})
-        for ext, count in file_types.items():
+        for ext, count in sorted(file_types.items()):
             ext_name = ext if ext else "无扩展名"
             report += f"- **{ext_name}**: {count} 个文件\n"
+        
+        report += f"""
+
+## 主要文件
+
+"""
+        
+        main_files = project_info.get("main_files", [])
+        for main_file in main_files[:5]:  # 只显示前5个主要文件
+            report += f"- {Path(main_file).name}\n"
         
         report += "\n\n## 扫描完成\n\n此报告由CodeLens自动生成，为后续文档生成提供基础信息。\n"
         
         return report
+
+    def _check_and_handle_empty_file(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """检查并处理空文件，如果是空文件则自动生成简单文档并完成任务"""
+        task = self.task_manager.get_task(task_id)
+        if not task or not task.target_file:
+            return None
+            
+        file_path = self.project_path / task.target_file
+        if not file_path.exists():
+            return None
+        
+        # 检查文件是否为空或几乎为空
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+            
+            # 如果文件为空或只有少量内容（如空的__init__.py）
+            if len(content) <= 10:  # 10个字符以内认为是空文件
+                self.logger.info(f"检测到空文件: {task.target_file}，自动生成简单文档")
+                
+                # 标记任务为进行中
+                self.task_manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
+                self.state_tracker.record_task_event("started", task_id)
+                
+                # 生成简单的空文件文档
+                simple_doc = self._generate_empty_file_doc(task.target_file, content)
+                
+                # 确保输出目录存在
+                output_path = self.project_path / task.output_path
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # 写入文档
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(simple_doc)
+                
+                # 自动完成任务
+                self.task_manager.update_task_status(task_id, TaskStatus.COMPLETED)
+                self.state_tracker.record_task_event("completed", task_id)
+                self.logger.info(f"空文件任务自动完成: {task_id} - {task.target_file}")
+                
+                return {
+                    "success": True,
+                    "message": f"Empty file '{task.target_file}' processed automatically",
+                    "output_file": str(output_path),
+                    "task_completed": True,
+                    "auto_generated": True
+                }
+                
+        except Exception as e:
+            self.logger.warning(f"检查空文件时出错: {str(e)}")
+            return None
+        
+        return None
+    
+    def _generate_empty_file_doc(self, file_path: str, content: str) -> str:
+        """为空文件生成简单文档"""
+        filename = Path(file_path).name
+        
+        # 判断文件类型
+        if filename == "__init__.py":
+            description = "Python包初始化文件"
+            purpose = "标识该目录为Python包，允许从该目录导入模块"
+        elif file_path.endswith(".py"):
+            description = "Python模块文件"
+            purpose = "目前为空的Python模块，可能用于未来扩展"
+        else:
+            description = "项目文件"
+            purpose = "目前内容较少的项目文件"
+        
+        doc = f"""# 文件分析报告：{filename}
+
+## 文件概述
+
+**{description}** - 该文件当前内容为空或包含极少内容。
+
+## 基本信息
+
+- **文件路径**: `{file_path}`
+- **文件类型**: {Path(file_path).suffix or '无扩展名'}
+- **内容状态**: {'完全空白' if not content else '包含少量内容'}
+- **文件大小**: {len(content)} 字符
+
+## 内容分析
+
+### 当前内容
+```
+{content if content else '(文件为空)'}
+```
+
+### 功能说明
+{purpose}
+
+## 代码结构分析
+
+### 导入依赖
+无导入语句
+
+### 全局变量和常量  
+无全局变量
+
+### 配置和设置
+无配置信息
+
+## 函数详细分析
+
+### 函数概览表
+| 函数名 | 参数 | 返回值 | 描述 |
+|--------|------|--------|------|
+| 无函数 | - | - | 该文件中无函数定义 |
+
+### 函数详细说明
+该文件中没有定义任何函数。
+
+## 类详细分析
+
+### 类概览表
+| 类名 | 继承 | 方法数 | 描述 |
+|------|------|--------|------|
+| 无类 | - | - | 该文件中无类定义 |
+
+### 类详细说明
+该文件中没有定义任何类。
+
+## 函数调用流程图
+```mermaid
+graph TD
+    A[空文件] --> B[无执行流程]
+    B --> C[文件作为包标识或预留扩展]
+```
+
+## 变量作用域分析
+该文件无变量定义，不涉及作用域分析。
+
+## 函数依赖关系
+该文件无函数定义，不存在依赖关系。
+
+## 扩展建议
+
+该文件可能在以下场景中使用：
+1. **包初始化**: 作为Python包的标识文件
+2. **模块预留**: 为未来功能预留的模块文件
+3. **配置占位**: 配置文件的占位符
+
+## 注意事项
+
+- 该文件当前为空或内容极少
+- 文档由CodeLens自动生成
+- 如需详细分析，请在添加实际代码后重新生成文档
+"""
+        
+        return doc
 
     def complete_task(self, task_id: str, success: bool = True, error_message: Optional[str] = None) -> Dict[str, Any]:
         """完成任务"""
@@ -287,8 +519,6 @@ class TaskExecutor:
         if task.target_file:
             file_context = self._get_file_context(task.target_file, context_enhancement)
             context["file_context"] = file_context
-
-        # 模块相关上下文已删除（模块层已被移除）
 
         # 项目相关上下文
         if context_enhancement:

@@ -7,7 +7,7 @@
 class FileTemplates:
     """文件层文档模板集合"""
     
-    # 综合文件摘要模板 - 详细的文件分析文档，包含流程图和深度分析
+    # 综合文件摘要模板 - 精简的文件分析文档
     FILE_SUMMARY_TEMPLATE = """# 文件分析报告：{filename}
 
 ## 文件概述
@@ -50,30 +50,6 @@ class FileTemplates:
 
 ## 函数依赖关系
 {function_dependencies}
-
-## 数据流分析
-{data_flow_analysis}
-
-## 错误处理机制
-{error_handling}
-
-## 性能分析
-{performance_analysis}
-
-## 算法复杂度
-{algorithm_complexity}
-
-## 扩展性评估
-{extensibility_assessment}
-
-## 代码质量评估
-{code_quality_assessment}
-
-## 文档完整性
-{documentation_completeness}
-
-## 备注
-{notes}
 """
     
     # 为了保持向后兼容性，保留旧模板名称作为别名

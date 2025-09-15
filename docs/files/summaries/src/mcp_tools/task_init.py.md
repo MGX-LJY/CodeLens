@@ -1,460 +1,142 @@
-# task_init.py
+# 文件分析报告：src/mcp_tools/task_init.py
 
 ## 文件概述
-智能任务计划生成MCP工具实现，基于项目分析结果生成完整的5阶段任务列表。作为Task Engine模块的核心规划组件，负责将分析结果转化为可执行的任务队列，实现从项目扫描到文档生成的全流程任务调度。
+CodeLens智能任务计划生成MCP工具核心实现，基于项目分析结果生成完整的4阶段任务列表。该工具作为任务引擎的核心规划组件，负责将分析结果转化为可执行的任务队列，建立任务依赖关系图谱，实现从项目扫描到文档生成的全流程任务调度和时间估算。
 
-## 核心类定义
+## 代码结构分析
 
-### TaskPlanGenerator (任务计划生成器)
-基于分析结果生成结构化任务计划
+### 导入依赖
+- **系统模块**: `sys, os, time, pathlib.Path` - 系统操作、时间处理和路径管理
+- **数据处理**: `json` - JSON格式处理
+- **类型注解**: `typing.Dict, Any, List, Optional` - 类型提示支持
+- **任务引擎**: `TaskManager, TaskType, TaskStatus, PhaseController, Phase` - 核心任务管理组件
+- **日志系统**: `logging` - 标准Python日志记录
 
-#### 模板映射系统
-```python
-template_mapping = {
-    TaskType.FILE_SUMMARY: "file_summary",
-    TaskType.MODULE_ANALYSIS: "module_analysis", 
-    TaskType.MODULE_RELATIONS: "module_relations",
-    TaskType.DEPENDENCY_GRAPH: "dependency_graph",
-    TaskType.ARCHITECTURE: "architecture",
-    TaskType.TECH_STACK: "tech_stack",
-    TaskType.DATA_FLOW: "data_flow",
-    TaskType.PROJECT_README: "project_readme"
-    # 支持14种任务类型的模板映射
-}
-```
+### 全局变量和常量
+- **project_root**: 项目根目录路径，用于模块导入
+- **工具标识**: tool_name="task_init", description - MCP工具基本信息
 
-#### 智能优先级系统
-```python
-priority_mapping = {
-    "high": ["main.py", "app.py", "index.js", "server.js", "main.go"],
-    "normal": ["config", "model", "service", "controller", "handler"],
-    "low": ["util", "helper", "test", "spec"]
-}
-```
+### 配置和设置
+- **模板映射配置**: TaskType到模板名称的映射关系，支持8种核心任务类型
+- **优先级映射配置**: 文件优先级分类，包含high、normal、low三个级别
+- **MCP工具配置**: 标准化的inputSchema定义，支持5个参数
+- **4阶段架构**: Phase 1 Scan → Phase 2 Files → Phase 3 Architecture → Phase 4 Project
 
-#### 核心方法
+## 函数详细分析
 
-**generate_tasks(project_path, analysis_result, task_granularity, parallel_tasks, custom_priorities) -> Dict[str, Any]**
-- 生成完整的5阶段任务计划
-- 根据项目分析结果创建结构化任务列表
-- 建立任务间依赖关系图谱
-- 计算时间估算和任务分布统计
+### 函数概览表
+| 函数名 | 参数 | 返回值 | 功能描述 |
+|--------|------|--------|----------|
+| `__init__` | self | None | 初始化任务计划生成器，设置映射关系 |
+| `generate_tasks` | self, project_path, analysis_result, task_granularity, parallel_tasks, custom_priorities | Dict[str, Any] | 核心方法：生成完整的4阶段任务计划 |
+| `_generate_phase_1_tasks` | self, project_path, project_analysis, scan_task_id | List[Dict] | 生成Phase 1扫描任务 |
+| `_generate_phase_2_tasks` | self, project_path, plan, scan_task_id, custom_priorities | List[Dict] | 生成Phase 2文件层任务 |
+| `_generate_phase_3_tasks` | self, project_path, project_analysis, phase_2_tasks | List[Dict] | 生成Phase 3架构层任务 |
+| `_generate_phase_4_tasks` | self, project_path, project_analysis, phase_3_tasks | List[Dict] | 生成Phase 4项目层任务 |
+| `_build_dependency_graph` | self, all_tasks | Dict[str, List[str]] | 构建任务依赖关系图谱 |
+| `_get_file_priority` | self, file_path, custom_priorities | str | 计算文件优先级级别 |
+| `_estimate_task_duration` | self, task_type, target | int | 估算单个任务完成时间 |
+| `_get_output_path` | self, task_type, target, project_path | str | 生成任务输出路径 |
 
-### TaskInitTool (MCP工具类)
-task_init MCP工具主要实现
+### 函数详细说明
 
-#### 工具定义
-```python
-def get_tool_definition(self) -> Dict[str, Any]:
-    return {
-        "name": "task_init",
-        "description": "基于项目分析结果，生成完整的阶段性任务列表",
-        "inputSchema": {
-            "properties": {
-                "project_path": {"type": "string"},
-                "analysis_result": {"type": "object", "required": True},
-                "task_granularity": {"enum": ["file", "batch", "module"]},
-                "parallel_tasks": {"type": "boolean"},
-                "custom_priorities": {"type": "object"},
-                "create_in_manager": {"type": "boolean"}
-            }
-        }
-    }
-```
+**`__init__(self)`**
+- 初始化模板映射关系，支持8种核心任务类型
+- 设置文件优先级映射，包含high、normal、low三个级别
+- 建立TaskType到模板名称的对应关系
+- 为任务生成提供基础配置
 
-## 5阶段任务生成详解
+**`generate_tasks(self, project_path, analysis_result, task_granularity, parallel_tasks, custom_priorities)`**
+- 核心任务计划生成方法，处理嵌套JSON结构解析
+- 生成全局scan任务ID，确保依赖关系一致性
+- 按顺序生成4个阶段的任务列表
+- 计算总体统计和依赖关系图谱
+- 构建完整的任务计划响应结构
 
-### Phase 1: 项目扫描任务
-```python
-def _generate_phase_1_tasks(self, project_path: str, analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """生成第一阶段任务（项目扫描）"""
-    return [{
-        "id": f"scan_{timestamp}",
-        "type": "scan",
-        "description": "扫描项目文件结构和基本信息",
-        "phase": "phase_1_scan",
-        "template": None,
-        "dependencies": [],
-        "priority": "high",
-        "estimated_time": "5 minutes"
-    }]
-```
+**`_generate_phase_1_tasks(self, project_path, project_analysis, scan_task_id)`**
+- 生成Phase 1项目扫描任务
+- 创建唯一的scan任务，作为所有后续任务的依赖
+- 设置扫描任务的输出路径和模板映射
+- 为整个任务流程建立起始点
 
-**特点**:
-- 唯一扫描任务，作为所有后续任务的基础依赖
-- 无前置依赖，可立即执行
-- 高优先级，包含项目元数据
+**`_generate_phase_2_tasks(self, project_path, plan, scan_task_id, custom_priorities)`**
+- 生成Phase 2文件层文档任务
+- 基于项目分析结果中的关键文件列表
+- 应用文件优先级排序和自定义优先级
+- 建立对scan任务的依赖关系
 
-### Phase 2: 文件层文档生成
-```python
-def _generate_phase_2_tasks(self, project_path: str, plan: Dict[str, Any], custom_priorities: Dict[str, Any] = None) -> List[Dict[str, Any]]:
-    """生成第二阶段任务（文件层）"""
-    tasks = []
-    files_to_process = plan.get("phase_2_files", [])
+**`_generate_phase_3_tasks(self, project_path, project_analysis, phase_2_tasks)`**
+- 生成Phase 3架构层文档任务
+- 包含系统架构、技术栈、数据流等架构组件
+- 依赖于Phase 2所有文件任务完成
+- 为系统架构文档生成提供任务框架
+
+**`_generate_phase_4_tasks(self, project_path, project_analysis, phase_3_tasks)`**
+- 生成Phase 4项目层文档任务
+- 包含项目README等项目级别文档
+- 依赖于Phase 3所有架构任务完成
+- 作为整个文档生成流程的收尾
+
+## 类详细分析
+
+### 类概览表
+| 类名 | 继承关系 | 主要职责 | 实例方法数量 |
+|------|----------|----------|--------------|
+| `TaskPlanGenerator` | 无继承 | 任务计划生成核心引擎 | 10个 |
+| `TaskInitTool` | 无继承 | MCP协议task_init工具实现 | 4个 |
+
+### 类详细说明
+
+**`TaskPlanGenerator`**
+- **设计目的**: 提供完整的4阶段任务计划生成功能
+- **核心职责**: 任务列表生成、依赖关系建立、时间估算、优先级排序
+- **映射系统**: 任务类型到模板的映射、文件优先级映射
+- **架构支持**: 完整的4阶段文档生成架构
+- **扩展性**: 支持自定义优先级和任务粒度配置
+
+**`TaskInitTool`**
+- **设计目的**: 实现MCP协议的task_init工具功能
+- **核心职责**: 参数验证、任务生成调用、结果格式化
+- **MCP集成**: 完全符合MCP工具接口规范
+- **数据处理**: 处理复杂的嵌套分析结果结构
+- **错误处理**: 完整的异常捕获和错误响应机制
+
+## 函数调用流程图
+```mermaid
+graph TD
+    A[MCP调用execute] --> B[参数验证和解析]
+    B --> C[加载分析结果]
+    C --> D[调用generate_tasks]
     
-    for i, file_path in enumerate(files_to_process):
-        task_id = f"file_summary_{timestamp}_{i}"
-        priority = self._get_file_priority(file_path, custom_priorities)
-        
-        task = {
-            "id": task_id,
-            "type": "file_summary",
-            "description": f"生成{file_path}文件摘要",
-            "phase": "phase_2_files",
-            "target_file": file_path,
-            "template": "file_summary",
-            "output_path": f"docs/files/summaries/{file_path}.md",
-            "dependencies": [scan_task_id],
-            "priority": priority,
-            "estimated_time": "3 minutes"
-        }
-```
-
-**特点**:
-- 为每个关键文件生成独立任务
-- 依赖Phase 1扫描任务完成
-- 智能优先级分配
-- 标准化输出路径
-
-### Phase 3: 模块层文档生成
-创建6类模块层任务:
-
-1. **模块总览任务**
-```python
-{
-    "type": "module_analysis",
-    "description": "生成模块总览和功能分析",
-    "template": "module_analysis",
-    "output_path": "docs/modules/overview.md",
-    "dependencies": file_task_ids,  # 依赖所有文件任务
-    "estimated_time": "8 minutes"
-}
-```
-
-2. **模块关系任务**
-```python
-{
-    "type": "module_relations",
-    "description": "分析模块间关系和依赖",
-    "template": "module_relations",
-    "output_path": "docs/modules/module-relations.md",
-    "dependencies": [module_analysis_id],
-    "estimated_time": "6 minutes"
-}
-```
-
-3. **依赖图谱任务**
-```python
-{
-    "type": "dependency_graph",
-    "description": "生成模块依赖图谱分析",
-    "template": "dependency_graph",
-    "output_path": "docs/modules/dependency-graph.md",
-    "estimated_time": "5 minutes"
-}
-```
-
-4. **重要模块详细文档** (前3个模块)
-   - 模块README: `docs/modules/modules/{module}/README.md`
-   - 模块API: `docs/modules/modules/{module}/api.md`
-   - 模块流程: `docs/modules/modules/{module}/flow.md`
-
-### Phase 4: 架构层文档生成
-创建6类架构层任务:
-
-1. **架构概述**
-```python
-{
-    "type": "architecture",
-    "description": "生成系统架构概述",
-    "template": "architecture",
-    "output_path": "docs/architecture/overview.md",
-    "dependencies": module_task_ids,  # 依赖所有模块任务
-    "estimated_time": "12 minutes"
-}
-```
-
-2. **技术栈分析**
-```python
-{
-    "type": "tech_stack",
-    "description": "分析技术栈和架构原则",
-    "output_path": "docs/architecture/tech-stack.md",
-    "estimated_time": "10 minutes"
-}
-```
-
-3. **数据流设计**
-```python
-{
-    "type": "data_flow",
-    "description": "设计系统数据流",
-    "output_path": "docs/architecture/data-flow.md",
-    "estimated_time": "8 minutes"
-}
-```
-
-4. **架构图表**
-   - 系统架构图: `docs/architecture/diagrams/system-architecture.md`
-   - 组件关系图: `docs/architecture/diagrams/component-diagram.md`
-   - 部署架构图: `docs/architecture/diagrams/deployment-diagram.md`
-
-### Phase 5: 项目层文档生成
-```python
-def _generate_phase_5_tasks(self, project_path: str, analysis: Dict[str, Any], phase_4_tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """生成第五阶段任务（项目层）"""
-    return [{
-        "id": f"project_readme_{timestamp}",
-        "type": "project_readme",
-        "description": "生成项目README文档",
-        "phase": "phase_5_project",
-        "template": "project_readme",
-        "output_path": "docs/project/README.md",
-        "dependencies": arch_task_ids,  # 依赖所有架构任务
-        "estimated_time": "10 minutes"
-    }]
-```
-
-**特点**:
-- 仅生成README.md文档
-- 依赖所有架构层任务完成
-- 项目总结性文档
-
-## 智能特性
-
-### 优先级智能分配
-```python
-def _get_file_priority(self, file_path: str, custom_priorities: Dict[str, Any] = None) -> str:
-    """确定文件优先级"""
-    # 1. 自定义优先级优先
-    if custom_priorities and file_path in custom_priorities:
-        return custom_priorities[file_path]
+    D --> E[解析嵌套JSON结构]
+    E --> F[生成全局scan任务ID]
+    F --> G[生成Phase 1扫描任务]
     
-    file_lower = file_path.lower()
+    G --> H[生成Phase 2文件任务]
+    H --> I[应用优先级排序]
+    I --> J[生成Phase 3架构任务]
+    J --> K[生成Phase 4项目任务]
     
-    # 2. 高优先级模式匹配
-    for pattern in self.priority_mapping["high"]:
-        if pattern in file_lower:
-            return "high"
+    K --> L[构建依赖关系图谱]
+    L --> M[计算总体统计]
+    M --> N[保存任务状态]
+    N --> O[返回完整任务计划]
     
-    # 3. 普通和低优先级模式匹配
-    # 默认返回"normal"
+    P[异常处理] --> Q[错误日志记录]
+    Q --> R[返回错误响应]
 ```
 
-### 依赖关系图构建
-```python
-def _build_dependency_graph(self, all_tasks: List[Dict[str, Any]]) -> Dict[str, List[str]]:
-    """构建依赖关系图"""
-    graph = {}
-    for task in all_tasks:
-        task_id = task["id"]
-        dependencies = task.get("dependencies", [])
-        graph[task_id] = dependencies
-    return graph
-```
+## 变量作用域分析
+- **模块作用域**: project_root路径、导入的模块和类
+- **类作用域**: TaskPlanGenerator和TaskInitTool类定义
+- **实例作用域**: 模板映射字典、优先级映射、任务管理器实例
+- **方法作用域**: 各方法内的局部变量，如任务列表、依赖图谱等
 
-### 任务管理器集成
-```python
-def create_tasks_in_manager(self, task_manager: TaskManager, task_plan: Dict[str, Any]) -> int:
-    """在任务管理器中创建所有任务"""
-    created_count = 0
-    phases = ["phase_1_scan", "phase_2_files", "phase_3_modules", "phase_4_architecture", "phase_5_project"]
-    
-    for phase in phases:
-        if phase in task_plan:
-            tasks = phase_data.get("tasks", [])
-            for task_data in tasks:
-                task_type = TaskType(task_data["type"])
-                task_id = task_manager.create_task(
-                    task_type=task_type,
-                    description=task_data["description"],
-                    phase=task_data["phase"],
-                    target_file=task_data.get("target_file"),
-                    target_module=task_data.get("target_module"),
-                    template_name=task_data.get("template"),
-                    output_path=task_data.get("output_path"),
-                    dependencies=task_data.get("dependencies", []),
-                    priority=task_data.get("priority", "normal"),
-                    estimated_time=task_data.get("estimated_time"),
-                    metadata=task_data.get("metadata", {})
-                )
-                created_count += 1
-```
-
-## 任务计划结构
-
-### 完整响应格式
-```json
-{
-    "task_plan": {
-        "total_phases": 5,
-        "total_tasks": 45,
-        "estimated_duration": "2 hours 30 minutes",
-        "dependencies_graph": {"task_id": ["dependency_ids"]},
-        "task_distribution": {
-            "phase_1_scan": 1,
-            "phase_2_files": 20,
-            "phase_3_modules": 12,
-            "phase_4_architecture": 6,
-            "phase_5_project": 1
-        }
-    },
-    "phase_1_scan": {
-        "description": "项目扫描和分析",
-        "dependencies": [],
-        "estimated_time": "5 minutes",
-        "tasks": [...]
-    },
-    "phase_2_files": {
-        "description": "文件层文档生成（20个文件）",
-        "dependencies": ["phase_1_complete"],
-        "estimated_time": "60 minutes",
-        "tasks": [...]
-    }
-    // ... 其他阶段
-}
-```
-
-### 任务结构标准
-```json
-{
-    "id": "file_summary_1694689200000_0",
-    "type": "file_summary",
-    "description": "生成app.py文件摘要",
-    "phase": "phase_2_files",
-    "target_file": "app.py",
-    "template": "file_summary",
-    "output_path": "docs/files/summaries/app.py.md",
-    "dependencies": ["scan_1694689200000"],
-    "priority": "high",
-    "estimated_time": "3 minutes",
-    "status": "pending",
-    "metadata": {
-        "file_type": ".py",
-        "file_size_category": "unknown"
-    }
-}
-```
-
-## 配置选项
-
-### 任务粒度控制
-- **file**: 每个文件一个任务（默认）
-- **batch**: 批量处理相似文件
-- **module**: 按模块组织任务
-
-### 并行任务支持
-- **parallel_tasks**: true时生成可并发执行的任务
-- 自动检测任务间独立性
-- 优化执行效率
-
-### 自定义优先级
-```python
-custom_priorities = {
-    "core/main.py": "high",
-    "utils/helper.py": "low",
-    "config/settings.py": "high"
-}
-```
-
-## 时间估算算法
-
-### 基础时间模型
-```python
-def _estimate_duration(self, file_count: int, module_count: int, arch_count: int) -> str:
-    """估计完成时间"""
-    # 每个文件3分钟，每个模块5分钟，每个架构组件10分钟
-    total_minutes = file_count * 3 + module_count * 5 + arch_count * 10 + 30  # 基础30分钟
-    
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-    
-    return f"{hours} hours {minutes} minutes" if hours > 0 else f"{minutes} minutes"
-```
-
-### 阶段时间分配
-- Phase 1: 固定5分钟
-- Phase 2: 文件数 × 3分钟
-- Phase 3: 模块数 × 5分钟 + 固定19分钟（总览+关系+依赖图）
-- Phase 4: 固定47分钟（6个架构组件）
-- Phase 5: 固定10分钟
-
-## 性能特性
-- **任务生成**: < 500ms for 100+ tasks
-- **依赖图构建**: O(n) 线性复杂度
-- **内存使用**: 每个任务约占用1KB
-- **批量创建**: 支持批量任务管理器集成
-
-## 使用示例
-
-### MCP工具调用
-```python
-from src.mcp_tools.task_init import create_mcp_tool
-
-# 创建工具实例
-tool = create_mcp_tool()
-
-# 执行任务初始化
-arguments = {
-    "project_path": "/path/to/project",
-    "analysis_result": doc_guide_result,
-    "task_granularity": "file",
-    "parallel_tasks": False,
-    "create_in_manager": True
-}
-
-result = tool.execute(arguments)
-```
-
-### 命令行测试
-```bash
-# 基本使用
-python src/mcp_tools/task_init.py /path/to/project \
-    --analysis-file analysis.json
-
-# 创建任务到管理器
-python src/mcp_tools/task_init.py /path/to/project \
-    --analysis-file analysis.json \
-    --granularity file \
-    --create-tasks
-```
-
-### 集成使用流程
-```python
-# 完整工作流
-from src.mcp_tools.doc_guide import create_mcp_tool as create_guide_tool
-from src.mcp_tools.task_init import create_mcp_tool as create_init_tool
-
-# 1. 项目分析
-guide_tool = create_guide_tool()
-analysis_result = guide_tool.execute({"project_path": project_path})
-
-# 2. 生成任务计划
-init_tool = create_init_tool()
-task_plan = init_tool.execute({
-    "project_path": project_path,
-    "analysis_result": analysis_result["data"],
-    "create_in_manager": True
-})
-
-print(f"生成了 {task_plan['data']['task_plan']['total_tasks']} 个任务")
-print(f"预计耗时: {task_plan['data']['task_plan']['estimated_duration']}")
-```
-
-## 错误处理
-
-### 输入验证
-- **项目路径验证**: 检查路径存在性和访问权限
-- **分析结果验证**: 验证必需字段完整性
-- **参数类型验证**: 确保参数类型正确
-
-### 异常处理
-- **任务类型转换失败**: 跳过无效任务继续处理
-- **依赖关系循环**: 自动检测并报告循环依赖
-- **模板映射失败**: 使用默认模板或跳过
-
-### 鲁棒性设计
-- **部分失败容错**: 单个任务创建失败不影响整体
-- **默认值填充**: 缺失参数使用合理默认值
-- **日志记录**: 详细记录任务创建过程
-
+## 函数依赖关系
+- `__init__` → 映射关系初始化
+- `generate_tasks` → `_generate_phase_1_tasks` → `_generate_phase_2_tasks` → `_generate_phase_3_tasks` → `_generate_phase_4_tasks`
+- `generate_tasks` → `_build_dependency_graph` 依赖图谱构建
+- `_generate_phase_2_tasks` → `_get_file_priority` 优先级计算
+- 各阶段生成方法 → `_get_output_path` → `_estimate_task_duration`
+- `execute` → `TaskPlanGenerator.generate_tasks` → `TaskManager` 状态保存
+- 所有方法 → `logger` 日志记录

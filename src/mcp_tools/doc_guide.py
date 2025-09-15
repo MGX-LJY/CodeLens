@@ -315,19 +315,8 @@ class ProjectAnalyzer:
                 if package_name not in ["__pycache__", ".pytest_cache"]:
                     real_packages.append(package_name)
         
-        # 🔍 第二步：基于文件摘要进行智能模块分析（如果可用）
-        intelligent_modules = []
-        docs_path = project_path / "docs" / "files" / "summaries"
-        if docs_path.exists():
-            intelligent_modules = ProjectModuleAnalyzer.analyze_from_file_summaries(
-                docs_path, real_packages
-            )
-        
-        # 🎯 第三步：回退到实际包结构（确保有实际代码支撑）
-        if intelligent_modules:
-            return intelligent_modules
-        else:
-            return ProjectModuleAnalyzer.map_packages_to_modules(real_packages, project_path)
+        # 直接返回实际包结构
+        return [pkg for pkg in real_packages if pkg != "root"]
 
     @staticmethod
     def _assess_complexity(file_info: Dict[str, Any]) -> str:

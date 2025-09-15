@@ -2,16 +2,16 @@
 
 ## 项目概述
 
-CodeLens 0.6.1.4 是一个专为Claude Code设计的智能化MCP（Model Context Protocol）协作服务器。通过**Task Engine智能任务管理**和**5阶段工作流程**，CodeLens为Claude Code提供从项目分析到文档生成的完整智能化协作体验，实现高质量项目文档的自动化生成。
+CodeLens 0.6.2.0 是一个专为Claude Code设计的智能化MCP（Model Context Protocol）协作服务器。通过**Task Engine智能任务管理**和**4阶段工作流程**，CodeLens为Claude Code提供从项目分析到文档生成的完整智能化协作体验，实现高质量项目文档的自动化生成。
 
 ## 🚀 核心特性
 
 🧠 **Task Engine智能任务管理**：完整的任务生命周期管理和5阶段流程控制
-🔄 **5阶段智能工作流**：项目扫描→任务规划→文件文档→模块分析→项目总结
+🔄 **4阶段智能工作流**：项目扫描→文件文档→架构分析→项目总结
 🎯 **7个智能MCP工具**：涵盖项目分析、任务管理、执行监控的完整工具链
 📊 **实时状态跟踪**：支持中断恢复的持久化状态管理和进度监控
 🧠 **项目智能分析**：自动识别项目类型、框架、模块，生成定制化文档策略
-📚 **16个核心模板系统**：覆盖架构、模块、文件、项目四个文档层级
+📚 **10个核心模板系统**：覆盖架构、文件、项目三个文档层级
 🛠️ **零依赖设计**：仅使用Python标准库，部署简单
 
 ## 快速开始
@@ -21,18 +21,20 @@ CodeLens 0.6.1.4 是一个专为Claude Code设计的智能化MCP（Model Context
 - Python 3.9+
 - 无外部依赖，使用Python标准库
 
-### 2. 5阶段智能工作流
+### 2. 4阶段智能工作流
 
 ```bash
-# 阶段1: 智能项目分析
+# 阶段1: 项目扫描和分析
 python src/mcp_tools/doc_guide.py /path/to/your/project
 
-# 阶段2: 生成任务计划  
-python src/mcp_tools/task_init.py /path/to/your/project --analysis-file analysis.json
+# 阶段2: 文件层文档生成
+python src/mcp_tools/task_execute.py /path/to/your/project --task-id <file_task_id>
 
-# 阶段3-5: 执行任务和监控
-python src/mcp_tools/task_execute.py /path/to/your/project --task-id <task_id>
-python src/mcp_tools/task_status.py /path/to/your/project --type overall_status
+# 阶段3: 架构层文档生成
+python src/mcp_tools/task_execute.py /path/to/your/project --task-id <arch_task_id>
+
+# 阶段4: 项目层文档生成
+python src/mcp_tools/task_execute.py /path/to/your/project --task-id <project_task_id>
 
 # 传统工具 (兼容)
 python src/mcp_tools/doc_scan.py /path/to/your/project
@@ -66,19 +68,19 @@ python src/mcp_tools/doc_verify.py /path/to/your/project
 - 🧠 **智能化协作**: 从被动信息提供到主动智能协作
 - ⚡ **任务驱动**: 完整的任务生命周期管理和进度跟踪
 - 📊 **状态感知**: 实时监控和健康检查机制
-- 🔧 **流程标准化**: 5阶段严格依赖验证和100%完成率要求
+- 🔧 **流程标准化**: 4阶段严格依赖验证和100%完成率要求
 - 🎯 **上下文增强**: 为AI提供丰富的执行上下文和指导信息
 
 ## 技术架构
 
 ### 🚀 Task Engine智能任务管理架构
 
-CodeLens  引入了Task Engine智能任务管理层，实现5阶段工作流程控制：
+CodeLens  引入了Task Engine智能任务管理层，实现4阶段工作流程控制：
 
 ```
 🧠 Task Engine层 (v核心)
 ├── TaskManager - 智能任务管理器 (依赖关系、优先级调度)
-├── PhaseController - 5阶段严格控制器 (100%完成率要求)
+├── PhaseController - 4阶段严格控制器 (100%完成率要求)
 └── StateTracker - 状态跟踪器 (持久化、进度监控、健康检查)
 
 🔧 7个智能MCP工具
@@ -86,33 +88,30 @@ CodeLens  引入了Task Engine智能任务管理层，实现5阶段工作流程�
 └── Task Engine工具 (4个): doc_guide, task_init, task_execute, task_status
 
 🛠️ 服务支撑层
-├── TemplateService - 16个模板管理
+├── TemplateService - 10个模板管理
 ├── FileService - 项目文件信息服务  
 └── ValidationService - 文档验证服务
 ```
 
-### 🏗️ 5阶段智能工作流程
+### 🏗️ 4阶段智能工作流程
 
 ```
-Phase 1: 项目扫描 → Phase 2: 任务规划 → Phase 3: 文件文档
-    ↓                    ↓                    ↓
-Phase 5: 项目总结 ← Phase 4: 模块架构 ←─────────┘
+Phase 1: 项目扫描 → Phase 2: 文件文档 → Phase 3: 架构文档 → Phase 4: 项目总结
 
 每阶段100%完成后才能进入下一阶段，确保文档质量
 ```
 
-### 📚 四层文档模板体系 (16个)
+### 📚 三层文档模板体系 (10个)
 
 ```
-🏛️ 架构层 (4个) - 系统概述、技术栈、数据流
-🧩 模块层 (6个) - 模块总览、关系分析、依赖图谱、API、业务流程  
-📄 文件层 (3个) - 文件摘要、类分析、函数目录
+🏛️ 架构层 (6个) - 系统概述、技术栈、数据流、组件图、部署图
+📄 文件层 (1个) - 详细文件分析，包含流程图、作用域分析、依赖关系
 📈 项目层 (3个) - README、变更日志、发展路线
 ```
 
 ### 🎯 智能化AI协作工作流
 1. **🧠 深度项目分析**: doc_guide智能识别项目类型、框架、模块特征
-2. **📋 智能任务规划**: task_init生成5阶段完整任务计划和依赖图谱
+2. **📋 智能任务规划**: task_init生成4阶段完整任务计划和依赖图谱
 3. **⚡ 任务执行驱动**: task_execute提供执行上下文、模板和指导信息
 4. **📊 实时状态监控**: task_status全面监控进度和健康状态
 5. **✅ 完整性验证**: doc_verify确保最终文档体系完整性
@@ -152,24 +151,18 @@ python mcp_server.py info
 ### 🚀 Task Engine智能工作流示例
 
 ```bash
-# 完整5阶段工作流演示
-📊 Phase 1: 项目分析
+# 完整4阶段工作流演示
+📊 Phase 1: 项目扫描和分析
 ├── 检测到: Python Flask项目
 ├── 识别框架: Flask + SQLAlchemy  
-├── 发现模块: Auth, Database, API (3个)
-└── 生成策略: 文件优先→模块分析→架构设计
+├── 文件分析: 20个核心Python文件
+└── 生成策略: 文件分析→架构设计→项目文档
 
-📋 Phase 2: 任务规划
-├── 生成任务: 45个 (扫描1 + 文件20 + 模块12 + 架构6 + 项目1)
-├── 依赖图谱: 构建完整任务依赖关系
-├── 优先级排序: 关键文件优先处理
-└── 预计耗时: 2小时15分钟
-
-⚡ Phase 3-5: 智能执行
-├── 实时进度: 45.2% (19/42任务完成)
-├── 当前阶段: Phase 2 - 文件层文档生成  
-├── 健康状态: 良好 ✅
-└── 下一步: 执行models.py文件摘要任务
+⚡ Phase 2-4: 智能执行
+├── Phase 2: 文件层文档 (20个文件)
+├── Phase 3: 架构层文档 (6个架构文档)
+├── Phase 4: 项目层文档 (3个项目文档)
+└── 实时进度: 65.5% (19/29任务完成)
 ```
 
 ### 🎭 智能化协作流程
@@ -184,7 +177,7 @@ sequenceDiagram
     TE-->>CC: 深度项目分析+策略
     
     CC->>TE: task_init(analysis_result)
-    TE-->>CC: 5阶段完整任务计划
+    TE-->>CC: 4阶段完整任务计划
     
     loop 任务执行循环
         CC->>TE: task_execute(task_id)
@@ -215,7 +208,7 @@ sequenceDiagram
 ### Phase 3: Task Engine智能化 ✅ (v)
 - ✅ **Task Engine核心**: TaskManager, PhaseController, StateTracker
 - ✅ **4个新增智能工具**: doc_guide, task_init, task_execute, task_status  
-- ✅ **5阶段工作流程**: 严格阶段控制和100%完成率要求
+- ✅ **4阶段工作流程**: 严格阶段控制和100%完成率要求
 - ✅ **智能项目分析**: 自动识别项目类型、框架、模块
 - ✅ **状态持久化**: 支持中断恢复的完整状态跟踪
 - ✅ **实时监控**: 健康检查和性能监控机制

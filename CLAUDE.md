@@ -22,18 +22,17 @@ CodeLens operates as a **Claude Code collaboration assistant** with two main ser
 - **doc_scan**: Scans project files and returns structured information
 - **template_get**: Provides document templates for various documentation levels
 - **doc_guide**: Intelligent project analysis with framework detection and documentation strategy
-- **task_init**: Generates complete 5-phase task plans with dependency management
+- **task_init**: Generates complete 4-phase task plans with dependency management
 - **task_status**: Real-time task progress monitoring and phase control
 - **task_execute**: Advanced task execution engine with template integration
 - **init_tools**: One-command project initialization with intelligent workflow
 
-### 4-Layer Documentation Architecture
+### 3-Layer Documentation Architecture
 1. **Architecture Layer** (`/docs/architecture/`) - System overview, tech stack, data flow, deployment diagrams (6 templates)
-2. **Module Layer** (`/docs/modules/`) - Module functionality, API docs, business flows, dependencies (6 templates)  
-3. **File Layer** (`/docs/files/`) - Comprehensive file analysis with classes, functions, algorithms (1 unified template)
-4. **Project Layer** (`/docs/project/`) - README, changelog, roadmap, project scan reports (4 templates)
+2. **File Layer** (`/docs/files/`) - Comprehensive file analysis with classes, functions, algorithms (1 unified template)
+3. **Project Layer** (`/docs/project/`) - README, changelog, roadmap, project scan reports (3 templates)
 
-**Total: 17 Professional Templates** covering all documentation needs
+**Total: 10 Professional Templates** covering all documentation needs
 
 ## Tech Stack
 
@@ -41,47 +40,48 @@ CodeLens operates as a **Claude Code collaboration assistant** with two main ser
 - **Framework**: MCP (Model Context Protocol)
 - **Task Engine**: Advanced dependency resolution with phase control
 - **File Processing**: pathlib, glob for efficient file operations
-- **Template System**: 17 professional templates with variable validation
+- **Template System**: 10 professional templates with variable validation
 - **Persistence**: JSON-based task state management with atomic operations
 - **Intelligence**: Framework detection, complexity analysis, smart prioritization
 
-## 🚀 5-Phase Intelligent Documentation Workflow
+## 🚀 4-Phase Intelligent Documentation Workflow
 
 CodeLens provides a **complete automated workflow** for large-scale project documentation:
 
-### Phase 1: Project Analysis
+### Phase 1: Project Scan and Analysis
 ```bash
 python src/mcp_tools/doc_guide.py /path/to/project
 # ✅ Intelligent framework detection (Flask, Django, React, etc.)
 # ✅ Complexity analysis and file prioritization  
 # ✅ Custom documentation strategy generation
+# ✅ Project scanning and file analysis
 ```
 
-### Phase 2: Task Planning
+### Phase 2: File-Level Documentation
 ```bash
-python src/mcp_tools/task_init.py /path/to/project --analysis-file .codelens/analysis.json --create-tasks
-# ✅ Generates 20-100+ tasks based on project size
-# ✅ Smart dependency graph with proper sequencing
-# ✅ Estimated completion time calculation
+python src/mcp_tools/task_execute.py /path/to/project --task-id <FILE_TASK_ID>
+# ✅ Detailed file analysis and documentation
+# ✅ Function and class documentation
+# ✅ Code flow and dependency analysis
 ```
 
-### Phase 3: Progress Monitoring
+### Phase 3: Architecture-Level Documentation
 ```bash
-python src/mcp_tools/task_status.py /path/to/project --type current_task
-# ✅ Real-time progress tracking
-# ✅ Phase completion validation
-# ✅ Dependency satisfaction checking
+python src/mcp_tools/task_execute.py /path/to/project --task-id <ARCH_TASK_ID>
+# ✅ System architecture documentation
+# ✅ Tech stack and data flow analysis
+# ✅ Component and deployment diagrams
 ```
 
-### Phase 4: Documentation Generation
+### Phase 4: Project-Level Documentation
 ```bash
-python src/mcp_tools/task_execute.py /path/to/project --task-id <TASK_ID>
-# ✅ Template-driven content generation
-# ✅ Automatic output directory creation
-# ✅ Quality validation and error handling
+python src/mcp_tools/task_execute.py /path/to/project --task-id <PROJECT_TASK_ID>
+# ✅ README and project overview
+# ✅ Changelog and roadmap generation
+# ✅ Final project documentation
 ```
 
-### Phase 5: One-Command Initialization
+**One-Command Initialization:**
 ```bash
 python src/mcp_tools/init_tools.py /path/to/project
 # ✅ Complete workflow setup in one command
@@ -111,7 +111,7 @@ python src/mcp_tools/doc_scan.py /path/to/project --no-content
 ### template_get  
 **Purpose**: Retrieve document templates
 ```python
-# Get all 17 templates
+# Get all 10 templates
 python src/mcp_tools/template_get.py --list-all
 
 # Get specific template with metadata
@@ -150,14 +150,14 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789 -
 
 ✅ **Completed & Production Ready**:
 - **FileService**: Enhanced metadata extraction, directory tree generation, framework detection
-- **TemplateService**: 17 professional templates covering all documentation layers
+- **TemplateService**: 10 professional templates covering all documentation layers
 - **TaskEngine**: Complete dependency resolution, phase control, atomic state management
 - **7 MCP Tools**: doc_scan, template_get, doc_guide, task_init, task_status, task_execute, init_tools
-- **Intelligent Workflow**: 5-phase automated documentation generation
+- **Intelligent Workflow**: 4-phase automated documentation generation
 - **Recent Fixes**: Scan task template integration, dependency ID consistency, template validation
 
 🧪 **Successfully Tested**:
-- WeChat automation project (453 files) - Generated 40 tasks across 5 phases
+- WeChat automation project (453 files) - Generated 40 tasks across 4 phases
 - Task dependency resolution working correctly
 - Template system producing real documentation output
 - All critical bugs from initial implementation resolved
@@ -170,16 +170,15 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789 -
 │   ├── file_service.py      # Enhanced project file scanning and metadata
 │   └── __init__.py
 ├── templates/
-│   ├── document_templates.py # 17 professional templates with validation
+│   ├── document_templates.py # 10 professional templates with validation
 │   ├── templates/           # Template layer organization
 │   │   ├── architecture_templates.py  # 6 architecture layer templates
-│   │   ├── module_templates.py       # 6 module layer templates  
 │   │   ├── file_templates.py         # 1 comprehensive file template
-│   │   └── project_templates.py      # 4 project layer templates
+│   │   └── project_templates.py      # 3 project layer templates
 │   └── __init__.py  
 ├── task_engine/
 │   ├── task_manager.py      # Advanced task lifecycle management
-│   ├── phase_controller.py  # 5-phase workflow control
+│   ├── phase_controller.py  # 4-phase workflow control
 │   └── __init__.py
 ├── mcp_tools/
 │   ├── doc_scan.py         # Project scanning MCP tool
@@ -219,7 +218,6 @@ python src/mcp_tools/template_get.py --template project_scan_summary --metadata
 
 # List templates by layer
 python src/mcp_tools/template_get.py --layer architecture
-python src/mcp_tools/template_get.py --layer module
 python src/mcp_tools/template_get.py --layer file
 python src/mcp_tools/template_get.py --layer project
 ```
@@ -228,7 +226,7 @@ python src/mcp_tools/template_get.py --layer project
 
 - **Scan Task Empty Implementation**: Fixed scan tasks to generate actual project reports using `project_scan_summary` template
 - **Dependency ID Mismatch**: Resolved task dependency chain issues with consistent ID generation
-- **Template Integration**: All 17 templates properly integrated with task execution engine
+- **Template Integration**: All 10 templates properly integrated with task execution engine
 - **Task Validation**: Added comprehensive output validation and quality checks
 
 ## 每次都要记得把想法生成在文档中

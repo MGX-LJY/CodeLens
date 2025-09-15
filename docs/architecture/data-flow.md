@@ -16,34 +16,34 @@ Claude Code → doc_guide → ProjectAnalyzer
 分析结果 + 文档策略 + 生成计划 → JSON响应 → Claude Code
 ```
 
-### 阶段2: 任务规划 (task_init)
+### 阶段2: 文件层文档生成 (task_execute)
 ```
-Claude Code → task_init → TaskPlanGenerator
+Claude Code → task_execute → FileAnalyzer
      ↓
-分析数据 → 任务生成 → 依赖图构建 → 优先级排序
+文件分析 → 详细解析 → 流程图生成 → 依赖分析
      ↓
-23+任务计划 + 执行策略 → JSON响应 → Claude Code
-```
-
-### 阶段3: 任务执行 (task_execute)
-```
-Claude Code → task_execute → TaskExecutor
-     ↓
-任务ID → 上下文构建 → 模板获取 → 执行管理
-     ↓
-执行结果 + 状态更新 → JSON响应 → Claude Code
+文件摘要文档 + 状态更新 → JSON响应 → Claude Code
 ```
 
-### 阶段4: 进度监控 (task_status)
+### 阶段3: 架构层文档生成 (task_execute)
 ```
-Claude Code → task_status → StateTracker
+Claude Code → task_execute → ArchitectureAnalyzer
      ↓
-状态查询 → 进度分析 → 健康检查 → 建议生成
+系统分析 → 架构设计 → 技术栈分析 → 图表生成
      ↓
-状态报告 + 执行建议 → JSON响应 → Claude Code
+架构文档 + 状态更新 → JSON响应 → Claude Code
 ```
 
-### 阶段5: 数据支持服务
+### 阶段4: 项目层文档生成 (task_execute)
+```
+Claude Code → task_execute → ProjectDocGenerator
+     ↓
+项目总结 → README生成 → 变更日志 → 路线图规划
+     ↓
+项目文档 + 状态更新 → JSON响应 → Claude Code
+```
+
+### 支持服务
 
 #### 5.1 智能文件扫描 (doc_scan)
 ```
@@ -60,7 +60,7 @@ Claude Code → template_get → TemplateService
      ↓
 模板查询 → 层级定位 → 模板加载
      ↓ 
-架构层/模块层/文件层/项目层模板
+架构层/文件层/项目层模板
      ↓
 模板内容 + 元数据 → JSON响应 → Claude Code
 ```
@@ -74,7 +74,7 @@ Claude Code → doc_verify → ValidationService
 验证报告 → JSON响应 → Claude Code
 ```
 
-## 5阶段文档生成工作流
+## 4阶段文档生成工作流
 
 ### Phase 1: 项目扫描分析 (phase_1_scan)
 ```
@@ -94,22 +94,10 @@ TaskManager → 文件任务调度 → 依赖验证(Phase 1) → 优先级排序
 普通/低优先级文件 → 批量处理 → 状态跟踪 → 100%完成检查
 ```
 
-### Phase 3: 模块层架构分析 (phase_3_modules)
-```
-任务类型: MODULE_* (6-20个任务)  
-依赖检查(Phase 2 100%完成) → 模块任务生成
-     ↓
-MODULE_ANALYSIS → MODULE_RELATIONS → DEPENDENCY_GRAPH
-     ↓
-重要模块详细任务: MODULE_README + MODULE_API + MODULE_FLOW
-     ↓
-模块关系构建 → 架构设计基础 → 阶段完成验证
-```
-
-### Phase 4: 架构层文档生成 (phase_4_architecture)
+### Phase 3: 架构层文档生成 (phase_3_architecture)
 ```
 任务类型: ARCHITECTURE/TECH_STACK/DATA_FLOW + 图表任务 (6个任务)
-依赖检查(Phase 3 100%完成) → 架构任务并发执行
+依赖检查(Phase 2 100%完成) → 架构任务并发执行
      ↓
 系统架构设计 + 技术栈分析 + 数据流设计
      ↓
@@ -118,12 +106,12 @@ MODULE_ANALYSIS → MODULE_RELATIONS → DEPENDENCY_GRAPH
 架构文档完整性验证 → 项目技术全貌构建
 ```
 
-### Phase 5: 项目层总结文档 (phase_5_project)
+### Phase 4: 项目层总结文档 (phase_4_project)
 ```
-任务类型: PROJECT_README (1个任务)
-依赖检查(Phase 4 100%完成) → 项目总结任务
+任务类型: PROJECT_README + CHANGELOG + ROADMAP (3个任务)
+依赖检查(Phase 3 100%完成) → 项目总结任务
      ↓
-整合所有阶段成果 → 项目README生成 → 文档完整性验证
+整合所有阶段成果 → 项目文档生成 → 文档完整性验证
      ↓
 项目文档生成完成 → 全流程状态更新(COMPLETED)
 ```

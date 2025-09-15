@@ -18,6 +18,7 @@ from src.mcp_tools.task_init import TaskInitTool
 from src.mcp_tools.task_execute import TaskExecuteTool
 from src.mcp_tools.task_status import TaskStatusTool
 from src.mcp_tools.init_tools import InitTools
+from src.mcp_tools.task_complete import TaskCompleteTool
 
 # 导入日志系统
 try:
@@ -47,7 +48,8 @@ class CodeLensMCPServer:
             "doc_guide": DocGuideTool(),
             "task_init": TaskInitTool(),
             "task_execute": TaskExecuteTool(),
-            "task_status": TaskStatusTool()
+            "task_status": TaskStatusTool(),
+            "task_complete": TaskCompleteTool()
         }
         self.logger = get_logger(component="MCP_Server", operation="server")
         

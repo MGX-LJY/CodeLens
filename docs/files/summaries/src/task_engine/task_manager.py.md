@@ -1,200 +1,162 @@
-# task_manager.py
+# 文件分析报告：src/task_engine/task_manager.py
 
 ## 文件概述
-智能任务管理器核心实现，提供任务创建、状态跟踪、依赖管理和优先级调度功能。作为Task Engine模块的核心组件，负责管理整个文档生成流程中的任务生命周期。
 
-## 核心类定义
+**文件路径**: `/src/task_engine/task_manager.py`  
+**文件类型**: Python模块  
+**主要作用**: CodeLens任务引擎的核心任务管理器，负责任务创建、调度、执行和状态管理  
+**代码行数**: 367行  
+**复杂度**: 高
 
-### TaskType (枚举)
-定义支持的任务类型
+这个文件是CodeLens系统的任务管理核心，提供完整的任务生命周期管理功能。它管理9种不同类型的文档生成任务，支持依赖关系验证、优先级调度、状态持久化和智能去重等功能。
+
+## 代码结构分析
+
+### 导入依赖
 ```python
-class TaskType(Enum):
-    SCAN = "scan"                      # 项目扫描任务
-    FILE_SUMMARY = "file_summary"      # 文件摘要生成
-    MODULE_ANALYSIS = "module_analysis" # 模块分析
-    MODULE_RELATIONS = "module_relations" # 模块关系分析
-    DEPENDENCY_GRAPH = "dependency_graph" # 依赖图生成
-    MODULE_README = "module_readme"    # 模块README
-    MODULE_API = "module_api"          # 模块API文档
-    MODULE_FLOW = "module_flow"        # 模块流程文档
-    ARCHITECTURE = "architecture"      # 系统架构
-    TECH_STACK = "tech_stack"         # 技术栈分析
-    DATA_FLOW = "data_flow"           # 数据流设计
-    SYSTEM_ARCHITECTURE = "system_architecture" # 系统架构图
-    COMPONENT_DIAGRAM = "component_diagram"     # 组件关系图
-    DEPLOYMENT_DIAGRAM = "deployment_diagram"  # 部署架构图
-    PROJECT_README = "project_readme" # 项目README
+import json  # JSON序列化
+import time  # 时间戳生成
+from dataclasses import dataclass, asdict  # 数据类支持
+from datetime import datetime  # 时间处理
+from enum import Enum  # 枚举类型
+from pathlib import Path  # 路径操作
+from typing import Dict, List, Optional, Any  # 类型注解
 ```
 
-### TaskStatus (枚举)
-定义任务状态
-```python
-class TaskStatus(Enum):
-    PENDING = "pending"           # 等待执行
-    IN_PROGRESS = "in_progress"   # 执行中
-    COMPLETED = "completed"       # 已完成
-    FAILED = "failed"            # 执行失败
-    BLOCKED = "blocked"          # 被阻塞
+### 全局变量和常量
+- **TaskStatus**: 6种任务状态（PENDING, READY, IN_PROGRESS, COMPLETED, FAILED, BLOCKED）
+- **TaskType**: 9种任务类型（SCAN, FILE_SUMMARY, ARCHITECTURE等）
+
+### 配置和设置
+- **task_file**: 任务持久化文件路径（.codelens/tasks.json）
+- **priority_order**: 优先级排序映射（high=0, normal=1, low=2）
+
+## 函数详细分析
+
+### 函数概览表
+| 函数名 | 参数数量 | 返回类型 | 主要功能 |
+|--------|----------|----------|----------|
+| create_task | 12 | str | 创建新任务，支持去重和ID预定义 |
+| _find_existing_task | 5 | Optional[str] | 查找现有相同任务，避免重复创建 |
+| get_task | 1 | Optional[Task] | 根据ID获取任务详情 |
+| update_task_status | 3 | bool | 更新任务状态和时间戳 |
+| get_ready_tasks | 1 | List[Task] | 获取依赖满足的可执行任务 |
+| get_next_task | 1 | Optional[Task] | 获取下一个最高优先级任务 |
+| get_phase_tasks | 1 | List[Task] | 获取指定阶段的所有任务 |
+| get_phase_progress | 1 | Dict[str, Any] | 计算阶段进度和统计信息 |
+| get_overall_progress | 0 | Dict[str, Any] | 获取整体项目进度 |
+| _are_dependencies_satisfied | 1 | bool | 检查任务依赖是否全部完成 |
+
+### 函数详细说明
+
+**create_task(...)**
+- 支持任务去重检查，避免创建重复任务
+- 统一ID生成逻辑，支持预定义ID
+- 完整的任务元数据管理
+- 自动持久化到JSON文件
+
+**get_ready_tasks(phase)**
+- 智能依赖解析，只返回可执行任务
+- 按优先级自动排序（high > normal > low）
+- 支持按阶段过滤
+
+**get_phase_progress(phase)**
+- 详细的阶段进度统计
+- 包含各状态任务数量和完成百分比
+- 提供阶段转换条件判断
+
+## 类详细分析
+
+### 类概览表
+| 类名 | 继承关系 | 主要属性 | 主要方法 | 核心功能 |
+|------|----------|----------|----------|----------|
+| TaskStatus | Enum | 6种状态枚举值 | - | 任务状态定义 |
+| TaskType | Enum | 9种任务类型 | - | 任务类型定义 |
+| Task | dataclass | 16个核心属性 | to_dict, from_dict | 任务数据封装 |
+| TaskManager | - | project_path, tasks, task_file | 15个核心方法 | 任务管理核心 |
+
+### 类详细说明
+
+**Task类**
+- **核心属性**: id, type, description, phase, dependencies, status等
+- **序列化**: 支持to_dict/from_dict转换，便于JSON持久化
+- **时间戳**: 自动记录created_at, started_at, completed_at
+- **元数据**: 支持自定义metadata字段
+
+**TaskManager类**
+- **核心特性**: 智能去重、依赖管理、优先级调度、状态持久化
+- **存储机制**: JSON文件持久化，支持增量保存
+- **性能优化**: 内存缓存 + 文件同步的混合策略
+
+## 函数调用流程图
+
+```mermaid
+graph TD
+    A[TaskManager初始化] --> B[load_tasks加载现有任务]
+    B --> C[create_task创建新任务]
+    C --> D[_find_existing_task检查重复]
+    D --> E{是否重复}
+    E -->|是| F[返回现有任务ID]
+    E -->|否| G[生成新任务ID]
+    G --> H[创建Task对象]
+    H --> I[save_tasks持久化]
+    
+    I --> J[get_ready_tasks获取可执行任务]
+    J --> K[_are_dependencies_satisfied检查依赖]
+    K --> L[按优先级排序]
+    L --> M[返回任务列表]
+    
+    M --> N[update_task_status更新状态]
+    N --> O[更新时间戳]
+    O --> P[save_tasks再次持久化]
+    
+    style A fill:#e1f5fe
+    style E fill:#fff3e0
+    style P fill:#f3e5f5
 ```
 
-### Task (数据类)
-任务数据结构
-```python
-@dataclass
-class Task:
-    id: str                          # 任务唯一标识
-    type: TaskType                   # 任务类型
-    description: str                 # 任务描述
-    phase: str                       # 所属阶段
-    target_file: Optional[str]       # 目标文件
-    target_module: Optional[str]     # 目标模块
-    template: Optional[str]          # 使用模板
-    output_path: Optional[str]       # 输出路径
-    dependencies: List[str]          # 依赖任务ID列表
-    priority: str                    # 优先级
-    status: TaskStatus               # 当前状态
-    created_at: str                  # 创建时间
-    updated_at: str                  # 更新时间
-    estimated_time: str              # 预计耗时
-    metadata: Dict[str, Any]         # 元数据
-    error_message: Optional[str]     # 错误信息
+## 变量作用域分析
+
+| 变量类型 | 作用域 | 生命周期 | 访问权限 |
+|----------|--------|----------|----------|
+| project_path | 实例属性 | 对象生命周期 | public |
+| tasks | 实例属性 | 对象生命周期 | public |
+| task_file | 实例属性 | 对象生命周期 | public |
+| priority_order | 局部变量 | 方法执行期间 | private |
+| ready_tasks | 局部变量 | 方法执行期间 | private |
+| phase_tasks | 局部变量 | 方法执行期间 | private |
+
+## 函数依赖关系
+
+```mermaid
+graph LR
+    A[create_task] --> B[_find_existing_task]
+    A --> C[save_tasks]
+    D[get_ready_tasks] --> E[_are_dependencies_satisfied]
+    F[get_next_task] --> D
+    G[update_task_status] --> C
+    H[get_phase_progress] --> I[get_phase_tasks]
+    J[get_overall_progress] --> H
+    K[load_tasks] --> L[Task.from_dict]
+    C --> M[Task.to_dict]
+    
+    style A fill:#e8f5e8
+    style J fill:#fff3e0
+    style C fill:#f3e5f5
 ```
 
-### TaskManager (主类)
-任务管理器主要实现
+### 在4阶段文档生成系统中的作用
 
-#### 核心方法
+1. **Phase 1 (项目扫描)**: 创建和管理SCAN类型任务，确保项目分析完成
+2. **Phase 2 (文件分析)**: 管理FILE_SUMMARY任务，跟踪每个文件的文档生成进度
+3. **Phase 3 (架构分析)**: 协调6种架构任务（ARCHITECTURE, TECH_STACK, DATA_FLOW等）
+4. **Phase 4 (项目文档)**: 管理PROJECT_README等最终文档任务
 
-**__init__(project_path: str)**
-- 初始化任务管理器
-- 设置项目路径和状态文件路径
-- 加载现有任务状态
+**核心价值**:
+- **智能调度**: 基于依赖关系和优先级的智能任务调度
+- **状态一致性**: 确保任务状态与实际执行状态同步
+- **去重机制**: 避免重复任务创建，提高系统效率
+- **持久化保障**: 可靠的状态持久化，支持系统重启恢复
+- **进度追踪**: 详细的阶段和整体进度统计
 
-**create_task(...) -> str**
-- 创建新任务并分配唯一ID
-- 验证任务参数合法性
-- 保存任务到持久化存储
-- 返回任务ID
-
-**get_task(task_id: str) -> Optional[Task]**
-- 根据ID获取任务详情
-- 返回Task对象或None
-
-**update_task_status(task_id: str, status: TaskStatus, error_message: Optional[str] = None) -> bool**
-- 更新任务状态
-- 记录状态变更时间
-- 持久化状态变更
-- 返回更新是否成功
-
-**get_next_task(phase_filter: Optional[str] = None) -> Optional[Task]**
-- 获取下一个可执行任务
-- 考虑依赖关系和优先级
-- 可按阶段过滤
-- 返回最高优先级的可执行任务
-
-**get_phase_progress(phase: str) -> Dict[str, Any]**
-- 获取指定阶段的进度信息
-- 包含总任务数、完成数、进度百分比
-- 提供任务状态分布统计
-
-**get_tasks_by_status(status: TaskStatus) -> List[Task]**
-- 按状态筛选任务
-- 返回符合条件的任务列表
-
-**get_all_tasks() -> List[Task]**
-- 获取所有任务列表
-- 按创建时间排序
-
-## 关键特性
-
-### 依赖管理
-- 自动检查任务依赖关系
-- 阻塞依赖未完成的任务
-- 构建任务执行队列
-
-### 优先级调度
-- 支持高、中、低三级优先级
-- 优先级相同时按创建时间排序
-- 依赖满足时优先执行高优先级任务
-
-### 状态持久化
-- 实时保存任务状态到JSON文件
-- 支持系统重启后状态恢复
-- 原子操作确保数据一致性
-
-### 错误处理
-- 完善的异常捕获机制
-- 详细的错误信息记录
-- 支持任务重试和恢复
-
-## 存储格式
-
-### 任务文件结构 (.codelens/tasks.json)
-```json
-{
-    "tasks": {
-        "task_id": {
-            "id": "task_id",
-            "type": "file_summary",
-            "description": "生成app.py文件摘要",
-            "phase": "phase_2_files",
-            "target_file": "app.py",
-            "status": "completed",
-            "created_at": "2025-09-13T10:30:00Z",
-            "dependencies": [],
-            "priority": "high",
-            "metadata": {}
-        }
-    },
-    "metadata": {
-        "project_path": "/path/to/project",
-        "created_at": "2025-09-13T10:00:00Z",
-        "last_updated": "2025-09-13T10:30:00Z"
-    }
-}
-```
-
-## 性能特性
-- **任务创建**: < 10ms
-- **状态更新**: < 5ms
-- **任务查询**: < 2ms
-- **内存占用**: 每1000个任务约占用1MB内存
-
-## 使用示例
-
-### 基本使用
-```python
-from src.task_engine.task_manager import TaskManager, TaskType, TaskStatus
-
-# 创建任务管理器
-manager = TaskManager("/path/to/project")
-
-# 创建任务
-task_id = manager.create_task(
-    task_type=TaskType.FILE_SUMMARY,
-    description="生成app.py文件摘要",
-    phase="phase_2_files",
-    target_file="app.py",
-    priority="high"
-)
-
-# 更新任务状态
-manager.update_task_status(task_id, TaskStatus.IN_PROGRESS)
-manager.update_task_status(task_id, TaskStatus.COMPLETED)
-
-# 获取下一个任务
-next_task = manager.get_next_task("phase_2_files")
-```
-
-### 批量操作
-```python
-# 获取阶段进度
-progress = manager.get_phase_progress("phase_2_files")
-print(f"进度: {progress['completion_percentage']}%")
-
-# 获取失败任务
-failed_tasks = manager.get_tasks_by_status(TaskStatus.FAILED)
-for task in failed_tasks:
-    print(f"失败任务: {task.description}")
-```
-
+这是整个CodeLens系统的"执行引擎"，确保所有文档生成任务按正确顺序和优先级执行，是4阶段流程控制的核心基础。

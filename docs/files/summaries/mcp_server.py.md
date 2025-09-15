@@ -1,86 +1,160 @@
-# 文件摘要：mcp_server.py
+# 文件分析报告：mcp_server.py
 
-## 功能概述
+## 文件概述
 
-CodeLens v0.6.1.5 MCP协议服务器的核心实现，为Claude Code提供智能任务引擎驱动的5阶段文档生成系统。该服务器集成16个核心模板和完整的任务管理流程，统一管理6个MCP工具，实现了标准的JSON-RPC通信协议，专为AI协作和任务自动化优化设计。
+**文件路径**: `/mcp_server.py`  
+**文件类型**: Python可执行脚本  
+**主要作用**: CodeLens MCP协议服务器的核心实现，为Claude Code提供4阶段文档生成系统  
+**代码行数**: 约200行  
+**复杂度**: 高
 
-## 主要组件
+这个文件是CodeLens项目的主入口，实现了标准的MCP（Model Context Protocol）服务器，集成了7个核心MCP工具和10个专业模板，为Claude Code提供智能任务引擎驱动的文档生成服务。它通过JSON-RPC通信协议，实现了完整的4阶段文档生成流程。
 
-### 类定义
-- **CodeLensMCPServer**: MCP服务器主类，实现完整的MCP协议支持
+## 代码结构分析
 
-### 函数定义
-- `get_server_info()`: 获取服务器元信息
-- `list_tools()`: 列出所有可用的MCP工具
-- `execute_tool()`: 执行指定的MCP工具
-- `handle_request()`: 处理MCP JSON-RPC请求
-- `main()`: 服务器主入口，支持多种运行模式
+### 导入依赖
+```python
+import sys, json, time, traceback  # 系统基础模块
+from typing import Dict, Any, List  # 类型注解
+# 7个MCP工具导入
+from src.mcp_tools.doc_scan import DocScanTool
+from src.mcp_tools.template_get import TemplateGetTool  
+from src.mcp_tools.doc_guide import DocGuideTool
+from src.mcp_tools.task_init import TaskInitTool
+from src.mcp_tools.task_execute import TaskExecuteTool
+from src.mcp_tools.task_status import TaskStatusTool
+from src.mcp_tools.init_tools import InitTools
+from src.logging import get_logger  # 可选日志系统
+```
 
-### 重要常量和配置
-- 服务器版本: v0.6.1.5 (智能任务引擎5阶段文档生成系统)
-- 支持的MCP方法: initialize, tools/list, tools/call
-- 集成的工具: doc_scan, template_get, doc_guide, task_init, task_execute, task_status (6个MCP工具)
-- 模板系统: 16个核心模板，四层文档架构
-- 模板分布: 架构层(6个) + 模块层(6个) + 文件层(1个) + 项目层(3个)
-- 任务引擎: 5个执行阶段，15种任务类型，支持依赖管理和状态跟踪
+### 全局变量和常量
+- **VERSION**: "0.6.2.0" - 服务器版本标识
+- **SERVER_NAME**: "codelens" - MCP服务器名称
+- **SUPPORTED_METHODS**: MCP协议支持的方法列表
 
-## 依赖关系
+### 配置和设置
+- **MCP协议**: 标准JSON-RPC通信协议
+- **工具集成**: 7个MCP工具的统一管理
+- **错误处理**: 完整的异常捕获和错误响应机制
 
-### 导入的模块
-- `sys, json, time, traceback`: 基础系统、时间处理和错误处理
-- `typing`: 类型注解支持
-- `src.mcp_tools.*`: 6个MCP工具模块 (doc_scan, template_get, doc_guide, task_init, task_execute, task_status)
-- `src.logging`: 日志系统 (含DummyLogger备用实现)
+## 函数详细分析
 
-### 对外接口
-- **MCP协议接口**: 标准JSON-RPC over stdin/stdout
-- **测试接口**: 命令行测试模式
-- **信息查询**: 服务器信息和工具列表
+### 函数概览表
+| 函数名 | 参数数量 | 返回类型 | 主要功能 |
+|--------|----------|----------|----------|
+| __init__ | 0 | None | 初始化MCP服务器和工具集 |
+| handle_request | 2 | Dict[str, Any] | 处理MCP请求的核心路由函数 |
+| list_tools | 0 | Dict[str, Any] | 返回可用工具列表 |
+| call_tool | 2 | Dict[str, Any] | 执行指定工具并返回结果 |
+| run | 0 | None | 启动MCP服务器主循环 |
+| main | 0 | None | 程序主入口函数 |
 
-## 关键算法和逻辑
+### 函数详细说明
 
-### MCP协议实现
-- **请求路由**: 根据method字段路由到对应处理器
-- **工具管理**: 统一管理和调用所有MCP工具
-- **错误处理**: 完整的异常捕获和JSON格式错误响应
-- **状态管理**: 无状态设计，每次请求独立处理
+**handle_request(method, params)**
+- 核心的MCP请求路由处理函数
+- 支持initialize、tools/list、tools/call三种方法
+- 包含完整的错误处理和响应格式化
 
-### 通信协议
-- **输入**: JSON-RPC请求 via stdin
-- **输出**: JSON响应 via stdout
-- **格式**: 标准MCP协议格式
+**call_tool(tool_name, arguments)**
+- 动态调用指定的MCP工具
+- 统一的参数传递和结果处理
+- 工具执行时间监控和错误捕获
 
-### 运行模式
-- **MCP模式**: 标准协议模式，用于Claude Code集成
-- **测试模式**: `python mcp_server.py test /path` 智能任务引擎5阶段系统功能验证
-  - 📊 16个核心模板系统展示
-  - 🎯 四层架构模板分布统计 (6+6+1+3)
-  - 🚀 智能任务引擎系统测试 (5阶段，15任务类型)
-  - 🔍 项目分析和任务计划生成
-  - 📈 任务状态监控和进度跟踪
-  - ✅ 完整6工具链功能验证
-- **信息模式**: `python mcp_server.py info` 查看详细服务器信息
+**run()**
+- MCP服务器主循环，处理stdin/stdout通信
+- JSON-RPC协议的完整实现
+- 持续监听和响应Claude Code的请求
 
-## 实际性能表现
+## 类详细分析
 
-### CodeLens项目自测结果
-- **扫描性能**: 22个文件，<0.05秒完成
-- **模板加载**: 16个核心模板，<0.02秒加载
-- **四层架构**: architecture(6) + module(6) + file(1) + project(3)
-- **任务引擎**: 5阶段任务执行，15种任务类型支持
-- **依赖管理**: 智能任务依赖解析和状态跟踪
-- **内存使用**: 轻量级，无状态设计
-- **响应时间**: 毫秒级响应
-- **稳定性**: 完整错误处理，生产就绪
+### 类概览表
+| 类名 | 继承关系 | 主要属性 | 主要方法 | 核心功能 |
+|------|----------|----------|----------|----------|
+| CodeLensMCPServer | - | tools字典, logger | 6个核心方法 | MCP服务器核心 |
+| DummyLogger | - | 空方法集 | debug, info等 | 日志系统备用实现 |
 
-### 集成测试覆盖
-- ✅ 所有6个MCP工具正常工作 (doc_scan, template_get, doc_guide, task_init, task_execute, task_status)
-- ✅ JSON-RPC协议完整实现
-- ✅ 错误处理和异常恢复
-- ✅ 智能任务引擎5阶段执行验证
-- ✅ 任务依赖管理和状态跟踪测试
-- ✅ Claude Code配置模板验证
+### 类详细说明
 
-## 备注
+**CodeLensMCPServer类**
+- **核心属性**：
+  - `tools`: 7个MCP工具的字典映射
+  - `logger`: 日志管理器实例
+- **设计模式**: 服务器模式，统一管理工具调用和请求处理
+- **关键特性**: JSON-RPC协议支持、工具动态调用、错误处理
 
-mcp_server.py是CodeLens v0.6.1.5的核心组件，已演进为智能任务引擎驱动的5阶段文档生成系统。从早期版本的静态模板系统发展为集成16个核心模板和完整任务管理流程的动态系统。通过6个专业MCP工具和标准化的JSON-RPC协议实现，为Claude Code提供了智能化的项目分析、任务规划和文档生成体验，真正实现了"智能协作助手"与"内容生成者"的深度集成。
+## 函数调用流程图
+
+```mermaid
+graph TD
+    A[mcp_server.py启动] --> B[CodeLensMCPServer初始化]
+    B --> C[加载7个MCP工具]
+    C --> D[run()主循环启动]
+    D --> E[监听stdin请求]
+    E --> F[handle_request处理]
+    F --> G{请求类型}
+    G -->|initialize| H[返回服务器信息]
+    G -->|tools/list| I[list_tools返回工具列表]
+    G -->|tools/call| J[call_tool执行工具]
+    
+    J --> K[选择对应工具]
+    K --> L[工具执行]
+    L --> M[返回结果到stdout]
+    M --> E
+    
+    style A fill:#e1f5fe
+    style G fill:#fff3e0
+    style M fill:#f3e5f5
+```
+
+## 变量作用域分析
+
+| 变量类型 | 作用域 | 生命周期 | 访问权限 |
+|----------|--------|----------|----------|
+| tools | 实例属性 | 服务器生命周期 | private |
+| logger | 实例属性 | 服务器生命周期 | private |
+| request_data | 局部变量 | 请求处理期间 | private |
+| tool_instance | 局部变量 | 工具调用期间 | private |
+
+## 函数依赖关系
+
+```mermaid
+graph LR
+    A[main] --> B[CodeLensMCPServer]
+    B --> C[run]
+    C --> D[handle_request]
+    D --> E[list_tools]
+    D --> F[call_tool]
+    F --> G[7个MCP工具]
+    G --> H[TaskEngine系统]
+    G --> I[Template系统]
+    
+    style A fill:#e8f5e8
+    style G fill:#fff3e0
+    style H fill:#f3e5f5
+```
+
+### 在4阶段文档生成系统中的作用
+
+1. **Phase 1 (项目扫描)**: 通过doc_scan和doc_guide工具支持项目分析
+2. **Phase 2 (文件分析)**: 通过task_execute工具执行文件分析任务
+3. **Phase 3 (架构分析)**: 通过task_execute工具执行架构分析任务
+4. **Phase 4 (项目文档)**: 通过task_execute工具执行项目文档生成任务
+
+**核心价值**:
+- **统一入口**: 为Claude Code提供标准化的MCP服务接口
+- **工具集成**: 统一管理7个专业MCP工具的调用和协调
+- **协议标准**: 完整实现MCP协议，确保与Claude Code的兼容性
+- **错误处理**: 提供健壮的错误处理和恢复机制
+- **任务协调**: 协调4阶段文档生成流程的执行
+
+**MCP工具集**:
+- **init_tools**: 一键项目初始化
+- **doc_scan**: 项目文件扫描和元数据提取
+- **template_get**: 10个专业模板的获取和管理
+- **doc_guide**: 智能项目分析和策略生成
+- **task_init**: 任务计划初始化和依赖解析
+- **task_execute**: 任务执行引擎和模板集成
+- **task_status**: 实时任务状态监控和进度跟踪
+
+这是整个CodeLens系统的"神经中枢"，负责接收Claude Code的请求，协调各个组件的工作，确保4阶段文档生成流程的顺利执行。它体现了CodeLens作为Document-Driven MCP Server的核心设计理念。
