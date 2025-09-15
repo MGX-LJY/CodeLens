@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CodeLens is a Document-Driven MCP (Model Context Protocol) Server designed to collaborate with Claude Code. Instead of autonomously generating documentation, CodeLens provides structured file information, document templates, and validation services that enable Claude Code to efficiently understand and document projects.
 
+**🔥 New Feature: Hot Reload Support**
+- Automatically detects code file changes and reloads modules
+- Supports watchdog real-time monitoring and polling fallback
+- No need to restart server during development, greatly improving development efficiency
+
 ## Core Architecture
 
 CodeLens operates as a **Claude Code collaboration assistant** with two main service layers:
@@ -33,14 +38,20 @@ CodeLens operates as a **Claude Code collaboration assistant** with two main ser
 
 ### Running the MCP Server
 ```bash
-# Start MCP server for development
-python mcp_server.py
+# Start MCP server for development (hot reload enabled by default)
+python mcp_server.py  # 🔥 Now supports hot reload
+
+# Disable hot reload
+CODELENS_HOT_RELOAD=false python mcp_server.py
 
 # Test MCP server with project scanning
 python mcp_server.py test /path/to/project
 
-# Get server information
+# Get server information (includes hot reload status)
 python mcp_server.py info
+
+# Manually trigger hot reload
+python mcp_server.py reload
 ```
 
 ### Testing MCP Tools Individually
@@ -82,6 +93,7 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789  
 - **Template System**: 10 professional templates with variable validation
 - **Persistence**: JSON-based task state management with atomic operations
 - **Intelligence**: Framework detection, complexity analysis, smart prioritization
+- **Hot Reload**: watchdog file monitoring + importlib module reload, with polling fallback
 
 ## Key File Structure
 
@@ -108,6 +120,11 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789  
 │   ├── task_status.py      # Real-time progress monitoring
 │   ├── task_execute.py     # Advanced task execution engine
 │   ├── init_tools.py       # One-command project initialization
+│   └── __init__.py
+├── hot_reload/             # 🔥 Hot reload system
+│   ├── file_watcher.py     # File watcher (watchdog + polling)
+│   ├── module_reloader.py  # Intelligent module reloader
+│   ├── hot_reload_manager.py # Hot reload coordination manager
 │   └── __init__.py
 ├── logging/                # Logging system
 └── __init__.py
@@ -176,12 +193,26 @@ The MCP server configuration is defined in `claude_code_config.json`:
       "args": ["mcp_server.py"],
       "cwd": ".",
       "env": {
-        "PYTHONPATH": "."
+        "PYTHONPATH": ".",
+        "CODELENS_HOT_RELOAD": "true"
       }
     }
   }
 }
 ```
+
+### Hot Reload Configuration
+
+- `CODELENS_HOT_RELOAD=true` - Enable hot reload (default)
+- `CODELENS_HOT_RELOAD=false` - Disable hot reload
+
+### How Hot Reload Works
+
+1. **File Monitoring**: watchdog library for real-time monitoring or polling for file changes
+2. **Smart Filtering**: Only reload project Python modules, excluding system and third-party libraries
+3. **Dependency Resolution**: Automatically analyze module dependencies and reload in correct order
+4. **Batch Processing**: Changes within 2-second window are processed in batches to avoid frequent reloads
+5. **Tool Updates**: Automatically refresh MCP tool instances after reload
 
 ## Logging System
 
@@ -237,4 +268,5 @@ Task states: `pending` → `in_progress` → `completed` → `validated`
 ✅ **Production Ready**: All core MCP tools, template system, and task engine are implemented and tested
 ✅ **Template System**: 10 professional templates covering all documentation layers  
 ✅ **Task Engine**: Complete dependency resolution and phase control
+✅ **Hot Reload System**: Intelligent file monitoring and module reloading, supports real-time development updates
 ✅ **Recent Fixes**: Scan task template integration, dependency consistency, validation system
