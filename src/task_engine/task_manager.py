@@ -31,6 +31,7 @@ class TaskType(Enum):
     COMPONENT_DIAGRAM = "component_diagram"  # 组件图
     DEPLOYMENT_DIAGRAM = "deployment_diagram"  # 部署图
     PROJECT_README = "project_readme"  # 项目README
+    CHANGELOG = "changelog"  # 变更日志
 
 
 @dataclass

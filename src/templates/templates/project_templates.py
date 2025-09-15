@@ -59,50 +59,6 @@ class ProjectTemplates:
 
 {version_entries}
 """
-    
-    # 3. 发展路线模板
-    ROADMAP_TEMPLATE = """# {project_name} 发展路线图
-
-## 总体目标
-{overall_goals}
-
-{version_planning}
-
-## 长期愿景
-{long_term_vision}
-
-## 技术演进
-{technology_evolution}
-
-## 社区建设
-{community_building}
-"""
-    
-    # 4. 项目扫描摘要模板 - 用于scan任务
-    PROJECT_SCAN_SUMMARY_TEMPLATE = """# {project_name} 项目扫描报告
-
-## 项目基本信息
-- **项目类型**: {project_type}
-- **主框架**: {main_framework}  
-- **文件总数**: {file_count}
-- **代码复杂度**: {code_complexity}
-
-## 目录结构
-{directory_structure}
-
-## 核心文件分析  
-{key_files_analysis}
-
-## 模块识别结果
-{identified_modules}
-
-## 文件类型分布
-{file_distribution}
-
----
-*扫描完成时间: {scan_timestamp}*
-*生成工具: CodeLens Project Scanner*
-"""
 
 
 

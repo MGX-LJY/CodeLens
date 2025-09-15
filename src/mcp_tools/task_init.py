@@ -335,10 +335,10 @@ class TaskPlanGenerator:
         # 所有架构层任务作为依赖
         arch_task_ids = [task["id"] for task in phase_3_tasks]
 
-        # 只生成README.md
-        task_id = f"project_readme_{int(time.time() * 1000)}"
+        # 1. 生成README.md
+        readme_task_id = f"project_readme_{int(time.time() * 1000)}"
         tasks.append({
-            "id": task_id,
+            "id": readme_task_id,
             "type": "project_readme",
             "description": "生成项目README文档",
             "phase": "phase_4_project",
@@ -352,6 +352,25 @@ class TaskPlanGenerator:
                 "project_type": analysis.get("project_type", "unknown"),
                 "framework": analysis.get("main_framework", "custom"),
                 "complexity": analysis.get("code_complexity", "unknown")
+            }
+        })
+        
+        # 2. 生成CHANGELOG.md
+        changelog_task_id = f"changelog_{int(time.time() * 1000)}"
+        tasks.append({
+            "id": changelog_task_id,
+            "type": "changelog",
+            "description": "生成项目变更日志文档",
+            "phase": "phase_4_project",
+            "template": "changelog",
+            "output_path": "docs/project/CHANGELOG.md",
+            "dependencies": arch_task_ids,
+            "priority": "normal",
+            "estimated_time": "5 minutes",
+            "status": "pending",
+            "metadata": {
+                "project_type": analysis.get("project_type", "unknown"),
+                "framework": analysis.get("main_framework", "custom")
             }
         })
 

@@ -63,17 +63,6 @@ class ArchitectureTemplates:
 ### 依赖策略
 {dependency_strategy}
 
-## 关键设计原则
-
-### 性能优化
-{performance_optimization}
-
-### 可靠性保证
-{reliability_guarantee}
-
-### 可观测性
-{observability}
-
 ### 配置管理
 {configuration_management}
 

@@ -173,15 +173,6 @@ class TemplateServiceV05:
                 'file_path': '/docs/project/CHANGELOG.md',
                 'variables': ['project_name', 'version_entries']
             },
-            {
-                'name': 'roadmap',
-                'description': '发展路线模板 - 项目发展规划',
-                'type': 'project_level',
-                'layer': 'project',
-                'file_path': '/docs/project/roadmap.md',
-                'variables': ['project_name', 'overall_goals', 'version_planning', 'long_term_vision',
-                              'technology_evolution', 'community_building']
-            },
 
         ]
     
