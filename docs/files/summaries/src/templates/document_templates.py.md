@@ -8,7 +8,7 @@
 **代码行数**: 313行  
 **复杂度**: 高
 
-这个文件是CodeLens模板系统的核心枢纽，实现了TemplateServiceV05类，管理3层文档架构（架构层、文件层、项目层）的10个专业模板。它为4阶段文档生成流程提供标准化的模板访问接口，支持智能查询、统计分析和格式化功能。
+这个文件是CodeLens模板系统的核心枢纽，实现了TemplateService类，管理3层文档架构（架构层、文件层、项目层）的10个专业模板。它为4阶段文档生成流程提供标准化的模板访问接口，支持智能查询、统计分析和格式化功能。
 
 ## 代码结构分析
 
@@ -64,12 +64,11 @@ from .templates import ArchitectureTemplates, FileTemplates, ProjectTemplates  #
 | 类名 | 继承关系 | 主要属性 | 主要方法 | 核心功能 |
 |------|----------|----------|----------|----------|
 | DocumentTemplates | - | 4个兼容性模板 | - | 向后兼容性支持 |
-| TemplateServiceV05 | - | template_registry, logger, 3个模板实例 | 7个核心方法 | 10模板统一管理 |
-| TemplateService | TemplateServiceV05 | 继承父类 | 继承父类 | 向后兼容别名 |
+| TemplateService | - | template_registry, logger, 3个模板实例 | 7个核心方法 | 10模板统一管理 |
 
 ### 类详细说明
 
-**TemplateServiceV05类**
+**TemplateService类**
 - **核心属性**：
   - `template_registry`: 10个模板的完整映射字典
   - `arch_templates`: 架构层模板实例（6个模板）
@@ -82,7 +81,7 @@ from .templates import ArchitectureTemplates, FileTemplates, ProjectTemplates  #
 
 ```mermaid
 graph TD
-    A[TemplateServiceV05初始化] --> B[加载3层模板类]
+    A[TemplateService初始化] --> B[加载3层模板类]
     B --> C[构建template_registry]
     C --> D[注册10个模板]
     

@@ -88,7 +88,7 @@ graph TD
 
 ```mermaid
 graph LR
-    A[ArchitectureTemplates] --> B[TemplateServiceV05]
+    A[ArchitectureTemplates] --> B[TemplateService]
     B --> C[task_execute工具]
     C --> D[Phase 3架构分析]
     D --> E[架构文档生成]

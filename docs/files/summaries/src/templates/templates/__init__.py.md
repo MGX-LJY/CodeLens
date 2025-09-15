@@ -88,7 +88,7 @@ graph LR
     C --> F[1个文件模板]
     D --> G[3个项目模板]
     
-    E --> H[TemplateServiceV05]
+    E --> H[TemplateService]
     F --> H
     G --> H
     
@@ -104,7 +104,7 @@ graph LR
 4. **Phase 4 (项目文档)**: 支持ProjectTemplates的统一访问，提供3种项目模板
 
 **核心价值**:
-- **统一入口**: 为TemplateServiceV05提供3层模板类的统一导入
+- **统一入口**: 为TemplateService提供3层模板类的统一导入
 - **模块化架构**: 实现10个核心模板的分层组织
 - **清晰分离**: 每个模板类专注于特定文档层级
 - **易于维护**: 独立文件便于代码审查和维护

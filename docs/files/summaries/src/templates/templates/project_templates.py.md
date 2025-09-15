@@ -83,7 +83,7 @@ graph TD
 
 ```mermaid
 graph LR
-    A[ProjectTemplates] --> B[TemplateServiceV05]
+    A[ProjectTemplates] --> B[TemplateService]
     B --> C[task_execute工具]
     C --> D[Phase 4项目文档]
     D --> E[项目文档生成]

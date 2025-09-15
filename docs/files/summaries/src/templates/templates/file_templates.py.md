@@ -87,7 +87,7 @@ graph TD
 
 ```mermaid
 graph LR
-    A[FileTemplates] --> B[TemplateServiceV05]
+    A[FileTemplates] --> B[TemplateService]
     B --> C[task_execute工具]
     C --> D[Phase 2文件分析]
     D --> E[文件文档生成]

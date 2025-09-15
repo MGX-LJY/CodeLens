@@ -32,7 +32,7 @@ class DocumentTemplates:
     PROJECT_README_TEMPLATE = ProjectTemplates.README_TEMPLATE
 
 
-class TemplateServiceV05:
+class TemplateService:
     """精简模板服务类 - 为Claude Code提供10个核心文档模板"""
     
     def __init__(self):
@@ -60,7 +60,7 @@ class TemplateServiceV05:
         }
         
         # 初始化日志器
-        self.logger = get_logger(component="TemplateServiceV05", operation="init")
+        self.logger = get_logger(component="TemplateService", operation="init")
         self.logger.info("TemplateService 初始化完成", {
             "template_count": len(self.template_registry),
             "architecture_templates": 6,
@@ -284,11 +284,6 @@ class TemplateServiceV05:
                 'error': f'Template formatting error: {str(e)}',
                 'template_name': template_name
             }
-
-
-class TemplateService(TemplateServiceV05):
-    """向后兼容的模板服务"""
-    pass
 
 
 # 兼容性方法，保持向后兼容
