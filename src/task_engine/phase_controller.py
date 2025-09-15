@@ -20,9 +20,8 @@ class Phase(Enum):
     """阶段枚举"""
     PHASE_1_SCAN = "phase_1_scan"  # 项目扫描和分析
     PHASE_2_FILES = "phase_2_files"  # 文件层文档生成
-    PHASE_3_MODULES = "phase_3_modules"  # 模块层文档生成
-    PHASE_4_ARCHITECTURE = "phase_4_architecture"  # 架构层文档生成
-    PHASE_5_PROJECT = "phase_5_project"  # 项目层文档生成
+    PHASE_3_ARCHITECTURE = "phase_3_architecture"  # 架构层文档生成
+    PHASE_4_PROJECT = "phase_4_project"  # 项目层文档生成
 
 
 @dataclass
@@ -60,29 +59,20 @@ class PhaseController:
                 expected_tasks=["file_summary"],
                 min_completion_rate=1.0
             ),
-            Phase.PHASE_3_MODULES: PhaseInfo(
-                phase=Phase.PHASE_3_MODULES,
-                name="模块层文档生成",
-                description="基于文件分析生成模块关系和架构文档",
-                dependencies=[Phase.PHASE_2_FILES],
-                expected_tasks=["module_analysis", "module_relations", "dependency_graph",
-                                "module_readme", "module_api", "module_flow"],
-                min_completion_rate=1.0
-            ),
-            Phase.PHASE_4_ARCHITECTURE: PhaseInfo(
-                phase=Phase.PHASE_4_ARCHITECTURE,
+            Phase.PHASE_3_ARCHITECTURE: PhaseInfo(
+                phase=Phase.PHASE_3_ARCHITECTURE,
                 name="架构层文档生成",
-                description="基于模块分析生成系统架构和技术栈文档",
-                dependencies=[Phase.PHASE_3_MODULES],
+                description="基于文件分析生成系统架构和技术栈文档",
+                dependencies=[Phase.PHASE_2_FILES],
                 expected_tasks=["architecture", "tech_stack", "data_flow",
                                 "system_architecture", "component_diagram", "deployment_diagram"],
                 min_completion_rate=1.0
             ),
-            Phase.PHASE_5_PROJECT: PhaseInfo(
-                phase=Phase.PHASE_5_PROJECT,
+            Phase.PHASE_4_PROJECT: PhaseInfo(
+                phase=Phase.PHASE_4_PROJECT,
                 name="项目层文档生成",
                 description="生成项目README等对外展示文档",
-                dependencies=[Phase.PHASE_4_ARCHITECTURE],
+                dependencies=[Phase.PHASE_3_ARCHITECTURE],
                 expected_tasks=["project_readme"],
                 min_completion_rate=1.0
             )
@@ -263,56 +253,6 @@ class PhaseController:
 
         return True, "可以进入下一阶段"
 
-    def get_phase_recommendations(self, phase: Phase) -> List[str]:
-        """获取阶段建议"""
-        recommendations = []
-        phase_info = self.phases_info[phase]
-        status = self.get_phase_status(phase)
-
-        if status == PhaseStatus.NOT_STARTED:
-            can_start, message = self.can_start_phase(phase)
-            if can_start:
-                recommendations.append(f"可以开始 {phase_info.name}")
-            else:
-                recommendations.append(f"等待依赖阶段完成: {message}")
-
-        elif status == PhaseStatus.IN_PROGRESS:
-            phase_tasks = self.task_manager.get_phase_tasks(phase.value)
-
-            # 检查失败的任务
-            failed_tasks = [t for t in phase_tasks if t.status == TaskStatus.FAILED]
-            if failed_tasks:
-                recommendations.append(f"需要重试 {len(failed_tasks)} 个失败的任务")
-
-            # 检查阻塞的任务
-            blocked_tasks = [t for t in phase_tasks if t.status == TaskStatus.BLOCKED]
-            if blocked_tasks:
-                recommendations.append(f"有 {len(blocked_tasks)} 个任务被阻塞，需要检查依赖")
-
-            # 建议下一个任务
-            next_task = self.task_manager.get_next_task(phase.value)
-            if next_task:
-                recommendations.append(f"建议执行任务: {next_task.description}")
-
-            # 检查是否可以进入下一阶段
-            can_proceed, message = self.can_proceed_to_next_phase(phase)
-            if can_proceed:
-                next_phase = self.get_next_phase(phase)
-                if next_phase:
-                    next_info = self.phases_info[next_phase]
-                    recommendations.append(f"当前阶段已完成，可以进入 {next_info.name}")
-                else:
-                    recommendations.append("所有阶段已完成！")
-
-        elif status == PhaseStatus.COMPLETED:
-            next_phase = self.get_next_phase(phase)
-            if next_phase:
-                next_info = self.phases_info[next_phase]
-                recommendations.append(f"进入下一阶段: {next_info.name}")
-            else:
-                recommendations.append("所有阶段已完成！")
-
-        return recommendations
 
     def validate_phase_transition(self, from_phase: Phase, to_phase: Phase) -> Tuple[bool, str]:
         """验证阶段转换是否合法"""

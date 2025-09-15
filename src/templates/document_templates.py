@@ -18,8 +18,8 @@ except ImportError:
 
     get_logger = lambda **kwargs: DummyLogger()
 
-# 导入四层架构模板
-from .templates import ArchitectureTemplates, ModuleTemplates, FileTemplates, ProjectTemplates
+# 导入三层架构模板
+from .templates import ArchitectureTemplates, FileTemplates, ProjectTemplates
 
 
 class DocumentTemplates:
@@ -27,22 +27,21 @@ class DocumentTemplates:
 
     # 原有的四个基础模板，保持向后兼容
     FILE_SUMMARY_TEMPLATE = FileTemplates.SUMMARY_TEMPLATE
-    MODULE_ANALYSIS_TEMPLATE = ModuleTemplates.OVERVIEW_TEMPLATE
+    # MODULE_ANALYSIS_TEMPLATE removed - module layer eliminated
     ARCHITECTURE_TEMPLATE = ArchitectureTemplates.OVERVIEW_TEMPLATE
     PROJECT_README_TEMPLATE = ProjectTemplates.README_TEMPLATE
 
 
 class TemplateServiceV05:
-    """精简模板服务类 - 为Claude Code提供16个核心文档模板"""
+    """精简模板服务类 - 为Claude Code提供10个核心文档模板"""
     
     def __init__(self):
-        # 初始化四层架构模板
+        # 初始化三层架构模板
         self.arch_templates = ArchitectureTemplates()
-        self.module_templates = ModuleTemplates()
         self.file_templates = FileTemplates()
         self.project_templates = ProjectTemplates()
         
-        # 模板注册表 - 16个模板
+        # 模板注册表 - 10个模板
         self.template_registry = {
             # 架构层模板 (6个)
             'architecture': self.arch_templates.OVERVIEW_TEMPLATE,
@@ -52,22 +51,13 @@ class TemplateServiceV05:
             'component_diagram': self.arch_templates.COMPONENT_DIAGRAM_TEMPLATE,
             'deployment_diagram': self.arch_templates.DEPLOYMENT_DIAGRAM_TEMPLATE,
             
-            # 模块层模板 (6个)
-            'module_analysis': self.module_templates.OVERVIEW_TEMPLATE,
-            'module_relations': self.module_templates.RELATIONS_TEMPLATE,
-            'dependency_graph': self.module_templates.DEPENDENCY_GRAPH_TEMPLATE,
-            'module_readme': self.module_templates.MODULE_README_TEMPLATE,
-            'module_api': self.module_templates.API_TEMPLATE,
-            'module_flow': self.module_templates.FLOW_TEMPLATE,
-            
             # 文件层模板 (1个)
             'file_summary': self.file_templates.SUMMARY_TEMPLATE,
             
-            # 项目层模板 (4个)
+            # 项目层模板 (3个)
             'project_readme': self.project_templates.README_TEMPLATE,
             'changelog': self.project_templates.CHANGELOG_TEMPLATE,
-            'roadmap': self.project_templates.ROADMAP_TEMPLATE,
-            'project_scan_summary': self.project_templates.PROJECT_SCAN_SUMMARY_TEMPLATE
+            'roadmap': self.project_templates.ROADMAP_TEMPLATE
         }
         
         # 初始化日志器
@@ -75,13 +65,12 @@ class TemplateServiceV05:
         self.logger.info("TemplateService 初始化完成", {
             "template_count": len(self.template_registry),
             "architecture_templates": 6,
-            "module_templates": 6,
             "file_templates": 1,
-            "project_templates": 4
+            "project_templates": 3
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:
-        """获取模板列表 - 16个核心模板"""
+        """获取模板列表 - 10个核心模板"""
         return [
             # ============== 架构层模板 (6个) ==============
             {
@@ -148,83 +137,23 @@ class TemplateServiceV05:
                               'configuration_management', 'monitoring_logging', 'scalability_design']
             },
 
-            
-            # ============== 模块层模板 (6个) ==============
-            {
-                'name': 'module_analysis',
-                'description': '模块总览模板 - 模块功能和架构总览',
-                'type': 'module_level',
-                'layer': 'module',
-                'file_path': '/docs/modules/overview.md',
-                'variables': ['project_name', 'version', 'identified_modules', 'module_details',
-                              'dependency_graph', 'dependency_analysis', 'data_flow',
-                              'core_interfaces', 'design_principles']
-            },
-            {
-                'name': 'module_relations',
-                'description': '模块关系模板 - 模块间依赖和协作关系',
-                'type': 'module_level',
-                'layer': 'module',
-                'file_path': '/docs/modules/module-relations.md',
-                'variables': ['project_name', 'overall_dependency_arch', 'layer_1_name', 'layer_1_dependencies',
-                              'layer_2_name', 'layer_2_dependencies', 'layer_3_name', 'layer_3_dependencies',
-                              'layer_4_name', 'layer_4_dependencies', 'dependency_injection',
-                              'circular_dependency_analysis', 'module_extensibility', 'testing_dependencies',
-                              'deployment_dependencies', 'version_compatibility']
-            },
-            {
-                'name': 'dependency_graph',
-                'description': '依赖图谱模板 - 模块依赖可视化分析',
-                'type': 'module_level',
-                'layer': 'module',
-                'file_path': '/docs/modules/dependency-graph.md',
-                'variables': ['project_name', 'dependency_hierarchy', 'dependency_matrix',
-                              'critical_path_analysis', 'dependency_risk_assessment', 'optimization_suggestions']
-            },
-            {
-                'name': 'module_readme',
-                'description': '模块主文档模板 - 单个模块详细说明',
-                'type': 'module_level',
-                'layer': 'module',
-                'file_path': '/docs/modules/modules/[module]/README.md',
-                'variables': ['module_name', 'module_overview', 'core_functions', 'architecture_design',
-                              'main_components', 'api_interfaces', 'configuration_options',
-                              'usage_examples', 'testing_strategy', 'performance_metrics', 'troubleshooting']
-            },
-            {
-                'name': 'module_api',
-                'description': '模块API模板 - 模块对外API接口',
-                'type': 'module_level',
-                'layer': 'module',
-                'file_path': '/docs/modules/modules/[module]/api.md',
-                'variables': ['module_name', 'api_overview', 'core_apis', 'data_models',
-                              'error_handling', 'usage_examples', 'performance_considerations']
-            },
-            {
-                'name': 'module_flow',
-                'description': '模块流程模板 - 模块内业务流程',
-                'type': 'module_level',
-                'layer': 'module',
-                'file_path': '/docs/modules/modules/[module]/flow.md',
-                'variables': ['module_name', 'flow_overview', 'flow_1_name', 'flow_1_description',
-                              'flow_2_name', 'flow_2_description', 'flow_3_name', 'flow_3_description',
-                              'flow_diagram', 'exception_handling', 'performance_optimization']
-            },
-            
             # ============== 文件层模板 (1个) ==============
             {
                 'name': 'file_summary',
-                'description': '综合文件摘要模板 - 完整的文件分析文档（整合文件摘要、类分析、函数目录功能）',
+                'description': '详细文件分析模板 - 包含流程图、变量作用域、函数依赖的完整文件分析',
                 'type': 'file_level',
                 'layer': 'file',
                 'file_path': '/docs/files/summaries/[file].md',
-                'variables': ['filename', 'function_overview', 'class_definitions',
-                              'function_definitions', 'constants', 'imports', 'exports',
-                              'algorithms', 'performance_analysis_section', 'architecture_contribution_section', 'notes']
+                'variables': ['filename', 'function_overview', 'imports', 'global_variables', 'constants',
+                              'function_summary_table', 'detailed_function_analysis', 'class_summary_table',
+                              'detailed_class_analysis', 'function_call_flowchart', 'variable_scope_analysis',
+                              'function_dependencies', 'data_flow_analysis', 'error_handling', 'performance_analysis',
+                              'algorithm_complexity', 'extensibility_assessment', 'code_quality_assessment',
+                              'documentation_completeness', 'notes']
             },
 
             
-            # ============== 项目层模板 (4个) ==============
+            # ============== 项目层模板 (3个) ==============
             {
                 'name': 'project_readme',
                 'description': '项目README模板 - 项目主文档',
@@ -252,16 +181,6 @@ class TemplateServiceV05:
                 'file_path': '/docs/project/roadmap.md',
                 'variables': ['project_name', 'overall_goals', 'version_planning', 'long_term_vision',
                               'technology_evolution', 'community_building']
-            },
-            {
-                'name': 'project_scan_summary',
-                'description': '项目扫描摘要模板 - 项目结构分析报告',
-                'type': 'project_level', 
-                'layer': 'project',
-                'file_path': '/docs/analysis/project-scan.md',
-                'variables': ['project_name', 'project_type', 'main_framework', 'file_count', 'code_complexity',
-                              'directory_structure', 'key_files_analysis', 'identified_modules', 
-                              'file_distribution', 'documentation_strategy', 'scan_timestamp']
             },
 
         ]
@@ -387,9 +306,7 @@ def get_file_summary_template() -> str:
     """获取文件摘要模板（兼容方法）"""
     return FileTemplates.SUMMARY_TEMPLATE
 
-def get_module_analysis_template() -> str:
-    """获取模块分析模板（兼容方法）"""
-    return ModuleTemplates.OVERVIEW_TEMPLATE
+# get_module_analysis_template removed - module layer eliminated
 
 def get_architecture_template() -> str:
     """获取架构文档模板（兼容方法）"""

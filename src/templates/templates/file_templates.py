@@ -7,37 +7,70 @@
 class FileTemplates:
     """文件层文档模板集合"""
     
-    # 综合文件摘要模板 - 整合文件摘要、类分析和函数目录功能
-    FILE_SUMMARY_TEMPLATE = """# 文件摘要：{filename}
+    # 综合文件摘要模板 - 详细的文件分析文档，包含流程图和深度分析
+    FILE_SUMMARY_TEMPLATE = """# 文件分析报告：{filename}
 
-## 功能概述
+## 文件概述
 {function_overview}
 
-## 主要组件
+## 代码结构分析
 
-### 类定义
-{class_definitions}
-
-### 函数定义
-{function_definitions}
-
-### 重要常量和配置
-{constants}
-
-## 依赖关系
-
-### 导入的模块
+### 导入依赖
 {imports}
 
-### 对外接口
-{exports}
+### 全局变量和常量
+{global_variables}
 
-## 关键算法和逻辑
-{algorithms}
+### 配置和设置
+{constants}
 
-{performance_analysis_section}
+## 函数详细分析
 
-{architecture_contribution_section}
+### 函数概览表
+{function_summary_table}
+
+### 函数详细说明
+{detailed_function_analysis}
+
+## 类详细分析
+
+### 类概览表
+{class_summary_table}
+
+### 类详细说明
+{detailed_class_analysis}
+
+## 函数调用流程图
+```mermaid
+{function_call_flowchart}
+```
+
+## 变量作用域分析
+{variable_scope_analysis}
+
+## 函数依赖关系
+{function_dependencies}
+
+## 数据流分析
+{data_flow_analysis}
+
+## 错误处理机制
+{error_handling}
+
+## 性能分析
+{performance_analysis}
+
+## 算法复杂度
+{algorithm_complexity}
+
+## 扩展性评估
+{extensibility_assessment}
+
+## 代码质量评估
+{code_quality_assessment}
+
+## 文档完整性
+{documentation_completeness}
 
 ## 备注
 {notes}

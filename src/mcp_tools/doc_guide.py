@@ -1,6 +1,6 @@
 """
 MCP doc_guide 工具实现
-智能分析项目特征，为AI提供文档生成策略和建议
+智能分析项目特征，为AI提供文档生成策略
 """
 import argparse
 import json
@@ -111,15 +111,15 @@ class ProjectAnalyzer:
         complexity = analysis["code_complexity"]
         file_count = analysis["file_count"]
 
-        # 确定推荐阶段顺序
+        # 确定执行阶段顺序
         if complexity == "simple" and file_count < 20:
-            recommended_phases = ["files_first", "modules_second", "architecture_third", "project_last"]
+            execution_phases = ["files_first", "architecture_second", "project_last"]
             priority_strategy = "sequential"
         elif complexity == "complex" or file_count > 100:
-            recommended_phases = ["architecture_first", "modules_second", "files_third", "project_last"]
+            execution_phases = ["architecture_first", "files_second", "project_last"]
             priority_strategy = "top_down"
         else:
-            recommended_phases = ["files_first", "modules_second", "architecture_third", "project_last"]
+            execution_phases = ["files_first", "architecture_second", "project_last"]
             priority_strategy = "bottom_up"
 
         # 确定优先文件
@@ -127,15 +127,14 @@ class ProjectAnalyzer:
 
         # 估计模板数量
         estimated_files = min(file_count, 30)  # 文件层最多30个
-        estimated_templates = estimated_files + 6 + 6 + 3  # 文件+模块+架构+项目
+        estimated_templates = estimated_files + 6 + 4  # 文件+架构+项目
 
         return {
-            "recommended_phases": recommended_phases,
+            "execution_phases": execution_phases,
             "priority_strategy": priority_strategy,
             "priority_files": priority_files,
             "estimated_templates": estimated_templates,
-            "complexity_level": complexity,
-            "focus_recommendations": self._get_focus_recommendations(analysis, focus_areas)
+            "complexity_level": complexity
         }
 
     def generate_generation_plan(self, analysis: Dict[str, Any], strategy: Dict[str, Any]) -> Dict[str, Any]:
@@ -394,33 +393,6 @@ class ProjectAnalyzer:
         scored_files.sort(key=lambda x: x[1], reverse=True)
         return [file_name for file_name, score in scored_files[:20] if score > 0]
 
-    @staticmethod
-    def _get_focus_recommendations(analysis: Dict[str, Any], focus_areas: List[str]) -> List[str]:
-        """获取焦点建议"""
-        recommendations = []
-        project_type = analysis["project_type"]
-        complexity = analysis["code_complexity"]
-        modules = analysis["identified_modules"]
-
-        if "architecture" in focus_areas:
-            if complexity == "complex":
-                recommendations.append("重点关注系统架构和模块依赖关系")
-            else:
-                recommendations.append("关注技术栈选择和设计模式")
-
-        if "modules" in focus_areas:
-            if len(modules) > 5:
-                recommendations.append("详细分析模块间的依赖关系和接口设计")
-            else:
-                recommendations.append("重点梳理核心业务模块的职责划分")
-
-        if "files" in focus_areas:
-            recommendations.append(f"优先分析{project_type}项目的核心文件结构")
-
-        if "project" in focus_areas:
-            recommendations.append("生成详细的项目说明和使用指南")
-
-        return recommendations
 
     @staticmethod
     def _get_architecture_components(project_type: str) -> List[str]:
@@ -458,7 +430,7 @@ class DocGuideTool:
 
     def __init__(self):
         self.tool_name = "doc_guide"
-        self.description = "智能分析项目特征，为AI提供文档生成策略和建议"
+        self.description = "智能分析项目特征，为AI提供文档生成策略"
         self.analyzer = ProjectAnalyzer()
         self.logger = logging.getLogger('doc_guide')
 

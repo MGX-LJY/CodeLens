@@ -223,8 +223,7 @@ class TaskExecutor:
                 "error_message": error_message
             },
             "phase_status": phase_progress,
-            "next_task": self._get_task_info(next_task) if next_task else None,
-            "recommendations": self._get_post_completion_recommendations(task, phase_progress)
+            "next_task": self._get_task_info(next_task) if next_task else None
         }
 
     def _check_dependencies(self, task: Task) -> Dict[str, Any]:
@@ -289,10 +288,7 @@ class TaskExecutor:
             file_context = self._get_file_context(task.target_file, context_enhancement)
             context["file_context"] = file_context
 
-        # 模块相关上下文
-        if task.target_module:
-            module_context = self._get_module_context(task.target_module, context_enhancement)
-            context["module_context"] = module_context
+        # 模块相关上下文已删除（模块层已被移除）
 
         # 项目相关上下文
         if context_enhancement:
@@ -339,34 +335,6 @@ class TaskExecutor:
 
         return context
 
-    def _get_module_context(self, target_module: str, enhanced: bool) -> Dict[str, Any]:
-        """获取模块上下文"""
-        # 查找模块相关的文件
-        module_files = self._find_module_files(target_module)
-
-        context = {
-            "module_name": target_module,
-            "module_files": module_files
-        }
-
-        # 如果有模块文件，获取其内容摘要
-        if module_files and enhanced:
-            file_summaries = []
-            for file_path in module_files[:5]:  # 最多5个文件
-                full_path = self.project_path / file_path
-                if full_path.exists():
-                    content = self.file_service.read_file_safe(str(full_path))
-                    if content:
-                        file_summaries.append({
-                            "file": file_path,
-                            "lines": content.count('\n') + 1,
-                            "size": len(content),
-                            "preview": content[:500] + "..." if len(content) > 500 else content
-                        })
-
-            context["file_summaries"] = file_summaries
-
-        return context
 
     def _get_project_context(self) -> Dict[str, Any]:
         """获取项目上下文"""
@@ -402,12 +370,10 @@ class TaskExecutor:
         try:
             phase_enum = Phase(phase)
             progress = self.phase_controller.get_phase_progress_detailed(phase_enum)
-            recommendations = self.phase_controller.get_phase_recommendations(phase_enum)
 
             return {
                 "phase": phase,
-                "progress": progress,
-                "recommendations": recommendations
+                "progress": progress
             }
         except ValueError:
             return {"phase": phase, "error": "Invalid phase"}
@@ -436,20 +402,6 @@ class TaskExecutor:
                 "准确识别所有主要组件",
                 "清晰描述功能用途",
                 "正确分析依赖关系"
-            ]
-
-        elif task_type == "module_analysis":
-            guidance["focus_points"] = [
-                "基于文件摘要识别功能模块",
-                "分析模块间的关系和依赖",
-                "理解模块的业务职责",
-                "评估模块的架构设计"
-            ]
-            guidance["template_instructions"] = "使用module_analysis模板，基于已完成的文件摘要进行模块识别"
-            guidance["quality_criteria"] = [
-                "合理的模块划分",
-                "清晰的职责定义",
-                "准确的依赖关系"
             ]
 
         elif task_type == "architecture":
@@ -513,7 +465,7 @@ class TaskExecutor:
         }
 
     def _get_next_task(self, current_task: Task) -> Optional[Dict[str, Any]]:
-        """获取下一个建议任务"""
+        """获取下一个任务"""
         # 获取同阶段的下一个任务
         next_task = self.task_manager.get_next_task(current_task.phase)
 
@@ -565,39 +517,7 @@ class TaskExecutor:
 
         return related[:5]  # 最多5个相关文件
 
-    def _find_module_files(self, module_name: str) -> List[str]:
-        """查找模块文件"""
-        module_files = []
-        module_lower = module_name.lower()
 
-        # 搜索包含模块名的文件
-        for file_path in self.project_path.rglob("*.py"):
-            relative_path = file_path.relative_to(self.project_path)
-            if module_lower in str(relative_path).lower():
-                module_files.append(str(relative_path))
-
-        return module_files[:10]  # 最多10个文件
-
-    def _get_post_completion_recommendations(self, task: Task, phase_progress: Dict[str, Any]) -> List[str]:
-        """获取完成后建议"""
-        recommendations = []
-
-        # 阶段进度建议
-        if phase_progress["can_proceed"]:
-            recommendations.append(f"{task.phase}阶段已完成，可以进入下一阶段")
-        else:
-            remaining = phase_progress["total_tasks"] - phase_progress["completed_tasks"]
-            recommendations.append(f"还有{remaining}个任务未完成，继续当前阶段")
-
-        # 任务特定建议
-        if task.type.value == "file_summary":
-            recommendations.append("文件摘要已完成，建议继续分析其他核心文件")
-        elif task.type.value == "module_analysis":
-            recommendations.append("模块分析已完成，可以开始分析模块关系")
-        elif task.type.value == "architecture":
-            recommendations.append("架构分析已完成，建议生成技术栈文档")
-
-        return recommendations
 
 
 class TaskExecuteTool:

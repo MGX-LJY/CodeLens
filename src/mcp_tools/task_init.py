@@ -28,12 +28,6 @@ class TaskPlanGenerator:
         self.template_mapping = {
             TaskType.SCAN: "project_scan_summary",  # 添加scan任务模板映射
             TaskType.FILE_SUMMARY: "file_summary",
-            TaskType.MODULE_ANALYSIS: "module_analysis",
-            TaskType.MODULE_RELATIONS: "module_relations",
-            TaskType.DEPENDENCY_GRAPH: "dependency_graph",
-            TaskType.MODULE_README: "module_readme",
-            TaskType.MODULE_API: "module_api",
-            TaskType.MODULE_FLOW: "module_flow",
             TaskType.ARCHITECTURE: "architecture",
             TaskType.TECH_STACK: "tech_stack",
             TaskType.DATA_FLOW: "data_flow",
@@ -69,27 +63,25 @@ class TaskPlanGenerator:
         # 生成全局scan任务ID，确保依赖关系一致
         scan_task_id = f"scan_{int(time.time() * 1000000)}"  # 使用更高精度避免冲突
         
-        # 生成各阶段任务
+        # 生成各阶段任务 (4阶段架构)
         phase_1_tasks = self._generate_phase_1_tasks(project_path, project_analysis, scan_task_id)
         phase_2_tasks = self._generate_phase_2_tasks(project_path, plan, scan_task_id, custom_priorities)
-        phase_3_tasks = self._generate_phase_3_tasks(project_path, project_analysis, phase_2_tasks)
-        phase_4_tasks = self._generate_phase_4_tasks(project_path, project_analysis, phase_3_tasks)
-        phase_5_tasks = self._generate_phase_5_tasks(project_path, project_analysis, phase_4_tasks)
+        phase_3_tasks = self._generate_phase_3_tasks(project_path, project_analysis, phase_2_tasks)  # 架构层
+        phase_4_tasks = self._generate_phase_4_tasks(project_path, project_analysis, phase_3_tasks)  # 项目层
 
         # 计算总体统计
-        all_tasks = phase_1_tasks + phase_2_tasks + phase_3_tasks + phase_4_tasks + phase_5_tasks
+        all_tasks = phase_1_tasks + phase_2_tasks + phase_3_tasks + phase_4_tasks
 
         task_plan = {
-            "total_phases": 5,
+            "total_phases": 4,
             "total_tasks": len(all_tasks),
             "estimated_duration": plan.get("estimated_duration", "Unknown"),
             "dependencies_graph": self._build_dependency_graph(all_tasks),
             "task_distribution": {
                 "phase_1_scan": len(phase_1_tasks),
                 "phase_2_files": len(phase_2_tasks),
-                "phase_3_modules": len(phase_3_tasks),
-                "phase_4_architecture": len(phase_4_tasks),
-                "phase_5_project": len(phase_5_tasks)
+                "phase_3_architecture": len(phase_3_tasks),
+                "phase_4_project": len(phase_4_tasks)
             }
         }
 
@@ -108,23 +100,17 @@ class TaskPlanGenerator:
                 "estimated_time": f"{len(phase_2_tasks) * 3} minutes",
                 "tasks": phase_2_tasks
             },
-            "phase_3_modules": {
-                "description": f"模块层文档生成（{len(phase_3_tasks)}个模板）",
+            "phase_3_architecture": {
+                "description": f"架构层文档生成（{len(phase_3_tasks)}个模板）",
                 "dependencies": ["phase_2_complete"],
-                "estimated_time": f"{len(phase_3_tasks) * 5} minutes",
+                "estimated_time": f"{len(phase_3_tasks) * 10} minutes",
                 "tasks": phase_3_tasks
             },
-            "phase_4_architecture": {
-                "description": f"架构层文档生成（{len(phase_4_tasks)}个模板）",
-                "dependencies": ["phase_3_complete"],
-                "estimated_time": f"{len(phase_4_tasks) * 10} minutes",
-                "tasks": phase_4_tasks
-            },
-            "phase_5_project": {
+            "phase_4_project": {
                 "description": "项目层文档生成（仅README.md）",
-                "dependencies": ["phase_4_complete"],
+                "dependencies": ["phase_3_complete"],
                 "estimated_time": "10 minutes",
-                "tasks": phase_5_tasks
+                "tasks": phase_4_tasks
             }
         }
 
@@ -188,131 +174,11 @@ class TaskPlanGenerator:
 
     def _generate_phase_3_tasks(self, project_path: str, analysis: Dict[str, Any],
                                 phase_2_tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """生成第三阶段任务（模块层）"""
+        """生成第三阶段任务（架构层）"""
         tasks = []
-        modules = analysis.get("identified_modules", [])
 
         # 所有文件层任务作为依赖
         file_task_ids = [task["id"] for task in phase_2_tasks]
-
-        # 1. 模块总览任务
-        task_id = f"module_analysis_{int(time.time() * 1000)}"
-        tasks.append({
-            "id": task_id,
-            "type": "module_analysis",
-            "description": "生成模块总览和功能分析",
-            "phase": "phase_3_modules",
-            "template": "module_analysis",
-            "output_path": "docs/modules/overview.md",
-            "dependencies": file_task_ids,
-            "priority": "high",
-            "estimated_time": "8 minutes",
-            "status": "pending",
-            "metadata": {
-                "modules_count": len(modules),
-                "modules_list": modules
-            }
-        })
-
-        module_analysis_id = task_id
-
-        # 2. 模块关系任务
-        task_id = f"module_relations_{int(time.time() * 1000)}"
-        tasks.append({
-            "id": task_id,
-            "type": "module_relations",
-            "description": "分析模块间关系和依赖",
-            "phase": "phase_3_modules",
-            "template": "module_relations",
-            "output_path": "docs/modules/module-relations.md",
-            "dependencies": [module_analysis_id],
-            "priority": "high",
-            "estimated_time": "6 minutes",
-            "status": "pending",
-            "metadata": {}
-        })
-
-        # 3. 依赖图谱任务
-        task_id = f"dependency_graph_{int(time.time() * 1000)}"
-        tasks.append({
-            "id": task_id,
-            "type": "dependency_graph",
-            "description": "生成模块依赖图谱分析",
-            "phase": "phase_3_modules",
-            "template": "dependency_graph",
-            "output_path": "docs/modules/dependency-graph.md",
-            "dependencies": [module_analysis_id],
-            "priority": "normal",
-            "estimated_time": "5 minutes",
-            "status": "pending",
-            "metadata": {}
-        })
-
-        # 4. 为每个重要模块生成详细文档
-        important_modules = modules[:3]  # 最多3个重要模块
-        for i, module in enumerate(important_modules):
-            module_clean = module.lower().replace(" ", "_").replace("-", "_")
-
-            # 模块README
-            task_id = f"module_readme_{module_clean}_{int(time.time() * 1000)}"
-            tasks.append({
-                "id": task_id,
-                "type": "module_readme",
-                "description": f"生成{module}模块详细文档",
-                "phase": "phase_3_modules",
-                "target_module": module,
-                "template": "module_readme",
-                "output_path": f"docs/modules/modules/{module_clean}/README.md",
-                "dependencies": [module_analysis_id],
-                "priority": "normal",
-                "estimated_time": "4 minutes",
-                "status": "pending",
-                "metadata": {"module_name": module}
-            })
-
-            # 模块API
-            api_task_id = f"module_api_{module_clean}_{int(time.time() * 1000)}"
-            tasks.append({
-                "id": api_task_id,
-                "type": "module_api",
-                "description": f"生成{module}模块API文档",
-                "phase": "phase_3_modules",
-                "target_module": module,
-                "template": "module_api",
-                "output_path": f"docs/modules/modules/{module_clean}/api.md",
-                "dependencies": [task_id],
-                "priority": "normal",
-                "estimated_time": "3 minutes",
-                "status": "pending",
-                "metadata": {"module_name": module}
-            })
-
-            # 模块流程
-            flow_task_id = f"module_flow_{module_clean}_{int(time.time() * 1000)}"
-            tasks.append({
-                "id": flow_task_id,
-                "type": "module_flow",
-                "description": f"生成{module}模块业务流程",
-                "phase": "phase_3_modules",
-                "target_module": module,
-                "template": "module_flow",
-                "output_path": f"docs/modules/modules/{module_clean}/flow.md",
-                "dependencies": [task_id],
-                "priority": "low",
-                "estimated_time": "3 minutes",
-                "status": "pending",
-                "metadata": {"module_name": module}
-            })
-
-        return tasks
-
-    def _generate_phase_4_tasks(self, project_path: str, analysis: Dict[str, Any],
-                                phase_3_tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """生成第四阶段任务（架构层）"""
-        tasks = []
-
-        # 所有模块层任务作为依赖
-        module_task_ids = [task["id"] for task in phase_3_tasks]
 
         # 1. 架构概述
         task_id = f"architecture_{int(time.time() * 1000)}"
@@ -320,10 +186,10 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "architecture",
             "description": "生成系统架构概述",
-            "phase": "phase_4_architecture",
+            "phase": "phase_3_architecture",
             "template": "architecture",
             "output_path": "docs/architecture/overview.md",
-            "dependencies": module_task_ids,
+            "dependencies": file_task_ids,
             "priority": "high",
             "estimated_time": "12 minutes",
             "status": "pending",
@@ -341,7 +207,7 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "tech_stack",
             "description": "分析技术栈和架构原则",
-            "phase": "phase_4_architecture",
+            "phase": "phase_3_architecture",
             "template": "tech_stack",
             "output_path": "docs/architecture/tech-stack.md",
             "dependencies": [architecture_id],
@@ -357,7 +223,7 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "data_flow",
             "description": "设计系统数据流",
-            "phase": "phase_4_architecture",
+            "phase": "phase_3_architecture",
             "template": "data_flow",
             "output_path": "docs/architecture/data-flow.md",
             "dependencies": [architecture_id],
@@ -373,7 +239,7 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "system_architecture",
             "description": "绘制系统架构图",
-            "phase": "phase_4_architecture",
+            "phase": "phase_3_architecture",
             "template": "system_architecture",
             "output_path": "docs/architecture/diagrams/system-architecture.md",
             "dependencies": [architecture_id],
@@ -389,7 +255,7 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "component_diagram",
             "description": "绘制组件关系图",
-            "phase": "phase_4_architecture",
+            "phase": "phase_3_architecture",
             "template": "component_diagram",
             "output_path": "docs/architecture/diagrams/component-diagram.md",
             "dependencies": [architecture_id],
@@ -405,7 +271,7 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "deployment_diagram",
             "description": "设计部署架构",
-            "phase": "phase_4_architecture",
+            "phase": "phase_3_architecture",
             "template": "deployment_diagram",
             "output_path": "docs/architecture/diagrams/deployment-diagram.md",
             "dependencies": [architecture_id],
@@ -417,13 +283,13 @@ class TaskPlanGenerator:
 
         return tasks
 
-    def _generate_phase_5_tasks(self, project_path: str, analysis: Dict[str, Any],
-                                phase_4_tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """生成第五阶段任务（项目层）"""
+    def _generate_phase_4_tasks(self, project_path: str, analysis: Dict[str, Any],
+                                phase_3_tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """生成第四阶段任务（项目层）"""
         tasks = []
 
         # 所有架构层任务作为依赖
-        arch_task_ids = [task["id"] for task in phase_4_tasks]
+        arch_task_ids = [task["id"] for task in phase_3_tasks]
 
         # 只生成README.md
         task_id = f"project_readme_{int(time.time() * 1000)}"
@@ -431,7 +297,7 @@ class TaskPlanGenerator:
             "id": task_id,
             "type": "project_readme",
             "description": "生成项目README文档",
-            "phase": "phase_5_project",
+            "phase": "phase_4_project",
             "template": "project_readme",
             "output_path": "docs/project/README.md",
             "dependencies": arch_task_ids,
@@ -446,6 +312,7 @@ class TaskPlanGenerator:
         })
 
         return tasks
+
 
     def _get_file_priority(self, file_path: str, custom_priorities: Dict[str, Any] = None) -> str:
         """确定文件优先级"""
@@ -489,7 +356,7 @@ class TaskPlanGenerator:
         error_count = 0
 
         # 按阶段顺序创建任务
-        phases = ["phase_1_scan", "phase_2_files", "phase_3_modules", "phase_4_architecture", "phase_5_project"]
+        phases = ["phase_1_scan", "phase_2_files", "phase_3_architecture", "phase_4_project"]
 
         for phase in phases:
             if phase in task_plan:

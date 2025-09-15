@@ -47,19 +47,13 @@ class TaskStatusTool:
                     },
                     "phase_filter": {
                         "type": "string",
-                        "enum": ["phase_1_scan", "phase_2_files", "phase_3_modules", "phase_4_architecture",
-                                 "phase_5_project"],
+                        "enum": ["phase_1_scan", "phase_2_files", "phase_3_architecture", "phase_4_project"],
                         "description": "阶段过滤器（可选）"
                     },
                     "detailed_analysis": {
                         "type": "boolean",
                         "default": True,
                         "description": "是否包含详细分析"
-                    },
-                    "include_recommendations": {
-                        "type": "boolean",
-                        "default": True,
-                        "description": "是否包含推荐行动"
                     },
                     "task_id": {
                         "type": "string",
@@ -82,7 +76,6 @@ class TaskStatusTool:
             check_type = arguments.get("check_type", "overall_status")
             phase_filter = arguments.get("phase_filter")
             detailed_analysis = arguments.get("detailed_analysis", True)
-            include_recommendations = arguments.get("include_recommendations", True)
             task_id = arguments.get("task_id")
 
             # 创建管理器实例
@@ -100,7 +93,7 @@ class TaskStatusTool:
             elif check_type == "overall_status":
                 result = self._check_overall_status(task_manager, phase_controller, state_tracker, detailed_analysis)
             elif check_type == "next_actions":
-                result = self._get_next_actions(task_manager, phase_controller, include_recommendations)
+                result = self._get_next_actions(task_manager, phase_controller)
             elif check_type == "health_check":
                 result = self._perform_health_check(state_tracker, task_manager, phase_controller)
             elif check_type == "task_detail" and task_id:
@@ -251,9 +244,8 @@ class TaskStatusTool:
 
         return result
 
-    def _get_next_actions(self, task_manager: TaskManager, phase_controller: PhaseController,
-                          include_recommendations: bool) -> Dict[str, Any]:
-        """获取下一步行动建议"""
+    def _get_next_actions(self, task_manager: TaskManager, phase_controller: PhaseController) -> Dict[str, Any]:
+        """获取下一步行动分析"""
         actions = []
         current_phase = phase_controller.get_current_phase()
 
@@ -276,11 +268,6 @@ class TaskStatusTool:
         blocked_tasks = task_manager.get_blocked_tasks()
         if blocked_tasks:
             actions.append(f"解决 {len(blocked_tasks)} 个被阻塞任务的依赖问题")
-
-        # 阶段建议
-        if include_recommendations:
-            phase_recommendations = phase_controller.get_phase_recommendations(current_phase)
-            actions.extend(phase_recommendations)
 
         # 阶段转换检查
         can_proceed, message = phase_controller.can_proceed_to_next_phase(current_phase)
@@ -344,8 +331,7 @@ class TaskStatusTool:
             "issues": issues,
             "warnings": warnings,
             "performance_metrics": state_tracker.get_performance_metrics(),
-            "task_distribution": phase_counts,
-            "recommendations": self._get_health_recommendations(issues, warnings, task_manager)
+            "task_distribution": phase_counts
         }
 
     def _check_task_detail(self, task_manager: TaskManager, task_id: str) -> Dict[str, Any]:
@@ -417,25 +403,6 @@ class TaskStatusTool:
         else:
             return f"{minutes} minutes"
 
-    def _get_health_recommendations(self, issues: List[str], warnings: List[str],
-                                    task_manager: TaskManager) -> List[str]:
-        """获取健康建议"""
-        recommendations = []
-
-        if not task_manager.tasks:
-            recommendations.append("运行task_init初始化任务")
-
-        failed_tasks = task_manager.get_failed_tasks()
-        if failed_tasks:
-            recommendations.append("检查并重试失败的任务")
-
-        if issues:
-            recommendations.append("解决严重问题以确保系统正常运行")
-
-        if warnings:
-            recommendations.append("关注警告信息以优化执行效果")
-
-        return recommendations
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""
@@ -471,14 +438,12 @@ def main():
                                  "next_actions", "health_check"],
                         default="overall_status", help="Check type")
     parser.add_argument("--phase", dest="phase_filter",
-                        choices=["phase_1_scan", "phase_2_files", "phase_3_modules",
-                                 "phase_4_architecture", "phase_5_project"],
+                        choices=["phase_1_scan", "phase_2_files", "phase_3_architecture",
+                                 "phase_4_project"],
                         help="Phase filter")
     parser.add_argument("--task-id", help="Specific task ID to check")
     parser.add_argument("--simple", action="store_true",
                         help="Simple output (less detail)")
-    parser.add_argument("--no-recommendations", action="store_true",
-                        help="Don't include recommendations")
 
     args = parser.parse_args()
 
@@ -486,8 +451,7 @@ def main():
     arguments = {
         "project_path": args.project_path,
         "check_type": args.check_type,
-        "detailed_analysis": not args.simple,
-        "include_recommendations": not args.no_recommendations
+        "detailed_analysis": not args.simple
     }
 
     if args.phase_filter:

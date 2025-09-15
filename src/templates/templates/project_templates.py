@@ -99,9 +99,6 @@ class ProjectTemplates:
 ## 文件类型分布
 {file_distribution}
 
-## 建议的文档策略
-{documentation_strategy}
-
 ---
 *扫描完成时间: {scan_timestamp}*
 *生成工具: CodeLens Project Scanner*
