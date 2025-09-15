@@ -24,6 +24,9 @@ from src.mcp_tools.task_execute import TaskExecuteTool
 from src.mcp_tools.task_status import TaskStatusTool
 from src.mcp_tools.init_tools import InitTools
 from src.mcp_tools.task_complete import TaskCompleteTool
+from src.mcp_tools.project_overview import ProjectOverviewTool
+from src.mcp_tools.doc_update_init import DocUpdateInitTool
+from src.mcp_tools.doc_update import DocUpdateTool
 
 # 导入热重载功能
 from src.hot_reload import HotReloadManager
@@ -43,7 +46,10 @@ def create_tool_instances():
         "task_init": TaskInitTool(),
         "task_execute": TaskExecuteTool(),
         "task_status": TaskStatusTool(),
-        "task_complete": TaskCompleteTool()
+        "task_complete": TaskCompleteTool(),
+        "project_overview": ProjectOverviewTool(),
+        "doc_update_init": DocUpdateInitTool(),
+        "doc_update": DocUpdateTool()
     }
 
 # 初始化CodeLens工具

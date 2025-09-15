@@ -1,0 +1,171 @@
+{
+  "created_at": "2025-09-15T21:01:00.832730",
+  "last_updated": "2025-09-15T21:01:00.846337",
+  "files": {
+    "src/__init__.py": {
+      "hash": "86aee8adaa6ee3e386c4f264d6531f3d",
+      "size": 39,
+      "modified_time": "2025-09-13T00:06:54.030723"
+    },
+    "src/hot_reload/__init__.py": {
+      "hash": "100d3c75b2885fdaac57fef0be8a02f2",
+      "size": 277,
+      "modified_time": "2025-09-15T17:51:25.610545"
+    },
+    "src/hot_reload/hot_reload_manager.py": {
+      "hash": "3c12b04153eec0aece0b64287a17d4db",
+      "size": 12456,
+      "modified_time": "2025-09-15T17:53:37.321555"
+    },
+    "src/hot_reload/file_watcher.py": {
+      "hash": "6b7b032f91cb30ef62eab2b8209bedf9",
+      "size": 7081,
+      "modified_time": "2025-09-15T17:55:01.550223"
+    },
+    "src/hot_reload/module_reloader.py": {
+      "hash": "849ca838153a5303f9e1d12f1bed29ae",
+      "size": 11617,
+      "modified_time": "2025-09-15T17:57:13.328359"
+    },
+    "src/task_engine/state_tracker.py": {
+      "hash": "10c570fc6b331335e7ac50a5a857e8e3",
+      "size": 14656,
+      "modified_time": "2025-09-15T11:00:43.442275"
+    },
+    "src/task_engine/__init__.py": {
+      "hash": "4525b3ac65057fc3bf1b183c513c158b",
+      "size": 561,
+      "modified_time": "2025-09-13T17:26:41.166443"
+    },
+    "src/task_engine/task_manager.py": {
+      "hash": "0931da09763938740398484841b23e75",
+      "size": 13200,
+      "modified_time": "2025-09-15T15:13:16.283331"
+    },
+    "src/task_engine/phase_controller.py": {
+      "hash": "69de6cb308f51fb2214cc243e4716fe9",
+      "size": 11071,
+      "modified_time": "2025-09-15T11:00:43.441968"
+    },
+    "src/templates/__init__.py": {
+      "hash": "dd51b427c37225cef4551d7a6673f281",
+      "size": 19,
+      "modified_time": "2025-09-13T00:06:58.105423"
+    },
+    "src/templates/document_templates.py": {
+      "hash": "8b0e2cbc9568144727edeea6822d9614",
+      "size": 13520,
+      "modified_time": "2025-09-15T20:37:31.660804"
+    },
+    "src/logging/config.py": {
+      "hash": "140499dee05102259005f41ed9eb0e3c",
+      "size": 13485,
+      "modified_time": "2025-09-15T18:08:44.359736"
+    },
+    "src/logging/__init__.py": {
+      "hash": "8a85c8517a5e0ed393e38101c41662e6",
+      "size": 8411,
+      "modified_time": "2025-09-13T17:27:34.042271"
+    },
+    "src/logging/manager.py": {
+      "hash": "d92fababcec7907cd5a706353c47ba83",
+      "size": 15671,
+      "modified_time": "2025-09-15T18:09:26.149347"
+    },
+    "src/logging/rotator.py": {
+      "hash": "b74d808f2f0f40ff6cc0daddc71a374c",
+      "size": 9945,
+      "modified_time": "2025-09-15T18:10:03.268959"
+    },
+    "src/mcp_tools/task_init.py": {
+      "hash": "283a36465cd1c1c0350a768401a922de",
+      "size": 29277,
+      "modified_time": "2025-09-15T15:14:23.162458"
+    },
+    "src/mcp_tools/task_execute.py": {
+      "hash": "4902cbbb782859fbc12b5d4f4723ddd2",
+      "size": 40969,
+      "modified_time": "2025-09-15T13:49:44.589415"
+    },
+    "src/mcp_tools/doc_guide.py": {
+      "hash": "f9d78ebc99f701cdafb3da3c138fd087",
+      "size": 29753,
+      "modified_time": "2025-09-15T14:02:25.957920"
+    },
+    "src/mcp_tools/init_tools.py": {
+      "hash": "e12003a5e256236f4fa71f65c76839cb",
+      "size": 14935,
+      "modified_time": "2025-09-15T13:34:36.749152"
+    },
+    "src/mcp_tools/__init__.py": {
+      "hash": "35331793d6f027245b7858f1cd47f82c",
+      "size": 457,
+      "modified_time": "2025-09-15T17:29:27.305191"
+    },
+    "src/mcp_tools/doc_update.py": {
+      "hash": "21a2ac53ef81bbc0d56b36d2a65f171b",
+      "size": 9216,
+      "modified_time": "2025-09-15T20:59:45.935015"
+    },
+    "src/mcp_tools/task_status.py": {
+      "hash": "92e9feb9072166a30aa168540bc6f7e0",
+      "size": 23437,
+      "modified_time": "2025-09-15T13:25:24.619192"
+    },
+    "src/mcp_tools/doc_scan.py": {
+      "hash": "f6b4ed9739227b339adaf045dd140029",
+      "size": 23132,
+      "modified_time": "2025-09-15T14:01:31.103528"
+    },
+    "src/mcp_tools/project_overview.py": {
+      "hash": "cf6e2e42b8df63f52682d5b92f6b96e2",
+      "size": 5799,
+      "modified_time": "2025-09-15T20:56:21.236238"
+    },
+    "src/mcp_tools/doc_update_init.py": {
+      "hash": "5740655f6fff8a4045ba3b7ddeb3a25a",
+      "size": 6740,
+      "modified_time": "2025-09-15T20:58:41.008101"
+    },
+    "src/mcp_tools/task_complete.py": {
+      "hash": "36d9b698c3eb4b21573aabbdf1770064",
+      "size": 11281,
+      "modified_time": "2025-09-15T15:25:40.019741"
+    },
+    "src/services/file_service.py": {
+      "hash": "56065d6aef50f774cc098be1ee240203",
+      "size": 14167,
+      "modified_time": "2025-09-15T14:01:03.238176"
+    },
+    "src/services/__init__.py": {
+      "hash": "a11833158331c41930ad8226ec944f85",
+      "size": 18,
+      "modified_time": "2025-09-13T00:06:57.217990"
+    },
+    "src/templates/templates/architecture_templates.py": {
+      "hash": "4dcf1db3530ee500fd15363912dda94c",
+      "size": 3049,
+      "modified_time": "2025-09-15T15:14:17.603042"
+    },
+    "src/templates/templates/__init__.py": {
+      "hash": "3a6b4ad9c3d554478e0f95bf26f1ee75",
+      "size": 294,
+      "modified_time": "2025-09-15T11:00:43.443364"
+    },
+    "src/templates/templates/file_templates.py": {
+      "hash": "6dcb765b5d7e0be9e62671b1919a3478",
+      "size": 1034,
+      "modified_time": "2025-09-15T11:00:43.443642"
+    },
+    "src/templates/templates/project_templates.py": {
+      "hash": "7abffc909034503de2a4f9b7911319d4",
+      "size": 847,
+      "modified_time": "2025-09-15T15:13:08.229352"
+    },
+    "mcp_server.py": {
+      "hash": "a2e3a3135845dc56553b6dca7db2569b",
+      "size": 8644,
+      "modified_time": "2025-09-15T21:00:38.686775"
+    }
+  }
+}
