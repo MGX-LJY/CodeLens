@@ -103,7 +103,7 @@ class FileService:
 
         return sorted(filtered_files)
 
-    def read_file_safe(self, file_path: str, max_size: int = 50000) -> Optional[str]:
+    def read_file_safe(self, file_path: str, max_size: int = 122880) -> Optional[str]:
         """安全读取文件内容，带大小限制"""
         try:
             file_path = Path(file_path)
@@ -122,7 +122,7 @@ class FileService:
             self.logger.error(f"Error reading file {file_path}: {e}")
             return None
     
-    def read_file_with_chunking(self, file_path: str, max_size: int = 50000) -> Union[str, ChunkingResult, None]:
+    def read_file_with_chunking(self, file_path: str, max_size: int = 122880) -> Union[str, ChunkingResult, None]:
         """读取文件内容，大文件自动分片处理"""
         try:
             file_path = Path(file_path)
@@ -372,7 +372,7 @@ class FileService:
 
     def get_project_files_info(self, project_path: str, include_content: bool = True,
                                extensions: List[str] = None, exclude_patterns: List[str] = None,
-                               max_file_size: int = 50000) -> Dict[str, Any]:
+                               max_file_size: int = 122880) -> Dict[str, Any]:
         """获取项目文件的完整信息，为Claude Code提供结构化数据"""
 
         # 开始操作日志记录

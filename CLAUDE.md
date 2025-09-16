@@ -89,7 +89,7 @@ python src/mcp_tools/task_execute.py /path/to/project --task-id scan_123456789  
 - **Primary Language**: Python 3.9+
 - **Framework**: MCP (Model Context Protocol) 
 - **Task Engine**: Advanced dependency resolution with phase control
-- **File Processing**: pathlib, glob for efficient file operations
+- **File Processing**: pathlib, glob for efficient file operations + intelligent large file handling (50KB chunking, 120KB processing limit)
 - **Template System**: 10 professional templates with variable validation
 - **Persistence**: JSON-based task state management with atomic operations
 - **Intelligence**: Framework detection, complexity analysis, smart prioritization
@@ -172,6 +172,37 @@ python src/mcp_tools/init_tools.py /path/to/project
 # ✅ Intelligent project size detection
 # ✅ Estimated completion time reporting
 ```
+
+## Large File Processing Strategy
+
+CodeLens implements intelligent large file handling with a dual-threshold approach:
+
+### File Processing Thresholds
+- **Chunking Threshold**: 50KB - Files above this size are automatically chunked for processing
+- **Processing Limit**: 120KB - Files above this size are skipped entirely
+- **Processing Range**: 50KB-120KB files are handled through intelligent chunking system
+
+### Chunking System Features
+- **AST-Based Chunking**: Python files are chunked by classes, methods, and functions
+- **Semantic Preservation**: Code semantic integrity maintained across chunks
+- **Automatic Fallback**: Line-based chunking when AST parsing fails
+- **Dependency Tracking**: Inter-chunk relationships and dependencies tracked
+
+### Configuration
+```python
+# In task_execute.py and file_service.py
+large_file_threshold = 50000    # 50KB - triggers chunking
+max_file_size = 122880          # 120KB - processing upper limit
+
+# Usage examples
+file_service.read_file_with_chunking(file_path, max_file_size)
+file_service.should_chunk_file(file_path, large_file_threshold)
+```
+
+### Benefits
+- **Enhanced Coverage**: Process files up to 120KB (previously 50KB limit)
+- **Maintained Performance**: Chunking prevents memory issues with large files
+- **Backward Compatibility**: Existing chunking logic unchanged
 
 ## Development Principles
 

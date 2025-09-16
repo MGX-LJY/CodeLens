@@ -3,7 +3,7 @@
 # 🔭 CodeLens - 智能文档协作平台
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.1.1-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.1.1.0-brightgreen" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-blue" alt="Python Version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/MCP-Protocol-orange" alt="MCP Protocol">
@@ -79,6 +79,7 @@
 | 📚 16个核心模板系统 | 四层架构(Architecture/Module/File/Project)覆盖所有文档需求 | ✅ 完成 |
 | 🤖 AI辅助工具集 | 智能文档阅读、文件变化检测、增量更新建议 | ✅ 完成 |
 | 🔥 热重载支持 | 实时监控代码变化，自动重载模块，无需重启服务 | ✅ 完成 |
+| 📄 智能大文件处理 | 50KB分片阈值+120KB处理上限，AST语义分片，支持超大代码文件 | ✅ 完成 |
 | 🛠️ 零依赖设计 | 核心功能仅使用Python标准库，部署简单 | ✅ 完成 |
 
 ## 快速开始

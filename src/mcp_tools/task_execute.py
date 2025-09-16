@@ -44,7 +44,8 @@ class TaskExecutor:
         self.template_service = TemplateService()
         
         # 大文件处理配置
-        self.large_file_threshold = 50000  # 50KB
+        self.large_file_threshold = 50000  # 50KB - 分片阈值
+        self.max_file_size = 122880  # 120KB - 文件处理上限
         self.enable_chunking = HAS_LARGE_FILE_HANDLER
         
         self.logger.info("TaskExecutor初始化完成")
@@ -655,7 +656,7 @@ graph TD
             context["metadata"] = metadata
 
         # 获取文件内容
-        content = self.file_service.read_file_safe(str(file_path))
+        content = self.file_service.read_file_safe(str(file_path), self.max_file_size)
         if content:
             context["content"] = content
             context["content_available"] = True
@@ -882,7 +883,7 @@ graph TD
             self.state_tracker.record_task_event("started", task_id)
             
             # 使用分片处理大文件
-            result = self.file_service.read_file_with_chunking(str(file_path), self.large_file_threshold)
+            result = self.file_service.read_file_with_chunking(str(file_path), self.max_file_size)
             
             if isinstance(result, ChunkingResult) and result.success:
                 # 处理分片结果
@@ -1161,6 +1162,7 @@ graph TD
             stats = handler.get_processing_stats()
             stats['chunking_enabled'] = True
             stats['threshold_kb'] = self.large_file_threshold / 1024
+            stats['max_file_size_kb'] = self.max_file_size / 1024
             return stats
         else:
             return {'chunking_enabled': False}

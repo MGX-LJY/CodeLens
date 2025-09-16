@@ -180,7 +180,7 @@ class DocScanTool:
             file_extensions = config.get("file_extensions", [".py"])
             exclude_patterns = config.get("exclude_patterns",
                                           ["__pycache__", ".git", "node_modules", ".idea", ".vscode"])
-            max_file_size = config.get("max_file_size", 50000)
+            max_file_size = config.get("max_file_size", 122880)
             max_depth = config.get("max_depth", 3)
 
             # 提取新的过滤配置
@@ -488,7 +488,7 @@ def main():
                         help="Don't include file content in results")
     parser.add_argument("--extensions", nargs="+", default=[".py"],
                         help="File extensions to include")
-    parser.add_argument("--max-size", type=int, default=50000,
+    parser.add_argument("--max-size", type=int, default=122880,
                         help="Maximum file size in characters")
     parser.add_argument("--max-depth", type=int, default=3,
                         help="Maximum directory depth for tree scan")

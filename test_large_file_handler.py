@@ -334,7 +334,7 @@ def test_large_file_chunking():
                 print(f"✅ 文件处理信息: {processing_info}")
                 
                 # 测试文件读取
-                read_result = file_service.read_file_with_chunking(test_file, 50000)
+                read_result = file_service.read_file_with_chunking(test_file, 122880)
                 if isinstance(read_result, type(result)) and read_result.success:
                     print(f"✅ FileService 分片读取成功: {read_result.total_chunks} 个分片")
                 else:
