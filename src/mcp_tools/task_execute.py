@@ -27,6 +27,15 @@ try:
 except ImportError:
     HAS_LARGE_FILE_HANDLER = False
 
+# 导入配置管理器
+try:
+    from src.config import get_file_size_limits_config, get_tool_config
+    HAS_CONFIG_MANAGER = True
+except ImportError:
+    HAS_CONFIG_MANAGER = False
+    get_file_size_limits_config = lambda: None
+    get_tool_config = lambda x: {}
+
 
 class TaskExecutor:
     """任务执行器"""
@@ -43,10 +52,40 @@ class TaskExecutor:
         self.file_service = FileService(enable_large_file_chunking=True)
         self.template_service = TemplateService()
         
-        # 大文件处理配置
+        # 加载配置
+        self._load_config()
+        
+        self.enable_chunking = HAS_LARGE_FILE_HANDLER
+        
+    def _load_config(self):
+        """加载配置"""
+        if HAS_CONFIG_MANAGER:
+            try:
+                file_size_config = get_file_size_limits_config()
+                tool_config = get_tool_config("task_execute")
+                
+                if file_size_config:
+                    self.large_file_threshold = file_size_config.large_file_threshold
+                    self.max_file_size = file_size_config.max_file_size
+                else:
+                    self._use_default_file_size_config()
+                    
+                self.logger.info("配置加载成功", {
+                    "large_file_threshold": self.large_file_threshold,
+                    "max_file_size": self.max_file_size
+                })
+                
+            except Exception as e:
+                self.logger.warning(f"配置加载失败，使用默认值: {e}")
+                self._use_default_file_size_config()
+        else:
+            self.logger.warning("配置管理器不可用，使用默认值")
+            self._use_default_file_size_config()
+    
+    def _use_default_file_size_config(self):
+        """使用默认文件大小配置"""
         self.large_file_threshold = 50000  # 50KB - 分片阈值
         self.max_file_size = 122880  # 120KB - 文件处理上限
-        self.enable_chunking = HAS_LARGE_FILE_HANDLER
         
         self.logger.info("TaskExecutor初始化完成")
 

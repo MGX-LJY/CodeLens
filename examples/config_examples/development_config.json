@@ -1,0 +1,102 @@
+{
+  "_metadata": {
+    "description": "开发环境配置示例",
+    "use_case": "本地开发，支持更多文件类型和详细日志"
+  },
+  
+  "file_filtering": {
+    "include_extensions": [
+      ".py", ".js", ".ts", ".jsx", ".tsx", 
+      ".vue", ".go", ".rs", ".java", ".cpp", ".c", ".h"
+    ],
+    "exclude_patterns": [
+      "__pycache__", ".pyc", ".pyo",
+      ".git", ".gitignore",
+      "node_modules", "package-lock.json",
+      ".env", ".env.local",
+      "*.log", "*.tmp",
+      ".pytest_cache", ".coverage"
+    ],
+    "smart_filtering": {
+      "enabled": true,
+      "max_files_per_project": 50,
+      "priority_patterns": {
+        "high": ["main.py", "app.py", "index.js", "main.go", "src/main.rs"],
+        "normal": ["config", "model", "service", "controller", "handler", "router"],
+        "low": ["util", "helper", "mock", "fixture"]
+      }
+    }
+  },
+  
+  "file_size_limits": {
+    "min_file_size": 20,
+    "max_file_size": 200000,
+    "large_file_threshold": 80000,
+    "chunking": {
+      "enabled": true,
+      "max_chunk_size": 2500,
+      "min_chunk_size": 150,
+      "overlap_size": 100
+    }
+  },
+  
+  "scanning": {
+    "max_depth": 8,
+    "follow_symlinks": false,
+    "include_hidden_files": false,
+    "parallel_processing": {
+      "enabled": true,
+      "max_workers": 8
+    },
+    "content_analysis": {
+      "detect_framework": true,
+      "extract_dependencies": true,
+      "analyze_complexity": true
+    }
+  },
+  
+  "mcp_tools": {
+    "doc_scan": {
+      "default_include_content": true,
+      "cache_results": true,
+      "cache_ttl": 1800,
+      "max_response_size": 50000
+    },
+    "doc_guide": {
+      "analysis_depth": "comprehensive",
+      "generate_suggestions": true
+    },
+    "task_init": {
+      "auto_filter_files": true,
+      "max_tasks_per_phase": 75,
+      "dependency_resolution": true
+    }
+  },
+  
+  "logging": {
+    "level": "DEBUG",
+    "format": "detailed",
+    "operation_tracking": {
+      "enabled": true,
+      "track_performance": true,
+      "detailed_context": true
+    }
+  },
+  
+  "performance": {
+    "memory_limits": {
+      "max_file_cache_size": "200MB",
+      "max_template_cache_size": "100MB"
+    },
+    "timeouts": {
+      "file_scan": 60,
+      "analysis": 120,
+      "template_render": 20
+    },
+    "optimization": {
+      "lazy_loading": true,
+      "incremental_analysis": true,
+      "result_caching": true
+    }
+  }
+}

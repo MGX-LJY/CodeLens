@@ -1,0 +1,113 @@
+{
+  "_metadata": {
+    "description": "生产环境配置示例",
+    "use_case": "生产环境，注重性能和稳定性"
+  },
+  
+  "file_filtering": {
+    "include_extensions": [".py", ".js", ".ts", ".go", ".rs"],
+    "exclude_patterns": [
+      "__pycache__", ".pyc", ".pyo", ".pyd",
+      ".git", ".github",
+      "node_modules", "*.min.js", "*.bundle.js",
+      "dist/", "build/", "target/",
+      "*.log", "*.tmp", "*.cache",
+      "test_", "_test.py", "spec.js",
+      ".pytest_cache", ".coverage", "coverage/"
+    ],
+    "smart_filtering": {
+      "enabled": true,
+      "max_files_per_project": 20,
+      "priority_patterns": {
+        "high": ["main.py", "app.py", "server.js", "main.go"],
+        "normal": ["model", "service", "handler"],
+        "low": ["util", "helper"]
+      }
+    }
+  },
+  
+  "file_size_limits": {
+    "min_file_size": 100,
+    "max_file_size": 100000,
+    "large_file_threshold": 40000,
+    "chunking": {
+      "enabled": true,
+      "max_chunk_size": 1500,
+      "min_chunk_size": 200,
+      "overlap_size": 50
+    }
+  },
+  
+  "scanning": {
+    "max_depth": 5,
+    "follow_symlinks": false,
+    "include_hidden_files": false,
+    "parallel_processing": {
+      "enabled": true,
+      "max_workers": 4
+    },
+    "content_analysis": {
+      "detect_framework": true,
+      "extract_dependencies": false,
+      "analyze_complexity": false
+    }
+  },
+  
+  "mcp_tools": {
+    "doc_scan": {
+      "default_include_content": false,
+      "cache_results": true,
+      "cache_ttl": 7200,
+      "max_response_size": 25000
+    },
+    "doc_guide": {
+      "analysis_depth": "standard",
+      "generate_suggestions": false
+    },
+    "task_init": {
+      "auto_filter_files": true,
+      "max_tasks_per_phase": 30,
+      "dependency_resolution": true
+    }
+  },
+  
+  "logging": {
+    "level": "INFO",
+    "format": "standard",
+    "file_logging": {
+      "enabled": true,
+      "max_file_size": "5MB",
+      "backup_count": 3
+    },
+    "operation_tracking": {
+      "enabled": false,
+      "track_performance": true,
+      "detailed_context": false
+    }
+  },
+  
+  "performance": {
+    "memory_limits": {
+      "max_file_cache_size": "50MB",
+      "max_template_cache_size": "25MB"
+    },
+    "timeouts": {
+      "file_scan": 20,
+      "analysis": 45,
+      "template_render": 10
+    },
+    "optimization": {
+      "lazy_loading": true,
+      "incremental_analysis": true,
+      "result_caching": true
+    }
+  },
+  
+  "security": {
+    "content_filtering": {
+      "scan_for_secrets": true,
+      "blocked_patterns": ["password", "api_key", "secret", "token", "private_key"],
+      "safe_content_only": true
+    }
+  }
+}

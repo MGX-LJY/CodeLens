@@ -4,11 +4,12 @@
 """
 import os
 import time
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Union, Tuple
 
-# 导入日志系统和大文件处理器
+# 导入日志系统、大文件处理器和配置管理器
 try:
     from ..logging import get_logger
     from .large_file_handler import LargeFileHandler, ChunkingResult, CodeChunk
@@ -18,7 +19,10 @@ except ImportError:
     
 try:
     from ..logging import get_logger
+    from ..config import get_file_filtering_config, get_file_size_limits_config
+    HAS_CONFIG_MANAGER = True
 except ImportError:
+    HAS_CONFIG_MANAGER = False
     # 如果日志系统不可用，创建一个空日志器
     class DummyLogger:
         def debug(self, msg, context=None): pass
@@ -35,11 +39,71 @@ except ImportError:
 
 
     get_logger = lambda **kwargs: DummyLogger()
+    get_file_filtering_config = lambda: None
+    get_file_size_limits_config = lambda: None
 
 
 class FileService:
-    def __init__(self, enable_large_file_chunking: bool = True):
-        self.default_extensions = ['.py']
+    def __init__(self, enable_large_file_chunking: bool = None):
+        # 初始化日志器
+        self.logger = get_logger(component="FileService", operation="default")
+        
+        # 加载配置
+        self._load_config()
+        
+        # 初始化大文件处理器
+        if enable_large_file_chunking is None:
+            enable_large_file_chunking = self.file_size_config.chunking.enabled if self.file_size_config else True
+            
+        self.enable_large_file_chunking = enable_large_file_chunking and HAS_LARGE_FILE_HANDLER
+        if self.enable_large_file_chunking:
+            # 初始化大文件处理器（注意：LargeFileHandler不接受构造参数）
+            self.large_file_handler = LargeFileHandler()
+            
+            # 如果有配置，可以后续考虑更新内部chunker的参数
+            chunking_config = self.file_size_config.chunking if self.file_size_config else None
+            if chunking_config:
+                self.logger.info("Large file chunking enabled with config", {
+                    "max_chunk_size": chunking_config.max_chunk_size,
+                    "min_chunk_size": chunking_config.min_chunk_size
+                })
+            else:
+                self.logger.info("Large file chunking enabled with defaults")
+        else:
+            self.large_file_handler = None
+            if enable_large_file_chunking:
+                self.logger.warning("Large file chunking requested but dependencies not available")
+    
+    def _load_config(self):
+        """加载配置"""
+        if HAS_CONFIG_MANAGER:
+            try:
+                self.filtering_config = get_file_filtering_config()
+                self.file_size_config = get_file_size_limits_config()
+                
+                # 从配置中获取值
+                self.default_extensions = self.filtering_config.include_extensions
+                self.default_excludes = self.filtering_config.exclude_patterns
+                
+                self.logger.info("配置加载成功", {
+                    "extensions_count": len(self.default_extensions),
+                    "exclude_patterns_count": len(self.default_excludes)
+                })
+                
+            except Exception as e:
+                self.logger.warning(f"配置加载失败，使用默认值: {e}")
+                self._use_default_config()
+        else:
+            self.logger.warning("配置管理器不可用，使用默认值")
+            self._use_default_config()
+    
+    def _use_default_config(self):
+        """使用默认配置（向后兼容）"""
+        self.filtering_config = None
+        self.file_size_config = None
+        
+        # 尝试从default_config.json读取扩展名
+        self.default_extensions = self._get_include_extensions_from_config()
         self.default_excludes = [
             '__pycache__',
             '.git',
@@ -63,18 +127,19 @@ class FileService:
             '*.temp'
         ]
 
-        # 初始化日志器
-        self.logger = get_logger(component="FileService", operation="default")
-        
-        # 初始化大文件处理器
-        self.enable_large_file_chunking = enable_large_file_chunking and HAS_LARGE_FILE_HANDLER
-        if self.enable_large_file_chunking:
-            self.large_file_handler = LargeFileHandler()
-            self.logger.info("Large file chunking enabled")
-        else:
-            self.large_file_handler = None
-            if enable_large_file_chunking:
-                self.logger.warning("Large file chunking requested but dependencies not available")
+    def _get_include_extensions_from_config(self):
+        """从配置文件获取要包含的文件扩展名"""
+        try:
+            config_path = Path(__file__).parent.parent / "config" / "default_config.json"
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                extensions = config.get("file_filtering", {}).get("include_extensions", [".py"])
+                self.logger.info(f"从配置文件读取到{len(extensions)}个文件扩展名")
+                return extensions
+        except Exception as e:
+            self.logger.warning(f"无法读取配置文件，使用默认扩展名: {e}")
+        return [".py"]
 
     def scan_source_files(self, project_path: str, extensions: List[str] = None,
                           exclude_patterns: List[str] = None) -> List[str]:

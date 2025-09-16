@@ -1,0 +1,125 @@
+{
+  "_metadata": {
+    "description": "大型项目配置示例",
+    "use_case": "大型代码库，需要严格的文件过滤和性能优化"
+  },
+  
+  "file_filtering": {
+    "include_extensions": [".py", ".js", ".ts"],
+    "exclude_patterns": [
+      "__pycache__", ".pyc", ".pyo", ".pyd",
+      ".git", ".gitignore", ".gitmodules",
+      "node_modules", "yarn.lock", "package-lock.json",
+      "*.min.js", "*.bundle.js", "*.map",
+      "dist/", "build/", "out/", "target/",
+      "vendor/", "third_party/", "external/",
+      "*.test.js", "*_test.py", "test_*.py",
+      "spec/", "tests/", "__tests__/",
+      "*.log", "*.tmp", "*.cache", ".DS_Store",
+      "Thumbs.db", "*.bak", "*.swp",
+      ".env", ".env.*", "*.secrets",
+      "Dockerfile", "docker-compose.yml",
+      "requirements.txt", "poetry.lock",
+      "*.md", "*.txt", "*.rst",
+      "docs/", "documentation/"
+    ],
+    "exclude_directories": [
+      "__pycache__", ".pytest_cache",
+      ".git", ".github", ".gitlab",
+      "node_modules", ".npm", ".yarn",
+      "dist", "build", "out", "target",
+      "vendor", "third_party", "external",
+      "tests", "test", "__tests__", "spec",
+      "docs", "documentation", "examples",
+      "logs", "log", "temp", "tmp",
+      "cache", ".cache", "coverage",
+      ".venv", "venv", "env", ".env"
+    ],
+    "smart_filtering": {
+      "enabled": true,
+      "max_files_per_project": 15,
+      "priority_patterns": {
+        "high": ["main.py", "app.py", "index.js", "server.py"],
+        "normal": ["model", "service", "handler", "router", "controller"],
+        "low": ["util", "helper", "constant", "config"]
+      }
+    }
+  },
+  
+  "file_size_limits": {
+    "min_file_size": 200,
+    "max_file_size": 80000,
+    "large_file_threshold": 30000,
+    "chunking": {
+      "enabled": true,
+      "max_chunk_size": 1200,
+      "min_chunk_size": 300,
+      "overlap_size": 30
+    }
+  },
+  
+  "scanning": {
+    "max_depth": 4,
+    "follow_symlinks": false,
+    "include_hidden_files": false,
+    "parallel_processing": {
+      "enabled": true,
+      "max_workers": 6
+    },
+    "content_analysis": {
+      "detect_framework": true,
+      "extract_dependencies": false,
+      "analyze_complexity": false
+    }
+  },
+  
+  "mcp_tools": {
+    "doc_scan": {
+      "default_include_content": false,
+      "cache_results": true,
+      "cache_ttl": 10800,
+      "max_response_size": 20000
+    },
+    "doc_guide": {
+      "analysis_depth": "basic",
+      "generate_suggestions": false,
+      "focus_areas": ["architecture", "modules"]
+    },
+    "task_init": {
+      "auto_filter_files": true,
+      "max_tasks_per_phase": 20,
+      "dependency_resolution": false
+    },
+    "task_execute": {
+      "enable_chunking": true,
+      "context_enhancement": false,
+      "template_caching": true
+    }
+  },
+  
+  "performance": {
+    "memory_limits": {
+      "max_file_cache_size": "30MB",
+      "max_template_cache_size": "15MB"
+    },
+    "timeouts": {
+      "file_scan": 15,
+      "analysis": 30,
+      "template_render": 5
+    },
+    "optimization": {
+      "lazy_loading": true,
+      "incremental_analysis": true,
+      "result_caching": true
+    }
+  },
+  
+  "logging": {
+    "level": "WARNING",
+    "format": "compact",
+    "operation_tracking": {
+      "enabled": false,
+      "track_performance": false
+    }
+  }
+}

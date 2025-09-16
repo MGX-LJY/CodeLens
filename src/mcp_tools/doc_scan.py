@@ -16,6 +16,14 @@ sys.path.insert(0, project_root)
 from src.services.file_service import FileService
 from src.logging import get_logger
 
+# 导入配置管理器
+try:
+    from src.config import get_tool_config
+    HAS_CONFIG_MANAGER = True
+except ImportError:
+    HAS_CONFIG_MANAGER = False
+    get_tool_config = lambda x: {}
+
 
 class DocScanTool:
     """MCP doc_scan 工具类 - 为Claude Code提供项目文件信息"""
@@ -26,6 +34,18 @@ class DocScanTool:
         self.file_service = FileService()
         self.logger = get_logger(component="DocScanTool", operation="init")
         self.logger.info("DocScanTool 初始化完成")
+
+    def _get_include_extensions(self):
+        """从配置文件获取要包含的文件扩展名"""
+        try:
+            config_path = Path(__file__).parent.parent / "config" / "default_config.json"
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                return config.get("file_filtering", {}).get("include_extensions", [".py"])
+        except Exception as e:
+            self.logger.warning(f"无法读取配置文件，使用默认扩展名: {e}")
+        return [".py"]
 
     def get_tool_definition(self) -> Dict[str, Any]:
         """获取MCP工具定义"""
@@ -176,8 +196,10 @@ class DocScanTool:
                 "config": config
             })
 
-            # 提取配置参数
-            file_extensions = config.get("file_extensions", [".py"])
+            # 提取配置参数，如果没有提供则从default_config.json读取
+            file_extensions = config.get("file_extensions")
+            if not file_extensions:
+                file_extensions = self._get_include_extensions()
             exclude_patterns = config.get("exclude_patterns",
                                           ["__pycache__", ".git", "node_modules", ".idea", ".vscode"])
             max_file_size = config.get("max_file_size", 122880)

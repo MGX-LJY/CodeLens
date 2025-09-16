@@ -17,6 +17,17 @@ from src.task_engine.task_manager import TaskManager, TaskType, TaskStatus
 from src.task_engine.phase_controller import PhaseController, Phase
 from src.logging import get_logger
 
+# 导入配置管理器
+try:
+    from src.config import get_file_filtering_config, get_file_size_limits_config, get_tool_config
+
+    HAS_CONFIG_MANAGER = True
+except ImportError:
+    HAS_CONFIG_MANAGER = False
+    get_file_filtering_config = lambda: None
+    get_file_size_limits_config = lambda: None
+    get_tool_config = lambda x: {}
+
 
 class TaskPlanGenerator:
     """任务计划生成器"""
@@ -24,6 +35,7 @@ class TaskPlanGenerator:
     def __init__(self):
         self.logger = get_logger(component="TaskPlanGenerator", operation="init")
         self.logger.info("TaskPlanGenerator 初始化开始")
+
         # 模板映射关系
         self.template_mapping = {
             TaskType.SCAN: "project_scan_summary",  # 添加scan任务模板映射
@@ -37,27 +49,334 @@ class TaskPlanGenerator:
             TaskType.PROJECT_README: "project_readme"
         }
 
-        # 优先级映射
+        # 加载配置
+        self._load_config()
+
+        self.logger.info("TaskPlanGenerator 初始化完成", {
+            "template_mapping_count": len(self.template_mapping),
+            "priority_levels": len(self.priority_mapping),
+            "filter_rules": len(self.file_filters["exclude_patterns"]),
+            "config_manager_available": HAS_CONFIG_MANAGER
+        })
+
+    def _load_config(self):
+        """加载配置"""
+        if HAS_CONFIG_MANAGER:
+            try:
+                # 从配置管理器获取配置
+                filtering_config = get_file_filtering_config()
+                file_size_config = get_file_size_limits_config()
+                tool_config = get_tool_config("task_init")
+
+                # 优先级映射（使用配置中的smart_filtering.priority_patterns或默认值）
+                if filtering_config and hasattr(filtering_config, 'smart_filtering'):
+                    priority_patterns = filtering_config.smart_filtering.get('priority_patterns', {})
+                    self.priority_mapping = {
+                        "high": priority_patterns.get("high", ["main.py", "app.py", "index.js", "server.js", "main.go",
+                                                               "main.rs"]),
+                        "normal": priority_patterns.get("normal",
+                                                        ["config", "model", "service", "controller", "handler"]),
+                        "low": priority_patterns.get("low", ["util", "helper", "test", "spec"])
+                    }
+                else:
+                    self._use_default_priority_mapping()
+
+                # 文件过滤规则（从配置获取）
+                if filtering_config:
+                    self.file_filters = {
+                        "exclude_patterns": filtering_config.exclude_patterns,
+                        "exclude_directories": filtering_config.exclude_directories,
+                        "min_file_size": file_size_config.min_file_size if file_size_config else 50,
+                        "max_files_per_project": filtering_config.smart_filtering.get('max_files_per_project',
+                                                                                      25) if hasattr(filtering_config,
+                                                                                                     'smart_filtering') else 25
+                    }
+                else:
+                    self._use_default_file_filters()
+
+                self.logger.info("配置加载成功", {
+                    "exclude_patterns_count": len(self.file_filters["exclude_patterns"]),
+                    "exclude_directories_count": len(self.file_filters["exclude_directories"]),
+                    "min_file_size": self.file_filters["min_file_size"],
+                    "max_files_per_project": self.file_filters["max_files_per_project"]
+                })
+
+            except Exception as e:
+                self.logger.warning(f"配置加载失败，使用默认值: {e}")
+                self._use_default_config()
+        else:
+            self.logger.warning("配置管理器不可用，使用默认值")
+            self._use_default_config()
+
+    def _use_default_config(self):
+        """使用默认配置（向后兼容）"""
+        self._use_default_priority_mapping()
+        self._use_default_file_filters()
+
+    def _use_default_priority_mapping(self):
+        """使用默认优先级映射"""
         self.priority_mapping = {
             "high": ["main.py", "app.py", "index.js", "server.js", "main.go", "main.rs"],
             "normal": ["config", "model", "service", "controller", "handler"],
             "low": ["util", "helper", "test", "spec"]
         }
-        
-        self.logger.info("TaskPlanGenerator 初始化完成", {
-            "template_mapping_count": len(self.template_mapping),
-            "priority_levels": len(self.priority_mapping)
-        })
+
+    def _use_default_file_filters(self):
+        """使用默认文件过滤规则"""
+        self.file_filters = {
+            "exclude_patterns": [
+                "__init__.py",  # 空的初始化文件
+                "__pycache__",
+                ".pyc",
+                ".git",
+                "node_modules",
+                ".venv",
+                "venv",
+                "test_",
+                "_test.py",
+                "conftest.py",
+                ".env",
+                ".example",
+                "requirements.txt",
+                "package.json",
+                "Dockerfile",
+                ".yml",
+                ".yaml",
+                ".json",
+                ".md",
+                ".txt",
+                ".log"
+            ],
+            "exclude_directories": [
+                "tests",
+                "test",
+                "__pycache__",
+                ".git",
+                "node_modules",
+                ".venv",
+                "venv",
+                "build",
+                "dist",
+                "logs",
+                "temp",
+                "tmp"
+            ],
+            "min_file_size": 50,  # 最小文件大小（字节）
+            "max_files_per_project": 25  # 每个项目最大文件数
+        }
+
+    def _get_include_extensions(self) -> List[str]:
+        """获取要包含的文件扩展名"""
+        if HAS_CONFIG_MANAGER:
+            try:
+                filtering_config = get_file_filtering_config()
+                if filtering_config and hasattr(filtering_config, 'include_extensions'):
+                    return filtering_config.include_extensions
+            except Exception as e:
+                self.logger.warning(f"获取配置扩展名失败，使用默认值: {e}")
+
+        # 默认扩展名列表（与配置文件保持一致）
+        return [
+            ".py", ".pyw", ".pyi",
+            ".js", ".mjs", ".cjs", ".jsx",
+            ".ts", ".tsx",
+            ".html", ".htm", ".xhtml",
+            ".css", ".scss", ".sass", ".less", ".styl",
+            ".sh", ".bash", ".zsh", ".fish",
+            ".ps1", ".psm1",
+            ".bat", ".cmd",
+            ".json", ".yml", ".yaml",
+            ".md", ".txt"
+        ]
+
+    def generate_tasks_auto(self, project_path: str,
+                            task_granularity: str = "file",
+                            max_files: int = None) -> Dict[str, Any]:
+        """智能生成任务计划 - 简化版API"""
+        operation_id = self.logger.log_operation_start("generate_tasks_auto",
+                                                       project_path=project_path,
+                                                       task_granularity=task_granularity,
+                                                       max_files=max_files)
+
+        try:
+            # 1. 自动加载分析数据
+            self.logger.info("自动加载项目分析数据")
+            analysis_result = self._auto_load_analysis_data(project_path)
+            if not analysis_result:
+                raise ValueError("无法加载项目分析数据，请先运行 doc_guide")
+
+            # 2. 智能过滤文件
+            self.logger.info("开始智能文件过滤")
+            filtered_files = self._smart_filter_files(project_path, analysis_result, max_files or 999999)
+            self.logger.info(f"文件过滤完成，从原始文件中筛选出 {len(filtered_files)} 个重要文件")
+
+            # 3. 更新分析结果中的文件列表
+            if "generation_plan" not in analysis_result:
+                analysis_result["generation_plan"] = {}
+            analysis_result["generation_plan"]["phase_2_files"] = filtered_files
+
+            # 4. 调用原始的generate_tasks方法
+            return self.generate_tasks(project_path, analysis_result, task_granularity, False, None)
+
+        except Exception as e:
+            self.logger.log_operation_end("generate_tasks_auto", operation_id, success=False, error=str(e))
+            raise e
+        finally:
+            self.logger.log_operation_end("generate_tasks_auto", operation_id, success=True)
+
+    def _auto_load_analysis_data(self, project_path: str) -> Dict[str, Any]:
+        """自动加载项目分析数据"""
+        analysis_file = Path(project_path) / ".codelens" / "analysis.json"
+
+        if not analysis_file.exists():
+            self.logger.warning("分析文件不存在", {"analysis_file": str(analysis_file)})
+            return None
+
+        try:
+            with open(analysis_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                self.logger.info("成功加载分析数据", {"file_path": str(analysis_file)})
+                return data
+        except Exception as e:
+            self.logger.error("加载分析数据失败", {"error": str(e), "file_path": str(analysis_file)})
+            return None
+
+    def _smart_filter_files(self, project_path: str, analysis_result: Dict[str, Any], max_files: int = 20) -> List[str]:
+        """智能过滤文件"""
+        # 获取配置中的包含文件扩展名
+        all_files = []
+        project_root = Path(project_path)
+
+        # 从配置获取要包含的文件扩展名
+        include_extensions = self._get_include_extensions()
+
+        # 按扩展名扫描所有目标文件
+        for extension in include_extensions:
+            # 移除扩展名前的点号，用于glob模式
+            glob_pattern = f"*{extension}"
+            for file_path in project_root.rglob(glob_pattern):
+                try:
+                    rel_path = file_path.relative_to(project_root)
+                    all_files.append(str(rel_path))
+                except ValueError:
+                    # 跳过无法计算相对路径的文件
+                    continue
+
+        self.logger.info(f"扫描到 {len(all_files)} 个文件（包含所有配置的扩展名）")
+
+        # 应用过滤规则
+        filtered_files = []
+        for file_path in all_files:
+            if self._should_include_file(file_path, project_root):
+                filtered_files.append(file_path)
+
+        self.logger.info(f"过滤后剩余 {len(filtered_files)} 个文件")
+
+        # 按重要性排序
+        prioritized_files = self._prioritize_files(filtered_files, project_root)
+
+        # 不再限制文件数量，处理所有扫描到的文件
+        self.logger.info(f"将处理所有 {len(prioritized_files)} 个文件，不再限制数量")
+
+        return prioritized_files
+
+    def _should_include_file(self, file_path: str, project_root: Path) -> bool:
+        """判断是否应该包含某个文件"""
+        file_path_lower = file_path.lower()
+
+        # 检查排除模式
+        for pattern in self.file_filters["exclude_patterns"]:
+            if pattern in file_path_lower:
+                return False
+
+        # 检查排除目录
+        for exclude_dir in self.file_filters["exclude_directories"]:
+            if exclude_dir in file_path_lower:
+                return False
+
+        # 检查文件大小
+        full_path = project_root / file_path
+        try:
+            if full_path.stat().st_size < self.file_filters["min_file_size"]:
+                return False
+        except:
+            return False
+
+        # 特殊处理：排除空的__init__.py文件
+        if file_path.endswith("__init__.py"):
+            try:
+                if full_path.stat().st_size < 100:  # 小于100字节认为是空文件
+                    return False
+            except:
+                return False
+
+        return True
+
+    def _prioritize_files(self, files: List[str], project_root: Path) -> List[str]:
+        """按重要性对文件进行排序"""
+        file_scores = []
+
+        for file_path in files:
+            score = self._calculate_file_importance(file_path, project_root)
+            file_scores.append((file_path, score))
+
+        # 按分数降序排序
+        file_scores.sort(key=lambda x: x[1], reverse=True)
+
+        return [file_path for file_path, score in file_scores]
+
+    def _calculate_file_importance(self, file_path: str, project_root: Path) -> int:
+        """计算文件重要性分数"""
+        score = 0
+        file_path_lower = file_path.lower()
+        file_name = Path(file_path).name.lower()
+
+        # 主要入口文件 (+100)
+        if file_name in ["main.py", "app.py", "server.py", "index.py"]:
+            score += 100
+
+        # 模型和核心业务文件 (+50)
+        if "model" in file_path_lower or "service" in file_path_lower:
+            score += 50
+
+        # 路由和控制器 (+30)
+        if "route" in file_path_lower or "controller" in file_path_lower or "handler" in file_path_lower:
+            score += 30
+
+        # 配置文件 (+20)
+        if "config" in file_path_lower or "setting" in file_path_lower:
+            score += 20
+
+        # 数据库相关 (+25)
+        if "db.py" in file_path_lower or "database" in file_path_lower:
+            score += 25
+
+        # 文件大小加分
+        try:
+            full_path = project_root / file_path
+            file_size = full_path.stat().st_size
+            if file_size > 5000:  # 大于5KB
+                score += 10
+            if file_size > 15000:  # 大于15KB  
+                score += 10
+        except:
+            pass
+
+        # 目录深度减分（越深越不重要）
+        depth = len(Path(file_path).parts) - 1
+        score -= depth * 5
+
+        return score
 
     def generate_tasks(self, project_path: str, analysis_result: Dict[str, Any],
                        task_granularity: str = "file", parallel_tasks: bool = False,
                        custom_priorities: Dict[str, Any] = None) -> Dict[str, Any]:
         """生成完整的任务计划"""
-        operation_id = self.logger.log_operation_start("generate_tasks", 
+        operation_id = self.logger.log_operation_start("generate_tasks",
                                                        project_path=project_path,
                                                        task_granularity=task_granularity,
                                                        parallel_tasks=parallel_tasks)
-        
+
         self.logger.info("开始生成任务计划", {
             "project_path": project_path,
             "task_granularity": task_granularity,
@@ -81,22 +400,22 @@ class TaskPlanGenerator:
         # 生成全局scan任务ID，确保依赖关系一致
         scan_task_id = f"scan_{int(time.time() * 1000000)}"  # 使用更高精度避免冲突
         self.logger.debug("生成scan任务ID", {"scan_task_id": scan_task_id})
-        
+
         # 生成各阶段任务 (4阶段架构)
         self.logger.info("开始生成各阶段任务")
-        
+
         self.logger.debug("生成Phase 1任务（扫描阶段）")
         phase_1_tasks = self._generate_phase_1_tasks(project_path, project_analysis, scan_task_id)
         self.logger.info("Phase 1任务生成完成", {"task_count": len(phase_1_tasks)})
-        
+
         self.logger.debug("生成Phase 2任务（文件层）")
         phase_2_tasks = self._generate_phase_2_tasks(project_path, plan, scan_task_id, custom_priorities)
         self.logger.info("Phase 2任务生成完成", {"task_count": len(phase_2_tasks)})
-        
+
         self.logger.debug("生成Phase 3任务（架构层）")
         phase_3_tasks = self._generate_phase_3_tasks(project_path, project_analysis, phase_2_tasks)  # 架构层
         self.logger.info("Phase 3任务生成完成", {"task_count": len(phase_3_tasks)})
-        
+
         self.logger.debug("生成Phase 4任务（项目层）")
         phase_4_tasks = self._generate_phase_4_tasks(project_path, project_analysis, phase_3_tasks)  # 项目层
         self.logger.info("Phase 4任务生成完成", {"task_count": len(phase_4_tasks)})
@@ -158,7 +477,8 @@ class TaskPlanGenerator:
         self.logger.log_operation_end("generate_tasks", operation_id, success=True)
         return result
 
-    def _generate_phase_1_tasks(self, project_path: str, analysis: Dict[str, Any], scan_task_id: str) -> List[Dict[str, Any]]:
+    def _generate_phase_1_tasks(self, project_path: str, analysis: Dict[str, Any], scan_task_id: str) -> List[
+        Dict[str, Any]]:
         """生成第一阶段任务（项目扫描）"""
 
         return [{
@@ -354,7 +674,7 @@ class TaskPlanGenerator:
                 "complexity": analysis.get("code_complexity", "unknown")
             }
         })
-        
+
         # 2. 生成CHANGELOG.md
         changelog_task_id = f"changelog_{int(time.time() * 1000)}"
         tasks.append({
@@ -375,7 +695,6 @@ class TaskPlanGenerator:
         })
 
         return tasks
-
 
     def _get_file_priority(self, file_path: str, custom_priorities: Dict[str, Any] = None) -> str:
         """确定文件优先级"""
@@ -415,19 +734,19 @@ class TaskPlanGenerator:
     def create_tasks_in_manager(self, task_manager: TaskManager, task_plan: Dict[str, Any]) -> int:
         """在任务管理器中创建所有任务"""
         operation_id = self.logger.log_operation_start("create_tasks_in_manager")
-        
+
         # 检查task_plan是否有效
         if task_plan is None:
             self.logger.error("task_plan为None，无法创建任务")
-            self.logger.log_operation_end("create_tasks_in_manager", operation_id, success=False, 
-                                         error="task_plan is None")
+            self.logger.log_operation_end("create_tasks_in_manager", operation_id, success=False,
+                                          error="task_plan is None")
             return 0
-        
+
         self.logger.info("开始在任务管理器中创建任务", {
             "operation_id": operation_id,
             "total_phases": len([p for p in task_plan.keys() if p.startswith("phase_")])
         })
-        
+
         created_count = 0
         skipped_count = 0
         error_count = 0
@@ -445,7 +764,7 @@ class TaskPlanGenerator:
                     # 转换任务类型
                     task_type_str = task_data["type"]
                     self.logger.debug("处理任务", {"task_type": task_type_str, "task_id": task_data.get("id")})
-                    
+
                     try:
                         task_type = TaskType(task_type_str)
                     except ValueError as e:
@@ -473,7 +792,7 @@ class TaskPlanGenerator:
 
                         created_count += 1
                         self.logger.debug("任务创建成功", {"task_id": task_id, "type": task_type_str})
-                        
+
                     except Exception as e:
                         self.logger.error("创建任务失败", {
                             "task_description": task_data.get('description', 'Unknown'),
@@ -483,17 +802,17 @@ class TaskPlanGenerator:
                         continue
 
         self.logger.log_operation_end("create_tasks_in_manager", operation_id, success=True,
-                                     created_count=created_count,
-                                     skipped_count=skipped_count,
-                                     error_count=error_count)
-        
+                                      created_count=created_count,
+                                      skipped_count=skipped_count,
+                                      error_count=error_count)
+
         self.logger.info("任务创建完成", {
             "created": created_count,
             "skipped": skipped_count,
             "errors": error_count,
             "total_processed": created_count + skipped_count + error_count
         })
-        
+
         return created_count
 
 
@@ -521,28 +840,27 @@ class TaskInitTool:
                     },
                     "analysis_result": {
                         "type": "object",
-                        "description": "doc_guide的分析结果"
+                        "description": "doc_guide的分析结果（可选，如果不提供则自动加载）"
                     },
                     "task_granularity": {
                         "type": "string",
                         "enum": ["file", "batch", "module"],
                         "description": "任务粒度"
                     },
-                    "parallel_tasks": {
-                        "type": "boolean",
-                        "description": "是否支持并行任务"
-                    },
-                    "custom_priorities": {
-                        "type": "object",
-                        "description": "自定义优先级设置",
-                        "additionalProperties": {"type": "string"}
+                    "max_files": {
+                        "type": "number",
+                        "description": "最大文件数量（可选，默认20个）"
                     },
                     "create_in_manager": {
                         "type": "boolean",
                         "description": "是否在任务管理器中创建任务"
+                    },
+                    "auto_mode": {
+                        "type": "boolean",
+                        "description": "是否使用智能模式（自动过滤文件，简化参数）"
                     }
                 },
-                "required": ["analysis_result"]
+                "required": ["project_path"]
             }
         }
 
@@ -550,57 +868,87 @@ class TaskInitTool:
         """执行task_init工具"""
         operation_id = self.logger.log_operation_start("execute_task_init",
                                                        project_path=arguments.get("project_path"),
-                                                       has_analysis_result=bool(arguments.get("analysis_result")))
-        
+                                                       auto_mode=arguments.get("auto_mode", True))
+
         try:
             self.logger.info("开始执行task_init工具", {"arguments": arguments, "operation_id": operation_id})
-            
+
             # 参数验证
             project_path = arguments.get("project_path")
-            analysis_result = arguments.get("analysis_result")
-            
-            self.logger.debug("验证参数", {"project_path": project_path, "has_analysis_result": analysis_result is not None})
+            if not project_path:
+                project_path = os.getcwd()  # 默认使用当前目录
 
-            if not project_path or not os.path.exists(project_path):
+            if not os.path.exists(project_path):
                 error_msg = "Invalid project path"
                 self.logger.error(error_msg, {"project_path": project_path})
                 return self._error_response(error_msg)
 
-            if not analysis_result:
-                error_msg = "Analysis result is required"
-                self.logger.error(error_msg)
-                return self._error_response(error_msg)
+            # 检查是否使用智能模式 (默认启用)
+            auto_mode = arguments.get("auto_mode", True)
+            analysis_result = arguments.get("analysis_result")
+
+            self.logger.info("模式检查", {
+                "auto_mode": auto_mode,
+                "has_analysis_result": analysis_result is not None
+            })
 
             # 获取参数
             task_granularity = arguments.get("task_granularity", "file")
-            parallel_tasks = arguments.get("parallel_tasks", False)
-            custom_priorities = arguments.get("custom_priorities", {})
+            max_files = arguments.get("max_files", 20)
             create_in_manager = arguments.get("create_in_manager", False)
 
-            self.logger.info("开始生成任务计划", {
-                "project_path": project_path,
-                "task_granularity": task_granularity,
-                "parallel_tasks": parallel_tasks,
-                "has_custom_priorities": bool(custom_priorities),
-                "create_in_manager": create_in_manager
-            })
+            # 智能模式：自动加载数据并过滤文件
+            if auto_mode:
+                self.logger.info("使用智能模式生成任务计划", {
+                    "project_path": project_path,
+                    "task_granularity": task_granularity,
+                    "max_files": max_files,
+                    "create_in_manager": create_in_manager
+                })
 
-            # 生成任务计划
-            self.logger.debug("调用TaskPlanGenerator生成任务")
-            task_plan = self.generator.generate_tasks(
-                project_path=project_path,
-                analysis_result=analysis_result,
-                task_granularity=task_granularity,
-                parallel_tasks=parallel_tasks,
-                custom_priorities=custom_priorities
-            )
-            self.logger.debug("任务计划生成完成")
+                # 生成任务计划 - 使用智能API
+                self.logger.debug("调用TaskPlanGenerator智能模式")
+                task_plan = self.generator.generate_tasks_auto(
+                    project_path=project_path,
+                    task_granularity=task_granularity,
+                    max_files=max_files
+                )
+                self.logger.debug("智能任务计划生成完成")
+
+            else:
+                # 传统模式：需要手动提供analysis_result
+                if not analysis_result:
+                    error_msg = "Analysis result is required when auto_mode is disabled"
+                    self.logger.error(error_msg)
+                    return self._error_response(error_msg)
+
+                parallel_tasks = arguments.get("parallel_tasks", False)
+                custom_priorities = arguments.get("custom_priorities", {})
+
+                self.logger.info("使用传统模式生成任务计划", {
+                    "project_path": project_path,
+                    "task_granularity": task_granularity,
+                    "parallel_tasks": parallel_tasks,
+                    "has_custom_priorities": bool(custom_priorities),
+                    "create_in_manager": create_in_manager
+                })
+
+                # 生成任务计划 - 使用传统API
+                self.logger.debug("调用TaskPlanGenerator传统模式")
+                task_plan = self.generator.generate_tasks(
+                    project_path=project_path,
+                    analysis_result=analysis_result,
+                    task_granularity=task_granularity,
+                    parallel_tasks=parallel_tasks,
+                    custom_priorities=custom_priorities
+                )
+                self.logger.debug("传统任务计划生成完成")
 
             # 检查任务计划是否生成成功
             if task_plan is None:
                 self.logger.error("任务计划生成失败，返回None")
-                self.logger.log_operation_end("execute_task_init", operation_id, success=False, 
-                                             error="Task plan generation failed")
+                self.logger.log_operation_end("execute_task_init", operation_id, success=False,
+                                              error="Task plan generation failed")
                 return self._error_response("Task plan generation failed: generate_tasks returned None")
 
             # 如果需要，在任务管理器中创建任务
@@ -614,14 +962,15 @@ class TaskInitTool:
             # 安全地访问task_plan数据
             total_tasks = task_plan.get('task_plan', {}).get('total_tasks', 0) if task_plan else 0
             total_phases = task_plan.get('task_plan', {}).get('total_phases', 0) if task_plan else 0
-            
-            self.logger.log_operation_end("execute_task_init", operation_id, success=True,
-                                        total_tasks=total_tasks,
-                                        total_phases=total_phases,
-                                        created_in_manager=create_in_manager,
-                                        created_count=created_count)
 
-            response_data = task_plan.copy()
+            self.logger.log_operation_end("execute_task_init", operation_id, success=True,
+                                          total_tasks=total_tasks,
+                                          total_phases=total_phases,
+                                          created_in_manager=create_in_manager,
+                                          created_count=created_count)
+
+            # 优化响应：只返回前10个任务详情，防止token过大
+            response_data = self._optimize_response_for_display(task_plan)
             if create_in_manager:
                 response_data["manager_info"] = {
                     "tasks_created": created_count,
@@ -634,6 +983,38 @@ class TaskInitTool:
             self.logger.log_operation_end("execute_task_init", operation_id, success=False, error=str(e))
             self.logger.error(f"任务计划生成失败: {str(e)}", exc_info=e)
             return self._error_response(f"Task initialization failed: {str(e)}")
+
+    def _optimize_response_for_display(self, task_plan: Dict[str, Any]) -> Dict[str, Any]:
+        """优化响应显示，只返回前10个任务详情，防止token过大"""
+        optimized = task_plan.copy()
+        
+        # 保留完整的摘要信息
+        task_plan_summary = optimized.get("task_plan", {})
+        
+        # 对每个阶段只显示前10个任务
+        for phase_key in ["phase_1_scan", "phase_2_files", "phase_3_architecture", "phase_4_project"]:
+            if phase_key in optimized:
+                phase_data = optimized[phase_key]
+                tasks = phase_data.get("tasks", [])
+                
+                if len(tasks) > 10:
+                    # 只保留前10个任务详情
+                    limited_tasks = tasks[:10]
+                    phase_data["tasks"] = limited_tasks
+                    
+                    # 添加说明信息
+                    if "description" in phase_data:
+                        total_count = len(tasks)
+                        phase_data["description"] = f"{phase_data['description']} [显示前10个，共{total_count}个任务]"
+        
+        # 添加完整任务保存提示
+        optimized["display_notice"] = {
+            "message": "为防止响应过大，此处只显示前10个任务详情",
+            "full_tasks_location": "完整任务列表已保存到 .codelens/tasks.json",
+            "total_tasks": task_plan_summary.get("total_tasks", 0)
+        }
+        
+        return optimized
 
     def _success_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """成功响应"""

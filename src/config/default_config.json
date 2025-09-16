@@ -1,0 +1,199 @@
+{
+  "_metadata": {
+    "version": "1.0.0",
+    "description": "CodeLens 统一配置文件",
+    "last_updated": "2025-09-16"
+  },
+  
+  "file_filtering": {
+    "include_extensions": [
+      ".py", ".pyw", ".pyi",
+      ".js", ".mjs", ".cjs", ".jsx",
+      ".ts", ".tsx",
+      ".java", ".kt", ".scala",
+      ".c", ".cpp", ".cxx", ".cc", ".h", ".hpp", ".hxx",
+      ".cs", ".vb",
+      ".go",
+      ".rs",
+      ".php", ".phtml",
+      ".rb", ".rbw",
+      ".pl", ".pm",
+      ".swift",
+      ".dart",
+      ".ex", ".exs",
+      ".clj", ".cljs", ".cljc",
+      ".hs",
+      ".erl",
+      ".fs", ".fsx",
+      ".ml", ".mli",
+      ".html", ".htm", ".xhtml",
+      ".css", ".scss", ".sass", ".less", ".styl",
+      ".vue",
+      ".svelte",
+      ".j2", ".jinja", ".jinja2",
+      ".hbs", ".handlebars",
+      ".mustache",
+      ".ejs",
+      ".pug", ".jade",
+      ".twig",
+      ".sh", ".bash", ".zsh", ".fish",
+      ".ps1", ".psm1",
+      ".bat", ".cmd",
+      ".sql",
+      ".graphql", ".gql",
+      ".m", ".mm"
+    ],
+    "exclude_patterns": [
+      "__init__.py",
+      "__pycache__",
+      ".pyc", ".pyo", ".pyd",
+      ".git", ".gitignore", ".gitkeep",
+      "node_modules",
+      ".idea", ".vscode",
+      "venv", "env", ".env",
+      "dist", "build",
+      "*.egg-info",
+      ".DS_Store", "Thumbs.db",
+      "*.log", "*.tmp", "*.temp",
+      ".pytest_cache", ".coverage",
+      "requirements.txt", "package.json", "package-lock.json",
+      "Dockerfile", "docker-compose.yml",
+      "*.yml", "*.yaml", "*.json", "*.md", "*.txt"
+    ],
+    "exclude_directories": [
+      "tests", "test", "__tests__",
+      "__pycache__", ".pytest_cache",
+      ".git", ".github",
+      "node_modules", ".npm",
+      ".idea", ".vscode",
+      "venv", "env", ".env", ".virtualenv",
+      "build", "dist", ".build",
+      "logs", "log",
+      "temp", "tmp", ".tmp",
+      "cache", ".cache",
+      "coverage", ".coverage",
+      "docs/_build", "site"
+    ],
+    "smart_filtering": {
+      "enabled": true,
+      "min_file_size": 50,
+      "max_files_per_project": 25,
+      "priority_patterns": {
+        "high": ["main.py", "app.py", "index.js", "server.js", "main.go", "main.rs"],
+        "normal": ["config", "model", "service", "controller", "handler", "route"],
+        "low": ["util", "helper", "test", "spec", "mock"]
+      }
+    }
+  },
+  
+  "file_size_limits": {
+    "min_file_size": 50,
+    "max_file_size": 122880,
+    "large_file_threshold": 50000,
+    "chunking": {
+      "enabled": true,
+      "max_chunk_size": 2000,
+      "min_chunk_size": 100,
+      "overlap_size": 50
+    }
+  },
+  
+  "scanning": {
+    "max_depth": 6,
+    "follow_symlinks": false,
+    "include_hidden_files": false,
+    "parallel_processing": {
+      "enabled": true,
+      "max_workers": 4
+    },
+    "content_analysis": {
+      "detect_framework": true,
+      "extract_dependencies": true,
+      "analyze_complexity": true
+    }
+  },
+  
+  "mcp_tools": {
+    "doc_scan": {
+      "default_include_content": false,
+      "cache_results": true,
+      "cache_ttl": 3600,
+      "max_response_size": 25000
+    },
+    "doc_guide": {
+      "analysis_depth": "comprehensive",
+      "generate_suggestions": true,
+      "focus_areas": ["architecture", "modules", "files", "project"]
+    },
+    "task_init": {
+      "auto_filter_files": true,
+      "max_tasks_per_phase": 50,
+      "dependency_resolution": true,
+      "template_validation": true
+    },
+    "task_execute": {
+      "enable_chunking": true,
+      "context_enhancement": true,
+      "template_caching": true,
+      "progress_tracking": true
+    }
+  },
+  
+  "templates": {
+    "validation": {
+      "strict_mode": true,
+      "required_variables": true,
+      "type_checking": true
+    },
+    "formatting": {
+      "markdown_style": "github",
+      "code_highlighting": true,
+      "table_formatting": true
+    }
+  },
+  
+  "logging": {
+    "level": "INFO",
+    "format": "detailed",
+    "file_logging": {
+      "enabled": true,
+      "max_file_size": "10MB",
+      "backup_count": 5
+    },
+    "operation_tracking": {
+      "enabled": true,
+      "track_performance": true,
+      "detailed_context": true
+    }
+  },
+  
+  "performance": {
+    "memory_limits": {
+      "max_file_cache_size": "100MB",
+      "max_template_cache_size": "50MB"
+    },
+    "timeouts": {
+      "file_scan": 30,
+      "analysis": 60,
+      "template_render": 10
+    },
+    "optimization": {
+      "lazy_loading": true,
+      "incremental_analysis": true,
+      "result_caching": true
+    }
+  },
+  
+  "security": {
+    "path_validation": {
+      "allow_absolute_paths": true,
+      "restrict_parent_access": true,
+      "blocked_paths": ["/etc", "/usr", "/var", "/root"]
+    },
+    "content_filtering": {
+      "scan_for_secrets": true,
+      "blocked_patterns": ["password", "api_key", "secret", "token"],
+      "safe_content_only": false
+    }
+  }
+}
