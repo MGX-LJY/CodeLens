@@ -187,12 +187,12 @@
   "security": {
     "path_validation": {
       "allow_absolute_paths": true,
-      "restrict_parent_access": true,
-      "blocked_paths": ["/etc", "/usr", "/var", "/root"]
+      "restrict_parent_access": false,
+      "blocked_paths": []
     },
     "content_filtering": {
-      "scan_for_secrets": true,
-      "blocked_patterns": ["password", "api_key", "secret", "token"],
+      "scan_for_secrets": false,
+      "blocked_patterns": [],
       "safe_content_only": false
     }
   }

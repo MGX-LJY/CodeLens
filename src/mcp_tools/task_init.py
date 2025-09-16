@@ -486,7 +486,7 @@ class TaskPlanGenerator:
             "type": "scan",
             "description": "扫描项目文件结构和基本信息",
             "phase": "phase_1_scan",
-            "template": "project_scan_summary",  # 使用模板而不是None
+            "template": "project_readme",  # 使用project_readme模板
             "output_path": "docs/analysis/project-scan.md",  # 添加输出路径
             "dependencies": [],
             "priority": "high",
