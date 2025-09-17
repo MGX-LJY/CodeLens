@@ -17,7 +17,6 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 # 导入CodeLens工具
-from src.mcp_tools.doc_scan import DocScanTool
 from src.mcp_tools.doc_guide import DocGuideTool
 from src.mcp_tools.task_init import TaskInitTool
 from src.mcp_tools.task_execute import TaskExecuteTool
@@ -41,7 +40,6 @@ def create_tool_instances():
     """创建工具实例"""
     return {
         "init_tools": InitTools(),
-        "doc_scan": DocScanTool(),
         "doc_guide": DocGuideTool(),
         "task_init": TaskInitTool(),
         "task_execute": TaskExecuteTool(),
@@ -183,9 +181,9 @@ async def main():
                 print(f"\nTesting with project: {project_path}")
                 
                 try:
-                    # 测试doc_scan工具
-                    result = await call_tool("doc_scan", {"project_path": project_path})
-                    print(f"✅ doc_scan test passed")
+                    # 测试doc_guide工具
+                    result = await call_tool("doc_guide", {"project_path": project_path})
+                    print(f"✅ doc_guide test passed")
                     
                     # 测试热重载状态
                     if hot_reload_manager:

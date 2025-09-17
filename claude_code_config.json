@@ -15,10 +15,6 @@
           "description": "一键项目初始化，自动识别项目规模和复杂度"
         },
         {
-          "name": "doc_scan",
-          "description": "扫描项目文件并返回结构化信息和内容"
-        },
-        {
           "name": "doc_guide",
           "description": "智能项目分析，自动识别项目类型、框架、模块"
         },

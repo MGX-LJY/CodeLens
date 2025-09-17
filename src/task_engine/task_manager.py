@@ -22,7 +22,6 @@ class TaskStatus(Enum):
 
 class TaskType(Enum):
     """任务类型枚举"""
-    SCAN = "scan"  # 项目扫描
     FILE_SUMMARY = "file_summary"  # 文件摘要生成
     ARCHITECTURE = "architecture"  # 架构概述
     TECH_STACK = "tech_stack"  # 技术栈
@@ -246,7 +245,7 @@ class TaskManager:
             }
 
         completed = len([t for t in all_tasks if t.status == TaskStatus.COMPLETED])
-        phases = ["phase_1_scan", "phase_2_files", "phase_3_architecture", "phase_4_project"]
+        phases = ["phase_1_files", "phase_2_architecture", "phase_3_project"]
 
         phases_progress = {}
         current_phase = None
@@ -361,7 +360,7 @@ class TaskManager:
             },
             "phase_summary": {
                 phase: self.get_phase_progress(phase)
-                for phase in ["phase_1_scan", "phase_2_files", "phase_3_architecture",
-                              "phase_4_project"]
+                for phase in ["phase_1_files", "phase_2_architecture",
+                              "phase_3_project"]
             }
         }

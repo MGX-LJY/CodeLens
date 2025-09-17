@@ -1,4 +1,3 @@
-
 # CodeLens 系统架构图
 
 ## 整体架构
@@ -9,19 +8,21 @@ graph TD
         CC[Claude Code<br/>智能化文档生成客户端]
     end
     
-    subgraph "MCP接口层 - 7个专业工具"
+    subgraph "MCP接口层 - 9个专业工具"
         IT[init_tools<br/>工作流指导]
         DG[doc_guide<br/>智能项目分析]
         TI[task_init<br/>任务计划生成]
         TE[task_execute<br/>任务执行管理]
         TS[task_status<br/>状态监控中心]
         TC[task_complete<br/>任务完成工具]
-        DS[doc_scan<br/>项目文件扫描]
+        PO[project_overview<br/>项目概览]
+        DUI[doc_update_init<br/>更新初始化]
+        DU[doc_update<br/>变化检测]
     end
     
     subgraph "任务引擎层 - Task Engine"
-        TM[TaskManager<br/>14种任务管理]
-        PC[PhaseController<br/>5阶段严格控制]
+        TM[TaskManager<br/>8种任务管理]
+        PC[PhaseController<br/>3阶段严格控制]
         ST[StateTracker<br/>状态跟踪监控]
         SA[智能调度算法<br/>依赖图+优先级]
     end
@@ -33,16 +34,24 @@ graph TD
         DA[依赖分析<br/>防抖动机制]
     end
     
+    subgraph "配置管理层 - Configuration"
+        CM[ConfigManager<br/>配置管理器]
+        CS[ConfigSchema<br/>数据模型]
+        CV[ConfigValidator<br/>配置验证]
+        DC[DefaultConfig<br/>默认配置]
+    end
+    
     subgraph "服务层 - Services"
-        FS[FileService<br/>智能文件分析<br/>项目类型检测]
-        TmS[TemplateService<br/>16个核心模板<br/>四层架构支持]
-        VS[ValidationService<br/>完整性验证<br/>多种验证模式]
+        FS[FileService<br/>智能文件分析<br/>项目类型检测<br/>集成扫描功能]
+        TmS[TemplateService<br/>10个核心模板<br/>三层架构支持]
+        LFH[LargeFileHandler<br/>大文件分片处理<br/>AST语义分片]
     end
     
     subgraph "基础设施层"
         FileSys[文件系统<br/>pathlib/glob<br/>智能过滤]
-        Templates[模板资源<br/>Markdown<br/>16个模板]
+        Templates[模板资源<br/>Markdown<br/>10个模板]
         Storage[状态存储<br/>JSON持久化文件<br/>.codelens/tasks.json]
+        FileDB[文件指纹<br/>变化检测<br/>.codelens/file_fingerprints.json]
     end
     
     CC -->|MCP协议调用| IT
@@ -51,280 +60,164 @@ graph TD
     CC -->|MCP协议调用| TE
     CC -->|MCP协议调用| TS
     CC -->|MCP协议调用| TC
-    CC -->|MCP协议调用| DS
+    CC -->|MCP协议调用| PO
+    CC -->|MCP协议调用| DUI
+    CC -->|MCP协议调用| DU
     
     IT --> TM
-    DG --> TM
+    DG --> FS
     TI --> TM
     TE --> TM
-    TS --> TM
+    TE --> TmS
+    TE --> LFH
+    TS --> ST
     TC --> TM
-    DS --> TM
+    PO --> FS
+    DU --> FS
     
     TM --> PC
-    TM --> ST
     TM --> SA
+    PC --> ST
+    SA --> ST
     
-    PC --> HRM
-    ST --> HRM
-    SA --> HRM
+    FS --> CM
+    FS --> FileSys
+    TmS --> Templates
+    LFH --> FileSys
+    
+    ST --> Storage
+    DU --> FileDB
     
     HRM --> FW
     HRM --> MR
-    HRM --> DA
+    FW --> DA
+    MR --> DA
     
-    FW --> FS
-    MR --> TmS
-    DA --> VS
-    
-    FS --> FileSys
-    TmS --> Templates
-    VS --> Storage
+    CM --> CS
+    CM --> CV
+    CM --> DC
     
     style CC fill:#e3f2fd
     style TM fill:#fff3e0
-    style HRM fill:#fce4ec
     style FS fill:#e8f5e8
+    style HRM fill:#f3e5f5
+    style CM fill:#fce4ec
 ```
 
-## 详细组件架构
+## 层级关系详解
 
-### MCP 接口层 (7个专业工具)
+### 1. 客户端层 (Client Layer)
+- **Claude Code**: 智能化文档生成客户端，通过MCP协议与CodeLens协作
 
-```mermaid
-graph TB
-    subgraph "MCP Tools Layer - 7个专业工具"
-        subgraph "工作流管理工具"
-            IT2[init_tools.py<br/>• 工作流指导<br/>• 5阶段操作步骤<br/>• 完整工作流程<br/>• 标准化指导]
-            TC2[task_complete.py<br/>• 任务完成标记<br/>• 质量验证<br/>• 完成确认<br/>• 输出检查]
-        end
-        
-        subgraph "项目分析工具"
-            DG2[doc_guide.py<br/>• 智能项目分析<br/>• 项目类型检测<br/>• 框架识别<br/>• 文档策略生成]
-            DS2[doc_scan.py<br/>• 项目文件扫描<br/>• 智能过滤<br/>• 元数据提取<br/>• 目录树生成]
-        end
-        
-        subgraph "任务管理工具"
-            TI2[task_init.py<br/>• 任务计划生成<br/>• 5阶段规划<br/>• 依赖图构建<br/>• 优先级排序]
-            TE2[task_execute.py<br/>• 任务执行管理<br/>• 上下文构建<br/>• 模板集成<br/>• 3种执行模式]
-            TS2[task_status.py<br/>• 状态监控<br/>• 进度跟踪<br/>• 健康诊断<br/>• 执行建议]
-        end
-    end
-    
-    style IT2 fill:#e1f5fe
-    style DG2 fill:#e8f5e8
-    style TI2 fill:#fff8e1
-    style TE2 fill:#fce4ec
-    style TS2 fill:#e0f2f1
-    style TC2 fill:#f1f8e9
-    style DS2 fill:#e8eaf6
+### 2. MCP接口层 (MCP Interface Layer)
+9个专业MCP工具，提供完整的文档生成工作流：
+
+#### 核心工作流工具
+- **init_tools**: 工作流指导工具，提供3阶段标准操作步骤
+- **doc_guide**: 智能项目分析器，自动识别项目类型和框架
+- **task_init**: 任务计划生成器，基于分析结果创建3阶段执行计划
+
+#### 任务执行工具
+- **task_execute**: 任务执行管理器，提供模板、上下文和执行指导
+- **task_status**: 状态监控中心，实时进度跟踪和健康诊断
+- **task_complete**: 任务完成工具，标记任务完成并验证输出质量
+
+#### 项目管理工具
+- **project_overview**: 项目概览工具，生成项目文档导航
+- **doc_update_init**: 文档更新初始化工具，建立文件指纹基点
+- **doc_update**: 文档更新检测工具，分析文件变化并给出更新建议
+
+### 3. 任务引擎层 (Task Engine Layer)
+智能化任务驱动核心，实现完整的任务生命周期管理：
+
+- **TaskManager**: 智能任务管理器，支持8种任务类型、依赖关系和优先级调度
+- **PhaseController**: 3阶段严格控制器，确保100%完成率的阶段转换
+- **StateTracker**: 持久化状态跟踪，支持执行历史、性能监控和健康检查
+- **智能调度算法**: 基于依赖图和优先级的智能任务调度
+
+### 4. 热重载系统层 (Hot Reload Layer)
+开发时实时代码更新支持：
+
+- **HotReloadManager**: 热重载协调管理器，统一管理热重载流程
+- **FileWatcher**: 文件监控器，支持watchdog实时监控和轮询备用方案
+- **ModuleReloader**: 模块重载器，安全重载Python模块，支持依赖分析
+- **依赖分析**: 自动构建模块依赖关系图，防抖动机制
+
+### 5. 配置管理层 (Configuration Layer)
+统一的配置管理系统：
+
+- **ConfigManager**: 配置管理器，支持多环境配置和动态加载
+- **ConfigSchema**: 配置数据模型，严格的类型验证和数据结构定义
+- **ConfigValidator**: 配置验证器，确保配置的完整性和有效性
+- **DefaultConfig**: 默认配置模板，提供开箱即用的配置
+
+### 6. 服务层 (Services Layer)
+核心业务逻辑服务组件：
+
+- **FileService**: 项目文件扫描、智能过滤和项目类型检测，集成原doc_scan功能
+- **TemplateService**: 10个核心模板统一管理，三层架构支持
+- **LargeFileHandler**: 大文件智能分片处理，支持AST语义分片
+
+### 7. 基础设施层 (Infrastructure Layer)
+底层支撑服务：
+
+- **文件系统**: pathlib + glob + 智能过滤机制
+- **模板资源**: 10个Markdown模板，支持三层文档架构
+- **状态存储**: JSON持久化文件系统，支持中断恢复
+- **文件指纹**: 文件变化检测和指纹数据库
+
+## 3阶段工作流架构
+
+### Phase 1: 文件层文档生成
+```
+FileService扫描 → LargeFileHandler分片 → TemplateService模板 → 文件级文档
 ```
 
-### 任务引擎层架构
-
-```mermaid
-graph LR
-    subgraph "Task Engine Layer"
-        subgraph "核心管理器"
-            TM3[TaskManager<br/>• 任务创建管理<br/>• 14种任务类型<br/>• 依赖关系验证<br/>• 状态持久化]
-        end
-        
-        subgraph "控制器"
-            PC3[PhaseController<br/>• 5阶段控制<br/>• 100%完成率<br/>• 阶段转换门控<br/>• 健康检查]
-        end
-        
-        subgraph "跟踪器"
-            ST3[StateTracker<br/>• 状态跟踪<br/>• 执行历史<br/>• 性能监控<br/>• 异常检测]
-        end
-        
-        subgraph "调度算法"
-            SA3[智能调度算法<br/>• DAG依赖图<br/>• 优先级算法<br/>• 智能调度<br/>• 并发安全]
-        end
-    end
-    
-    TM3 <--> PC3
-    PC3 <--> ST3
-    ST3 <--> SA3
-    SA3 <--> TM3
-    
-    style TM3 fill:#fff3e0
-    style PC3 fill:#e8f5e8
-    style ST3 fill:#e0f2f1
-    style SA3 fill:#f3e5f5
+### Phase 2: 架构层文档生成
+```
+文件分析结果 → 系统架构分析 → 技术栈识别 → 架构级文档
 ```
 
-### 热重载系统层架构
-
-```mermaid
-graph TD
-    subgraph "Hot Reload System Layer"
-        subgraph "管理器"
-            HRM3[HotReloadManager<br/>• 热重载协调<br/>• 工具实例管理<br/>• 回调管理<br/>• 生命周期控制]
-        end
-        
-        subgraph "监控器"
-            FW3[FileWatcher<br/>• 双模式监控<br/>• watchdog优先<br/>• 轮询备用<br/>• 防抖动处理]
-        end
-        
-        subgraph "重载器"
-            MR3[ModuleReloader<br/>• 智能重载<br/>• 依赖分析<br/>• 安全重载<br/>• 缓存清理]
-        end
-        
-        subgraph "协调器"
-            SC[系统协调<br/>• 事件调度<br/>• 状态同步<br/>• 降级处理<br/>• 性能优化]
-        end
-    end
-    
-    HRM3 --> FW3
-    HRM3 --> MR3
-    HRM3 --> SC
-    FW3 --> MR3
-    MR3 --> SC
-    SC --> HRM3
-    
-    style HRM3 fill:#fce4ec
-    style FW3 fill:#e8f5e8
-    style MR3 fill:#fff3e0
-    style SC fill:#e1f5fe
+### Phase 3: 项目层文档生成
+```
+架构分析结果 → 项目概述生成 → README编写 → 项目级文档
 ```
 
-**14种支持任务类型**:
-- **Phase 1**: SCAN (项目扫描)
-- **Phase 2**: FILE_SUMMARY (文件摘要) 
-- **Phase 3**: MODULE_ANALYSIS, MODULE_RELATIONS, DEPENDENCY_GRAPH, MODULE_README, MODULE_API, MODULE_FLOW
-- **Phase 4**: ARCHITECTURE, TECH_STACK, DATA_FLOW, SYSTEM_ARCHITECTURE, COMPONENT_DIAGRAM, DEPLOYMENT_DIAGRAM
-- **Phase 5**: PROJECT_README (项目README)
+## 数据流向
 
-### 服务层架构
-
-```mermaid
-graph LR
-    subgraph "Services Layer"
-        subgraph "文件服务"
-            FS3[FileService<br/>• 智能文件扫描<br/>• 项目类型检测<br/>• 框架识别<br/>• 元数据提取<br/>• 目录树构建]
-        end
-        
-        subgraph "模板服务"
-            TS3[TemplateService<br/>• 16个核心模板<br/>• 四层架构支持<br/>• 智能查询系统<br/>• 模板格式化<br/>• 变量管理]
-        end
-        
-        subgraph "验证服务"
-            VS3[ValidationService<br/>• 文档结构验证<br/>• 完整性检查<br/>• 改进建议<br/>• 多种验证模式<br/>• 状态报告]
-        end
-    end
-    
-    FS3 -.-> TS3
-    TS3 -.-> VS3
-    VS3 -.-> FS3
-    
-    style FS3 fill:#e8f5e8
-    style TS3 fill:#fff8e1
-    style VS3 fill:#e0f2f1
+### 正向流程 (文档生成)
+```
+Claude Code → MCP工具 → 任务引擎 → 服务层 → 基础设施层
 ```
 
-## 智能化协作数据流
-
-```mermaid
-graph TD
-    A[Claude Code 请求] --> B[MCP 工具接收<br/>7个专业工具]
-    B --> C[参数验证处理]
-    C --> D[任务引擎调用]
-    
-    D --> TM4[TaskManager]
-    D --> PC4[PhaseController]
-    D --> ST4[StateTracker]
-    
-    TM4 --> E[服务层处理]
-    PC4 --> E
-    ST4 --> E
-    
-    E --> FS4[FileService]
-    E --> TS4[TemplateService]
-    E --> VS4[ValidationService]
-    
-    FS4 --> F[智能分析执行]
-    TS4 --> F
-    VS4 --> F
-    
-    F --> G1[项目分析]
-    F --> G2[任务生成]
-    F --> G3[状态跟踪]
-    
-    G1 --> H[结果格式化]
-    G2 --> H
-    G3 --> H
-    
-    H --> I[JSON结构化响应]
-    I --> J[Claude Code 接收完整响应数据]
-    
-    style A fill:#e3f2fd
-    style B fill:#f3e5f5
-    style J fill:#c8e6c9
+### 反向流程 (状态反馈)
+```
+基础设施层 → 服务层 → 任务引擎 → MCP工具 → Claude Code
 ```
 
-## 5阶段文档生成流程
-
-```mermaid
-graph LR
-    subgraph "Phase 1: 项目扫描"
-        P1[1个SCAN任务<br/>项目结构分析<br/>文件过滤优化]
-    end
-    
-    subgraph "Phase 2: 文件层文档"
-        P2[1-50个FILE_SUMMARY任务<br/>详细文件分析<br/>代码结构文档]
-    end
-    
-    subgraph "Phase 3: 模块层架构"
-        P3[6-20个MODULE_*任务<br/>模块关系分析<br/>API设计文档]
-    end
-    
-    subgraph "Phase 4: 架构层设计"
-        P4[6个ARCHITECTURE任务<br/>系统架构设计<br/>技术栈文档]
-    end
-    
-    subgraph "Phase 5: 项目层总结"
-        P5[1个PROJECT_README任务<br/>项目综合文档<br/>使用指南]
-    end
-    
-    P1 --> P2
-    P2 --> P3
-    P3 --> P4
-    P4 --> P5
-    
-    P5 --> CHECK[100%完成检查]
-    CHECK --> VERIFY[最终文档验证]
-    
-    style P1 fill:#e1f5fe
-    style P2 fill:#e8f5e8
-    style P3 fill:#fff8e1
-    style P4 fill:#fce4ec
-    style P5 fill:#e0f2f1
-    style CHECK fill:#fff3e0
-    style VERIFY fill:#c8e6c9
+### 侧向流程 (热重载)
+```
+代码变更 → 热重载系统 → 模块更新 → MCP工具刷新
 ```
 
-## 技术栈架构
+## 关键特性
 
-```mermaid
-graph TB
-    subgraph "Application Layer"
-        APP[Python 3.9+ / MCP Protocol<br/>智能化任务驱动架构<br/>7个专业MCP工具]
-    end
-    
-    subgraph "Framework Layer"
-        FRAME[pathlib / glob / json / threading<br/>核心Python标准库<br/>零外部依赖设计]
-    end
-    
-    subgraph "System Layer"  
-        SYS[File System / OS Resources<br/>跨平台兼容支持<br/>智能权限管理]
-    end
-    
-    APP --> FRAME
-    FRAME --> SYS
-    
-    style APP fill:#e3f2fd
-    style FRAME fill:#fff8e1
-    style SYS fill:#e8f5e8
-```
+### 智能化
+- 自动项目类型检测和框架识别
+- 智能任务调度和依赖管理
+- 大文件AST语义分片处理
 
-这是一个专为 Claude Code 协作设计的智能化任务驱动 MCP 服务器，采用五层分层架构，具有完整的任务引擎、热重载系统、智能项目分析和5阶段严格控制能力。
+### 可靠性
+- 严格的3阶段流程控制
+- 状态持久化和中断恢复
+- 完整的异常处理机制
+
+### 高性能
+- 智能文件过滤和优先级排序
+- 按需加载和内存优化
+- 并发任务处理支持
+
+### 开发友好
+- 热重载实时代码更新
+- 多环境配置管理
+- 完整的日志和监控体系

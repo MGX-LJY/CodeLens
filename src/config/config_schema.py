@@ -116,15 +116,6 @@ class MCPToolConfig:
 
 
 @dataclass
-class DocScanConfig(MCPToolConfig):
-    """doc_scan工具配置"""
-    default_include_content: bool = False
-    cache_results: bool = True
-    cache_ttl: int = 3600
-    max_response_size: int = 25000
-
-
-@dataclass
 class DocGuideConfig(MCPToolConfig):
     """doc_guide工具配置"""
     analysis_depth: AnalysisDepth = AnalysisDepth.COMPREHENSIVE
@@ -153,7 +144,6 @@ class TaskExecuteConfig(MCPToolConfig):
 @dataclass
 class MCPToolsConfig:
     """MCP工具集配置"""
-    doc_scan: DocScanConfig = field(default_factory=DocScanConfig)
     doc_guide: DocGuideConfig = field(default_factory=DocGuideConfig)
     task_init: TaskInitConfig = field(default_factory=TaskInitConfig)
     task_execute: TaskExecuteConfig = field(default_factory=TaskExecuteConfig)
@@ -265,8 +255,6 @@ class CodeLensConfig:
         if self.mcp_tools.task_init.max_tasks_per_phase <= 0:
             errors.append("Invalid task_init configuration: max_tasks_per_phase must be > 0")
         
-        if self.mcp_tools.doc_scan.cache_ttl < 0:
-            errors.append("Invalid doc_scan configuration: cache_ttl must be >= 0")
         
         return errors
     

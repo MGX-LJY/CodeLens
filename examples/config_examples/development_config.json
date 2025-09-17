@@ -56,12 +56,6 @@
   },
   
   "mcp_tools": {
-    "doc_scan": {
-      "default_include_content": true,
-      "cache_results": true,
-      "cache_ttl": 1800,
-      "max_response_size": 50000
-    },
     "doc_guide": {
       "analysis_depth": "comprehensive",
       "generate_suggestions": true

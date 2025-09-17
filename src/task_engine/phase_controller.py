@@ -18,10 +18,9 @@ class PhaseStatus(Enum):
 
 class Phase(Enum):
     """阶段枚举"""
-    PHASE_1_SCAN = "phase_1_scan"  # 项目扫描和分析
-    PHASE_2_FILES = "phase_2_files"  # 文件层文档生成
-    PHASE_3_ARCHITECTURE = "phase_3_architecture"  # 架构层文档生成
-    PHASE_4_PROJECT = "phase_4_project"  # 项目层文档生成
+    PHASE_1_FILES = "phase_1_files"  # 文件层文档生成
+    PHASE_2_ARCHITECTURE = "phase_2_architecture"  # 架构层文档生成
+    PHASE_3_PROJECT = "phase_3_project"  # 项目层文档生成
 
 
 @dataclass
@@ -43,36 +42,28 @@ class PhaseController:
 
         # 定义各阶段信息
         self.phases_info = {
-            Phase.PHASE_1_SCAN: PhaseInfo(
-                phase=Phase.PHASE_1_SCAN,
-                name="项目分析和初始化",
-                description="扫描项目文件、分析项目特征、生成任务计划",
-                dependencies=[],
-                expected_tasks=["scan"],
-                min_completion_rate=1.0
-            ),
-            Phase.PHASE_2_FILES: PhaseInfo(
-                phase=Phase.PHASE_2_FILES,
+            Phase.PHASE_1_FILES: PhaseInfo(
+                phase=Phase.PHASE_1_FILES,
                 name="文件层文档生成",
                 description="为每个源文件生成详细的摘要文档",
-                dependencies=[Phase.PHASE_1_SCAN],
+                dependencies=[],  # 第一阶段，无依赖
                 expected_tasks=["file_summary"],
                 min_completion_rate=1.0
             ),
-            Phase.PHASE_3_ARCHITECTURE: PhaseInfo(
-                phase=Phase.PHASE_3_ARCHITECTURE,
+            Phase.PHASE_2_ARCHITECTURE: PhaseInfo(
+                phase=Phase.PHASE_2_ARCHITECTURE,
                 name="架构层文档生成",
                 description="基于文件分析生成系统架构和技术栈文档",
-                dependencies=[Phase.PHASE_2_FILES],
+                dependencies=[Phase.PHASE_1_FILES],
                 expected_tasks=["architecture", "tech_stack", "data_flow",
                                 "system_architecture", "component_diagram", "deployment_diagram"],
                 min_completion_rate=1.0
             ),
-            Phase.PHASE_4_PROJECT: PhaseInfo(
-                phase=Phase.PHASE_4_PROJECT,
+            Phase.PHASE_3_PROJECT: PhaseInfo(
+                phase=Phase.PHASE_3_PROJECT,
                 name="项目层文档生成",
                 description="生成项目README等对外展示文档",
-                dependencies=[Phase.PHASE_3_ARCHITECTURE],
+                dependencies=[Phase.PHASE_2_ARCHITECTURE],
                 expected_tasks=["project_readme"],
                 min_completion_rate=1.0
             )

@@ -29,8 +29,6 @@ def example_basic_usage():
         print(f"✅ 排除模式数量: {len(filtering_config.exclude_patterns)}")
         
         # 3. 获取工具配置
-        doc_scan_config = get_tool_config("doc_scan")
-        print(f"✅ doc_scan 缓存TTL: {doc_scan_config}")
         
         # 4. 测试文件过滤
         test_files = ["main.py", "__pycache__/test.pyc", "node_modules/lib.js", "src/model.py"]

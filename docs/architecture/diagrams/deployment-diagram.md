@@ -1,278 +1,366 @@
-
 # CodeLens 部署架构图
 
-## 部署拓扑
+## 部署环境架构
 
 ```mermaid
-graph TB
-    subgraph "开发环境"
-        CC[Claude Code<br/>智能化文档生成客户端]
-    end
-    
-    subgraph "本地主机"
-        subgraph "CodeLens 智能化任务驱动 MCP 服务器"
-            subgraph "MCP 工具层 - 7个专业工具"
-                IT[init_tools.py<br/>工作流指导]
-                DG[doc_guide.py<br/>智能项目分析]
-                TI[task_init.py<br/>任务计划生成]
-                TE[task_execute.py<br/>任务执行管理]
-                TS[task_status.py<br/>状态监控中心]
-                TC[task_complete.py<br/>任务完成工具]
-                DS[doc_scan.py<br/>项目文件扫描]
-            end
-            
-            subgraph "任务引擎层 - Task Engine"
-                TM[TaskManager<br/>14种任务类型管理]
-                PC[PhaseController<br/>5阶段严格控制]
-                ST[StateTracker<br/>状态跟踪监控]
-            end
-            
-            subgraph "热重载系统层 - Hot Reload System"
-                HRM[HotReloadManager<br/>热重载协调管理]
-                FW[FileWatcher<br/>文件监控组件]
-                MR[ModuleReloader<br/>模块重载组件]
-            end
-            
-            subgraph "服务层 - Services"
-                FS[FileService<br/>智能文件分析]
-                TmS[TemplateService<br/>16个核心模板]
-                VS[ValidationService<br/>完整性验证]
-            end
+graph TD
+    subgraph "开发环境 (Development)"
+        subgraph "开发者工作站"
+            DEV[开发者<br/>MacOS/Windows/Linux]
+            CC_DEV[Claude Code<br/>开发版本]
+            IDE[IDE/编辑器<br/>VS Code等]
         end
         
-        subgraph "文件系统"
-            subgraph "项目源代码目录"
-                SRC[Source Code]
-            end
-            
-            subgraph "文档输出目录 /docs"
-                ARCH[architecture/<br/>架构层文档]
-                FILES[files/<br/>文件层文档]
-                PROJ[project/<br/>项目层文档]
-            end
-            
-            subgraph "任务状态存储 .codelens/"
-                TASKS[tasks.json<br/>任务状态文件]
-                HIST[execution_history.json<br/>执行历史]
-            end
+        subgraph "CodeLens 开发实例"
+            CL_DEV[CodeLens MCP Server<br/>热重载模式]
+            HR_DEV[HotReload System<br/>实时代码更新]
+            LOG_DEV[Development Logs<br/>详细调试日志]
+        end
+        
+        subgraph "开发数据"
+            PROJ_DEV[开发项目<br/>源代码目录]
+            STATE_DEV[开发状态<br/>.codelens/]
+            DOCS_DEV[开发文档<br/>docs/]
         end
     end
     
-    CC -->|MCP 协议调用<br/>7个专业工具| IT
-    CC -->|MCP 协议调用| DG
-    CC -->|MCP 协议调用| TI
-    CC -->|MCP 协议调用| TE
-    CC -->|MCP 协议调用| TS
-    CC -->|MCP 协议调用| TC
-    CC -->|MCP 协议调用| DS
+    subgraph "测试环境 (Testing)"
+        subgraph "CI/CD 流水线"
+            CI[GitHub Actions<br/>自动化测试]
+            TEST[测试套件<br/>pytest/unittest]
+            COV[代码覆盖率<br/>coverage.py]
+        end
+        
+        subgraph "CodeLens 测试实例"
+            CL_TEST[CodeLens MCP Server<br/>测试模式]
+            MOCK[Mock Components<br/>模拟组件]
+            PERF[性能测试<br/>负载和压力测试]
+        end
+        
+        subgraph "测试数据"
+            PROJ_TEST[测试项目<br/>多语言样本]
+            STATE_TEST[测试状态<br/>临时状态文件]
+            RESULT[测试结果<br/>报告和日志]
+        end
+    end
     
-    IT --> TM
-    DG --> TM
-    TI --> TM
-    TE --> TM
-    TS --> TM
-    TC --> TM
-    DS --> TM
+    subgraph "生产环境 (Production)"
+        subgraph "用户工作站"
+            USER[最终用户<br/>各种操作系统]
+            CC_PROD[Claude Code<br/>生产版本]
+            PROJ_USER[用户项目<br/>实际工作项目]
+        end
+        
+        subgraph "CodeLens 生产实例"
+            CL_PROD[CodeLens MCP Server<br/>生产模式]
+            CONFIG[配置管理<br/>生产配置]
+            LOG_PROD[生产日志<br/>运行时日志]
+        end
+        
+        subgraph "生产数据"
+            STATE_PROD[用户状态<br/>个人.codelens/]
+            DOCS_PROD[生成文档<br/>用户docs/]
+            CACHE[缓存系统<br/>模板和状态缓存]
+        end
+    end
     
-    TM --> PC
-    PC --> ST
-    ST --> HRM
+    %% 开发环境连接
+    DEV --> CC_DEV
+    CC_DEV -->|MCP协议| CL_DEV
+    CL_DEV --> HR_DEV
+    CL_DEV --> PROJ_DEV
+    CL_DEV --> STATE_DEV
+    CL_DEV --> DOCS_DEV
+    IDE --> PROJ_DEV
+    HR_DEV --> LOG_DEV
     
-    HRM --> FW
-    HRM --> MR
+    %% 测试环境连接
+    CI --> TEST
+    TEST --> CL_TEST
+    CL_TEST --> MOCK
+    CL_TEST --> PROJ_TEST
+    CL_TEST --> STATE_TEST
+    PERF --> CL_TEST
+    TEST --> COV
+    CL_TEST --> RESULT
     
-    FW --> FS
-    MR --> TmS
-    TmS --> VS
+    %% 生产环境连接
+    USER --> CC_PROD
+    CC_PROD -->|MCP协议| CL_PROD
+    CL_PROD --> CONFIG
+    CL_PROD --> PROJ_USER
+    CL_PROD --> STATE_PROD
+    CL_PROD --> DOCS_PROD
+    CL_PROD --> CACHE
+    CONFIG --> LOG_PROD
     
-    FS --> SRC
-    TmS --> ARCH
-    TmS --> FILES
-    TmS --> PROJ
-    VS --> TASKS
-    VS --> HIST
+    %% 部署流程
+    PROJ_DEV -.->|代码提交| CI
+    RESULT -.->|测试通过| USER
     
-    style CC fill:#e3f2fd
-    style TM fill:#fff3e0
-    style HRM fill:#fce4ec
-    style FS fill:#e8f5e8
+    style DEV fill:#e3f2fd
+    style CI fill:#fff3e0
+    style USER fill:#e8f5e8
+    style CL_DEV fill:#f3e5f5
+    style CL_TEST fill:#fce4ec
+    style CL_PROD fill:#e0f2f1
 ```
 
-## 部署方式
+## 部署方式详解
 
-### 1. **命令行部署** - 直接工具调用
+### 1. 本地开发部署
+
+#### 开发环境特点
+- **热重载支持**: 实时代码更新，无需重启服务
+- **详细日志**: 完整的调试信息和性能监控
+- **快速迭代**: 支持频繁的代码修改和测试
+
+#### 部署步骤
 ```bash
-# 工作流指导
-python src/mcp_tools/init_tools.py /path/to/project
+# 1. 克隆项目
+git clone https://github.com/your-repo/CodeLens.git
+cd CodeLens
 
-# 智能项目分析
-python src/mcp_tools/doc_guide.py /path/to/project
+# 2. 安装依赖（可选，核心功能零依赖）
+pip install watchdog  # 热重载增强
+pip install psutil    # 性能监控增强
 
-# 任务计划生成
-python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json
+# 3. 启动开发服务器
+CODELENS_HOT_RELOAD=true python mcp_server.py
 
-# 任务执行管理
-python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode execute
-
-# 状态监控检查
-python src/mcp_tools/task_status.py /path/to/project --type overall_status
-
-# 任务完成标记
-python src/mcp_tools/task_complete.py /path/to/project --task-id <task_id>
-
-# 项目文件扫描
-python src/mcp_tools/doc_scan.py /path/to/project --no-content
-```
-
-### 2. **MCP 协议部署** - Claude Code 集成
-```json
+# 4. 配置Claude Code
+# 编辑 claude_code_config.json
 {
   "mcpServers": {
     "codelens": {
       "command": "python",
-      "args": ["/path/to/codelens/src/mcp_tools/doc_guide.py"]
+      "args": ["mcp_server.py"],
+      "cwd": "/path/to/CodeLens",
+      "env": {
+        "PYTHONPATH": ".",
+        "CODELENS_HOT_RELOAD": "true"
+      }
     }
   }
 }
 ```
 
-**支持的7个MCP工具**:
-- `init_tools.py`: 工作流指导
-- `doc_guide.py`: 智能项目分析
-- `task_init.py`: 任务计划生成  
-- `task_execute.py`: 任务执行管理
-- `task_status.py`: 状态监控中心
-- `task_complete.py`: 任务完成工具
-- `doc_scan.py`: 项目文件扫描
+### 2. 测试环境部署
 
-### 3. **智能化工作流部署** - 完整5阶段流程
+#### CI/CD 流水线
+```yaml
+# .github/workflows/test.yml
+name: CodeLens Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        pip install pytest coverage
+        pip install watchdog psutil  # 可选依赖
+    
+    - name: Run tests
+      run: |
+        python mcp_server.py test
+        pytest tests/ -v --cov=src
+    
+    - name: Performance tests
+      run: |
+        python tests/performance_tests.py
+```
+
+#### 测试环境特点
+- **自动化测试**: GitHub Actions CI/CD流水线
+- **多版本支持**: Python 3.9-3.11兼容性测试
+- **性能测试**: 负载测试和内存使用监控
+- **代码覆盖率**: 完整的测试覆盖率报告
+
+### 3. 生产环境部署
+
+#### 生产部署特点
+- **稳定可靠**: 关闭热重载，使用稳定配置
+- **性能优化**: 启用缓存和性能优化选项
+- **日志管理**: 生产级日志记录和轮转
+- **配置管理**: 多环境配置支持
+
+#### 生产部署步骤
 ```bash
-# 完整的智能化文档生成工作流
-# 1. 项目分析
-python src/mcp_tools/doc_guide.py /path/to/project > analysis.json
+# 1. 生产环境安装
+pip install CodeLens  # 通过PyPI安装（未来）
 
-# 2. 任务规划
-python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json --create-tasks
+# 或者从源码安装
+git clone --branch stable https://github.com/your-repo/CodeLens.git
+cd CodeLens
 
-# 3. 状态监控
-python src/mcp_tools/task_status.py /path/to/project --type current_task
+# 2. 生产配置
+export CODELENS_HOT_RELOAD=false
+export CODELENS_LOG_LEVEL=INFO
+export CODELENS_CACHE_SIZE=100MB
 
-# 4. 任务执行 (循环执行直到完成)
-python src/mcp_tools/task_execute.py /path/to/project --task-id <task_id> --mode execute
+# 3. 启动生产服务
+python mcp_server.py
 
-# 5. 任务完成标记
-python src/mcp_tools/task_complete.py /path/to/project --task-id <final_task_id>
+# 4. 配置Claude Code生产环境
+{
+  "mcpServers": {
+    "codelens": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "/opt/codelens",
+      "env": {
+        "CODELENS_HOT_RELOAD": "false",
+        "CODELENS_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
 ```
 
-## 运行环境要求
+## 系统要求
 
-### **系统要求**
-- **Python 版本**: Python 3.9+ (推荐 3.11+)
-- **操作系统**: Windows 10+, macOS 10.15+, Linux (Ubuntu 20.04+)
-- **内存**: 最小 256MB，推荐 512MB
-- **磁盘空间**: 50MB (代码) + 可变文档空间 + 任务状态存储
-
-### **权限要求**
-- **文件读取权限**: 需要访问目标项目目录
-- **文件写入权限**: 文档输出目录和.codelens状态目录写入权限
-- **网络权限**: 不需要网络访问（纯本地操作）
-
-### **依赖要求**
-- **核心零依赖**: 核心功能仅使用 Python 标准库
-- **可选增强依赖**: 热重载功能可选依赖 watchdog 库（提供轮询备用方案）
-- **模块化设计**: 各组件可独立部署
-
-## 任务状态存储部署
-
-### **状态文件结构**
+### 最小系统要求
 ```
-/.codelens/
-├── tasks.json               # 主任务状态文件
-├── execution_history.json   # 执行历史记录
-└── performance_metrics.json # 性能指标统计 (可选)
+操作系统: Windows 10+ / macOS 10.15+ / Ubuntu 20.04+
+Python版本: 3.9+
+内存: 256MB (核心功能)
+磁盘空间: 50MB (安装) + 项目大小
+网络: 无需网络连接（离线工作）
 ```
 
-### **任务状态文件格式**
+### 推荐系统配置
+```
+操作系统: 最新稳定版本
+Python版本: 3.11+
+内存: 1GB+ (大型项目)
+磁盘空间: 500MB+ (缓存和日志)
+CPU: 多核处理器（并发处理）
+SSD: 固态硬盘（文件IO性能）
+```
+
+## 配置管理
+
+### 环境配置层级
+```
+1. 默认配置 (src/config/default_config.json)
+2. 环境变量配置 (CODELENS_*)
+3. 用户配置文件 (~/.codelens/config.json)
+4. 项目配置文件 (./codelens.json)
+```
+
+### 关键配置参数
 ```json
 {
-  "tasks": {
-    "task_id": {
-      "id": "task_id",
-      "type": "file_summary", 
-      "description": "生成app.py文件摘要",
-      "phase": "phase_2_files",
-      "status": "completed",
-      "target_file": "app.py",
-      "template": "file_summary",
-      "output_path": "docs/files/summaries/app.py.md",
-      "dependencies": ["scan_task_id"],
-      "priority": "high",
-      "created_at": "2025-09-13T10:30:00Z",
-      "completed_at": "2025-09-13T10:35:00Z",
-      "estimated_time": "3 minutes",
-      "metadata": {}
-    }
+  "hot_reload": {
+    "enabled": true,
+    "debounce_seconds": 0.5,
+    "polling_interval": 1.0
   },
-  "metadata": {
-    "project_path": "/path/to/project",
-    "created_at": "2025-09-13T10:00:00Z",
-    "last_updated": "2025-09-13T10:35:00Z"
+  "performance": {
+    "max_file_size": 122880,
+    "large_file_threshold": 50000,
+    "cache_size": "100MB"
+  },
+  "logging": {
+    "level": "INFO",
+    "file_rotation": true,
+    "max_file_size": "10MB"
   }
 }
 ```
-
-## 性能优化部署
-
-### **开发环境**
-- 使用task_status工具实时监控任务执行
-- 启用详细的错误信息输出
-- 保留完整的任务执行历史用于调试
-
-### **生产环境**  
-- 配置合理的任务状态文件轮转策略
-- 定期清理旧的执行历史记录
-- 启用性能指标收集和分析
-- 监控.codelens目录磁盘使用情况
-
-### **高负载环境**
-- 增大文档输出目录磁盘空间
-- 优化任务并发执行策略
-- 配置任务状态检查点，支持增量恢复
-- 监控内存使用和文件句柄数量
 
 ## 监控和维护
 
-### **任务状态监控**
+### 健康检查
 ```bash
-# 检查总体状态
-python src/mcp_tools/task_status.py /path/to/project --type overall_status
+# 服务器状态检查
+python mcp_server.py info
 
-# 查看当前任务
-python src/mcp_tools/task_status.py /path/to/project --type current_task
-
-# 执行健康检查
-python src/mcp_tools/task_status.py /path/to/project --type health_check
-
-# 获取执行建议
-python src/mcp_tools/task_status.py /path/to/project --type next_actions
+# 组件健康检查
+python -c "from src.mcp_tools.task_status import TaskStatusTool; \
+           tool = TaskStatusTool(); \
+           print(tool.execute({'check_type': 'health_check'}))"
 ```
 
-### **性能监控**
-- 任务执行时间统计
-- 阶段完成率追踪  
-- 文档生成数量统计
-- 系统健康状态检查
-- 内存使用和磁盘空间监控
-
-### **维护操作**
-```bash
-# 清理任务状态
-rm -rf .codelens/
-
-# 重新初始化项目
-python src/mcp_tools/doc_guide.py /path/to/project
-python src/mcp_tools/task_init.py /path/to/project --analysis-file analysis.json
-
-# 状态文件备份
-cp .codelens/tasks.json .codelens/tasks.backup.json
+### 日志管理
 ```
+日志位置: logs/codelens.log
+日志级别: DEBUG/INFO/WARNING/ERROR
+日志轮转: 10MB/文件，保留5个历史文件
+性能日志: logs/performance.log
+错误日志: logs/error.log
+```
+
+### 备份和恢复
+```bash
+# 状态备份
+cp -r .codelens/ backup_$(date +%Y%m%d)/
+
+# 配置备份
+cp ~/.codelens/config.json config_backup.json
+
+# 恢复操作
+cp -r backup_20231201/.codelens/ ./
+```
+
+## 安全考虑
+
+### 文件访问安全
+- 仅访问指定项目目录
+- 禁止访问系统敏感目录
+- 文件权限检查和验证
+
+### 数据隐私
+- 本地处理，无数据上传
+- 敏感信息过滤
+- 临时文件安全清理
+
+### 代码执行安全
+- 仅分析代码结构，不执行代码
+- AST解析安全边界
+- 异常处理和资源限制
+
+## 扩展和定制
+
+### 插件开发
+```python
+# 自定义分片器
+class CustomChunker(BaseChunker):
+    def supports_language(self, language: str) -> bool:
+        return language == "custom"
+    
+    def chunk_code(self, content: str, file_path: str) -> ChunkingResult:
+        # 自定义分片逻辑
+        pass
+
+# 注册插件
+large_file_handler.register_chunker("custom", CustomChunker())
+```
+
+### 模板扩展
+```python
+# 自定义模板
+custom_template = {
+    "name": "custom_analysis",
+    "description": "自定义分析模板",
+    "content": "# 自定义分析\n{analysis_content}",
+    "variables": ["analysis_content"]
+}
+
+# 注册模板
+template_service.register_template(custom_template)
+```
+
+这个部署架构支持从开发到生产的完整部署生命周期，确保在各种环境下的稳定运行。

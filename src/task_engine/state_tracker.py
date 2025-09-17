@@ -230,8 +230,8 @@ class StateTracker:
         
         # 阶段统计
         phase_stats = {}
-        for phase_name in ["phase_1_scan", "phase_2_files", 
-                          "phase_3_architecture", "phase_4_project"]:
+        for phase_name in ["phase_1_files", 
+                          "phase_2_architecture", "phase_3_project"]:
             phase_events = [e for e in self.events if e.phase == phase_name]
             phase_stats[phase_name] = {
                 "total_events": len(phase_events),

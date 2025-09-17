@@ -182,28 +182,24 @@ class ProjectAnalyzer:
 
     def generate_generation_plan(self, analysis: Dict[str, Any], strategy: Dict[str, Any]) -> Dict[str, Any]:
         """生成具体的生成计划"""
-        # Phase 1: 扫描任务
-        phase_1_scan = ["project_scan_and_analysis"]
-
-        # Phase 2: 文件层任务
+        # Phase 1: 文件层任务
         priority_files = strategy["priority_files"]
         other_files = [f for f in analysis["key_files"] if f not in priority_files]
-        phase_2_files = priority_files + other_files[:20]  # 最多处理20个文件
+        phase_1_files = priority_files + other_files[:20]  # 最多处理20个文件
 
-        # Phase 3: 架构层任务
+        # Phase 2: 架构层任务
         project_type = analysis["project_type"]
-        phase_3_architecture = self._get_architecture_components(project_type)
+        phase_2_architecture = self._get_architecture_components(project_type)
 
-        # Phase 4: 项目层任务
-        phase_4_project = ["project_readme"]
+        # Phase 3: 项目层任务
+        phase_3_project = ["project_readme"]
 
         return {
-            "phase_1_scan": phase_1_scan,
-            "phase_2_files": phase_2_files,
-            "phase_3_architecture": phase_3_architecture,
-            "phase_4_project": phase_4_project,
+            "phase_1_files": phase_1_files,
+            "phase_2_architecture": phase_2_architecture,
+            "phase_3_project": phase_3_project,
             "estimated_duration": self._estimate_duration(
-                len(phase_2_files), len(phase_3_architecture)
+                len(phase_1_files), len(phase_2_architecture)
             )
         }
 
@@ -592,9 +588,9 @@ class DocGuideTool:
                 plan = simplified["generation_plan"]
                 
                 # 限制文件任务数量
-                if "phase_2_files" in plan and len(plan["phase_2_files"]) > 15:
-                    plan["phase_2_files"] = plan["phase_2_files"][:15]
-                    self.logger.debug("限制phase_2_files到前15个")
+                if "phase_1_files" in plan and len(plan["phase_1_files"]) > 15:
+                    plan["phase_1_files"] = plan["phase_1_files"][:15]
+                    self.logger.debug("限制phase_1_files到前15个")
             
             self.logger.info("响应数据简化完成")
             return simplified

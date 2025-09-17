@@ -2,13 +2,13 @@
 
 ## 整体协作流程图
 
-### Claude Code 与 CodeLens 5阶段协作流程
+### Claude Code 与 CodeLens 3阶段协作流程
 
 ```mermaid
 graph TD
     A[Claude Code 启动文档生成] --> B[init_tools: 获取工作流指导]
     B --> C[doc_guide: 智能项目分析]
-    C --> D[task_init: 生成5阶段任务计划]
+    C --> D[task_init: 生成3阶段任务计划]
     D --> E[task_status: 检查当前任务状态]
     
     E --> F{是否有待执行任务?}
@@ -28,7 +28,7 @@ graph TD
 
 ## MCP工具数据流程图
 
-### 7个核心MCP工具协作流程
+### 9个核心MCP工具协作流程
 
 ```mermaid
 graph LR
@@ -44,7 +44,9 @@ graph LR
             TE[task_execute<br/>任务执行]
             TS[task_status<br/>状态监控]
             TC[task_complete<br/>任务完成]
-            DS[doc_scan<br/>文件扫描]
+            PO[project_overview<br/>项目概览]
+            DUI[doc_update_init<br/>更新初始化]
+            DU[doc_update<br/>变化检测]
         end
         
         subgraph "引擎和服务层"
@@ -54,6 +56,8 @@ graph LR
             FS[FileService<br/>文件服务]
             TS2[TemplateService<br/>模板服务]
             HR[HotReloadManager<br/>热重载]
+            LFH[LargeFileHandler<br/>大文件处理]
+            CM[ConfigManager<br/>配置管理]
         end
     end
     
@@ -63,18 +67,23 @@ graph LR
     CC --> TE
     CC --> TS
     CC --> TC
-    CC --> DS
+    CC --> PO
+    CC --> DUI
+    CC --> DU
     
     DG --> FS
     TI --> TM
     TE --> TM
     TE --> TS2
+    TE --> LFH
     TS --> ST
     TC --> TM
-    DS --> FS
+    PO --> FS
+    DU --> FS
     
     TM --> PC
     PC --> ST
+    FS --> CM
     
     style CC fill:#e3f2fd
     style IT fill:#f3e5f5
@@ -83,71 +92,62 @@ graph LR
     style TE fill:#fce4ec
     style TS fill:#e0f2f1
     style TC fill:#f1f8e9
-    style DS fill:#e8eaf6
+    style PO fill:#e8eaf6
 ```
 
-## 5阶段文档生成工作流
+## 3阶段文档生成工作流
 
 ### 完整任务执行流程图
 
 ```mermaid
 graph TD
-    subgraph "Phase 1: 项目分析"
-        P1A[SCAN任务启动] --> P1B[项目结构扫描]
-        P1B --> P1C[项目类型检测]
-        P1C --> P1D[框架识别]
-        P1D --> P1E[生成分析报告]
-        P1E --> P1F[Phase 1 完成]
+    subgraph "核心流程: 项目分析"
+        P0A[doc_guide启动] --> P0B[项目结构扫描]
+        P0B --> P0C[项目类型检测]
+        P0C --> P0D[框架识别]
+        P0D --> P0E[生成分析报告]
+        P0E --> P0F[分析完成]
     end
     
-    subgraph "Phase 2: 任务计划"
-        P2A[基于分析结果] --> P2B[生成5阶段任务]
-        P2B --> P2C[构建依赖关系图]
-        P2C --> P2D[设置任务优先级]
-        P2D --> P2E[创建执行计划]
-        P2E --> P2F[Phase 2 完成]
+    subgraph "Phase 1: 文件层文档生成"
+        P1A[FILE_SUMMARY任务] --> P1B[高优先级文件]
+        P1A --> P1C[普通文件]
+        P1A --> P1D[低优先级文件]
+        P1B --> P1E[大文件分片处理]
+        P1C --> P1F[常规文件处理]
+        P1D --> P1F
+        P1E --> P1G[生成文件文档]
+        P1F --> P1G
+        P1G --> P1H{所有文件完成?}
+        P1H -->|否| P1A
+        P1H -->|是| P1I[Phase 1 完成]
     end
     
-    subgraph "Phase 3: 文件层文档"
-        P3A[FILE_SUMMARY任务] --> P3B[高优先级文件]
-        P3A --> P3C[普通文件]
-        P3A --> P3D[低优先级文件]
-        P3B --> P3E[生成文件文档]
-        P3C --> P3E
-        P3D --> P3E
-        P3E --> P3F{所有文件完成?}
-        P3F -->|否| P3A
-        P3F -->|是| P3G[Phase 3 完成]
+    subgraph "Phase 2: 架构层文档生成"
+        P2A[ARCHITECTURE任务] --> P2B[系统架构分析]
+        P2B --> P2C[技术栈文档]
+        P2C --> P2D[数据流设计]
+        P2D --> P2E[组件关系图]
+        P2E --> P2F[部署架构图]
+        P2F --> P2G[Phase 2 完成]
     end
     
-    subgraph "Phase 4: 架构层文档"
-        P4A[ARCHITECTURE任务] --> P4B[系统架构分析]
-        P4B --> P4C[技术栈文档]
-        P4C --> P4D[数据流设计]
-        P4D --> P4E[组件关系图]
-        P4E --> P4F[部署架构图]
-        P4F --> P4G[Phase 4 完成]
+    subgraph "Phase 3: 项目层文档生成"
+        P3A[PROJECT_README任务] --> P3B[整合所有成果]
+        P3B --> P3C[生成项目文档]
+        P3C --> P3D[更新变更日志]
+        P3D --> P3E[Phase 3 完成]
     end
     
-    subgraph "Phase 5: 项目层文档"
-        P5A[PROJECT_README任务] --> P5B[整合所有成果]
-        P5B --> P5C[生成项目文档]
-        P5C --> P5D[更新变更日志]
-        P5D --> P5E[制定路线图]
-        P5E --> P5F[Phase 5 完成]
-    end
+    P0F --> P1A
+    P1I --> P2A
+    P2G --> P3A
+    P3E --> END[文档生成完成]
     
-    P1F --> P2A
-    P2F --> P3A
-    P3G --> P4A
-    P4G --> P5A
-    P5F --> END[文档生成完成]
-    
-    style P1F fill:#c8e6c9
-    style P2F fill:#c8e6c9
-    style P3G fill:#c8e6c9
-    style P4G fill:#c8e6c9
-    style P5F fill:#c8e6c9
+    style P0F fill:#e1f5fe
+    style P1I fill:#c8e6c9
+    style P2G fill:#c8e6c9
+    style P3E fill:#c8e6c9
     style END fill:#4caf50,color:#fff
 ```
 
@@ -166,7 +166,7 @@ graph TB
         F --> G[加入任务队列]
     end
     
-    subgraph "阶段控制"
+    subgraph "阶段控制（3阶段）"
         G --> H[PhaseController.check_phase]
         H --> I{当前阶段允许执行?}
         I -->|否| J[阻塞任务]
@@ -195,7 +195,7 @@ graph TB
         X --> Y[健康检查更新]
     end
     
-    subgraph "阶段转换检查"
+    subgraph "阶段转换检查（1→2→3）"
         Y --> Z[PhaseController.check_phase_completion]
         Z --> AA{当前阶段100%完成?}
         AA -->|是| BB[转换到下一阶段]
@@ -210,6 +210,53 @@ graph TB
     style R fill:#c8e6c9
     style S fill:#ffcdd2
     style BB fill:#81c784
+```
+
+## 大文件处理流程图
+
+### LargeFileHandler 智能分片流程
+
+```mermaid
+graph TD
+    subgraph "文件检测"
+        A[输入文件] --> B[检查文件大小]
+        B --> C{超过50KB?}
+        C -->|否| D[直接处理]
+        C -->|是| E[启动分片处理]
+    end
+    
+    subgraph "语言检测和分片器选择"
+        E --> F[检测编程语言]
+        F --> G{Python文件?}
+        G -->|是| H[PythonChunker]
+        G -->|否| I[GeneralChunker]
+    end
+    
+    subgraph "AST语义分片"
+        H --> J[AST解析]
+        J --> K{解析成功?}
+        K -->|是| L[按类/函数分片]
+        K -->|否| M[降级行数分片]
+        L --> N[分析依赖关系]
+        M --> O[简单分片]
+        N --> P[生成分片结果]
+        O --> P
+    end
+    
+    subgraph "分片优化"
+        I --> Q[基于大小分片]
+        Q --> R[自然边界切分]
+        R --> P
+        P --> S[依赖关系分析]
+        S --> T[分片元数据生成]
+        T --> U[返回分片集合]
+    end
+    
+    style A fill:#e1f5fe
+    style D fill:#c8e6c9
+    style U fill:#c8e6c9
+    style L fill:#fff3e0
+    style M fill:#ffcdd2
 ```
 
 ## 热重载系统流程图
@@ -276,7 +323,7 @@ graph LR
     A[Claude Code请求] --> B[init_tools.execute]
     B --> C[验证project_path]
     C --> D[分析项目规模]
-    D --> E[生成5阶段指导]
+    D --> E[生成3阶段指导]
     E --> F[返回操作步骤]
     F --> G[Claude Code获得指导]
     
@@ -289,7 +336,7 @@ graph LR
 ```mermaid
 graph TD
     A[项目路径输入] --> B[ProjectAnalyzer启动]
-    B --> C[扫描项目文件]
+    B --> C[FileService扫描文件]
     C --> D[检测项目类型]
     D --> E{Python项目?}
     E -->|是| F[Python特征分析]
@@ -298,10 +345,11 @@ graph TD
     G --> H
     H --> I[复杂度评估]
     I --> J[生成文档策略]
-    J --> K[返回分析结果]
+    J --> K[保存analysis.json]
+    K --> L[返回分析结果]
     
     style A fill:#e1f5fe
-    style K fill:#c8e6c9
+    style L fill:#c8e6c9
 ```
 
 ### task_execute 任务执行流程
@@ -313,15 +361,39 @@ graph TD
     C --> D{任务可执行?}
     D -->|否| E[返回错误信息]
     D -->|是| F[获取执行上下文]
-    F --> G[加载文档模板]
-    G --> H[构建任务指导]
-    H --> I[返回执行指导]
-    I --> J[Claude Code生成文档]
-    J --> K[task_complete标记完成]
+    F --> G{大文件需要分片?}
+    G -->|是| H[LargeFileHandler处理]
+    G -->|否| I[直接文件读取]
+    H --> J[加载文档模板]
+    I --> J
+    J --> K[构建任务指导]
+    K --> L[返回执行指导]
+    L --> M[Claude Code生成文档]
+    M --> N[task_complete标记完成]
     
     style A fill:#e1f5fe
-    style I fill:#fff3e0
-    style K fill:#c8e6c9
+    style L fill:#fff3e0
+    style N fill:#c8e6c9
+```
+
+### doc_update 变化检测流程
+
+```mermaid
+graph TD
+    A[doc_update请求] --> B[读取指纹基点]
+    B --> C[扫描当前文件]
+    C --> D[计算文件指纹]
+    D --> E[对比指纹变化]
+    E --> F{发现变化?}
+    F -->|否| G[无需更新]
+    F -->|是| H[分析变化类型]
+    H --> I[生成更新建议]
+    I --> J[更新指纹基点]
+    J --> K[返回变化报告]
+    
+    style A fill:#e1f5fe
+    style G fill:#c8e6c9
+    style K fill:#fff3e0
 ```
 
 ## 数据格式和接口规范
@@ -342,6 +414,8 @@ graph LR
         B --> B1[任务状态]
         B --> B2[执行历史]
         B --> B3[性能指标]
+        B --> B4[分片数据]
+        B --> B5[配置信息]
     end
     
     subgraph "输出格式"
@@ -349,6 +423,7 @@ graph LR
         C --> C1[success: boolean]
         C --> C2[data: object]
         C --> C3[error: string]
+        C --> C4[metadata: object]
     end
     
     A --> B
@@ -386,10 +461,11 @@ graph TD
     C --> D[排除无关目录]
     D --> E[大小和扩展名过滤]
     E --> F[智能优先级排序]
-    F --> G[返回过滤结果]
+    F --> G[大文件分片检查]
+    G --> H[返回过滤结果]
     
     style A fill:#e1f5fe
-    style G fill:#c8e6c9
+    style H fill:#c8e6c9
 ```
 
 ### 任务调度优化流程
@@ -397,7 +473,7 @@ graph TD
 ```mermaid
 graph LR
     A[任务队列] --> B[依赖图分析]
-    B --> C[优先级计算]
+    B --> C[3阶段优先级计算]
     C --> D[智能调度]
     D --> E[并发安全执行]
     E --> F[性能监控]
@@ -408,4 +484,23 @@ graph LR
     style G fill:#c8e6c9
 ```
 
-这套流程图设计提供了CodeLens系统完整的数据流可视化，涵盖了从Claude Code协作到内部任务引擎处理的所有关键流程，让整个系统的工作机制一目了然。
+### 配置管理流程
+
+```mermaid
+graph TD
+    A[配置请求] --> B[ConfigManager启动]
+    B --> C[加载默认配置]
+    C --> D[环境配置覆盖]
+    D --> E[用户配置覆盖]
+    E --> F[配置验证]
+    F --> G{验证通过?}
+    G -->|否| H[返回错误]
+    G -->|是| I[配置生效]
+    I --> J[组件配置更新]
+    
+    style A fill:#e1f5fe
+    style I fill:#c8e6c9
+    style H fill:#ffcdd2
+```
+
+这套数据流设计展示了CodeLens系统在3阶段架构下的完整工作机制，从Claude Code协作到内部任务引擎处理，涵盖了所有关键流程，包括新增的大文件处理和配置管理功能。

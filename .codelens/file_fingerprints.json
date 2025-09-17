@@ -1,6 +1,6 @@
 {
   "created_at": "2025-09-15T22:06:14.696038",
-  "last_updated": "2025-09-16T13:15:03.557512",
+  "last_updated": "2025-09-17T08:16:01.220584",
   "files": {
     "test_large_file_handler.py": {
       "hash": "638de00ab4a516dee842a2eada361030",
@@ -22,15 +22,20 @@
       "size": 837,
       "modified_time": "2025-09-15T17:03:30.574325"
     },
+    "test_config_system.py": {
+      "hash": "d257839667aecca350f9588e0a4dbf89",
+      "size": 9062,
+      "modified_time": "2025-09-16T14:04:41.953467"
+    },
     "claude_code_config.json": {
-      "hash": "229bc5399c5612134c4809c96416b8a8",
-      "size": 1387,
-      "modified_time": "2025-09-15T17:37:04.223154"
+      "hash": "c0ef44728dd270ca329d6b97d3a282e6",
+      "size": 1257,
+      "modified_time": "2025-09-17T07:51:38.809503"
     },
     "mcp_server.py": {
-      "hash": "ea32f6bcaceb41b16100e1a60b61a091",
-      "size": 8643,
-      "modified_time": "2025-09-15T22:06:30.163164"
+      "hash": "eb5a31eeea2ee5def530a9ead4cdd79c",
+      "size": 8564,
+      "modified_time": "2025-09-17T07:43:16.400461"
     },
     "bin/codelens-mcp": {
       "hash": "f2f9d0a1f06c3262ba40b98c9e88ff28",
@@ -38,14 +43,54 @@
       "modified_time": "2025-09-15T17:04:00.697549"
     },
     ".claude/settings.local.json": {
-      "hash": "425a8f0808c533da69700e272bd2749b",
-      "size": 2019,
-      "modified_time": "2025-09-15T23:40:30.722646"
+      "hash": "d741bb1ec1056e2ea4964a44ef076d65",
+      "size": 2370,
+      "modified_time": "2025-09-17T07:51:13.944597"
+    },
+    "examples/config_usage_examples.py": {
+      "hash": "7f3b26e5f9792d4965e1c00973518aed",
+      "size": 10240,
+      "modified_time": "2025-09-17T07:52:30.178797"
     },
     "src/__init__.py": {
       "hash": "86aee8adaa6ee3e386c4f264d6531f3d",
       "size": 39,
       "modified_time": "2025-09-13T00:06:54.030723"
+    },
+    "examples/config_examples/production_config.json": {
+      "hash": "70bbe6a4106e8aef0d9bb4ebbc7c7ab6",
+      "size": 2492,
+      "modified_time": "2025-09-17T07:51:14.394708"
+    },
+    "examples/config_examples/development_config.json": {
+      "hash": "e18fdd4ac87ce8cd4a7df8914cf25e10",
+      "size": 2257,
+      "modified_time": "2025-09-17T07:51:14.393425"
+    },
+    "examples/config_examples/large_project_config.json": {
+      "hash": "f87a60d5d4383a158292a4f5bbd4225d",
+      "size": 3159,
+      "modified_time": "2025-09-17T07:51:14.394216"
+    },
+    "src/config/config_manager.py": {
+      "hash": "9bb6cbab0d217c826ff59fb93955940a",
+      "size": 17612,
+      "modified_time": "2025-09-16T14:05:48.180366"
+    },
+    "src/config/config_schema.py": {
+      "hash": "b915c2ed97b887f97ddfb8080d3a2a74",
+      "size": 11308,
+      "modified_time": "2025-09-17T07:50:06.306659"
+    },
+    "src/config/__init__.py": {
+      "hash": "2e9b560f42cbbdcccc3a67455ed9971a",
+      "size": 2258,
+      "modified_time": "2025-09-16T14:01:39.693294"
+    },
+    "src/config/default_config.json": {
+      "hash": "11b658d66f0818feb2549941b331e8aa",
+      "size": 4629,
+      "modified_time": "2025-09-17T07:50:34.144990"
     },
     "src/hot_reload/__init__.py": {
       "hash": "100d3c75b2885fdaac57fef0be8a02f2",
@@ -68,9 +113,9 @@
       "modified_time": "2025-09-15T17:57:13.328359"
     },
     "src/task_engine/state_tracker.py": {
-      "hash": "23c811149f23de856dba4ca8d3881de2",
-      "size": 14637,
-      "modified_time": "2025-09-15T23:53:57.264503"
+      "hash": "0e32da5a13950bda975b5f4ceadcc6b6",
+      "size": 14621,
+      "modified_time": "2025-09-17T07:59:41.741802"
     },
     "src/task_engine/__init__.py": {
       "hash": "4525b3ac65057fc3bf1b183c513c158b",
@@ -78,14 +123,14 @@
       "modified_time": "2025-09-13T17:26:41.166443"
     },
     "src/task_engine/task_manager.py": {
-      "hash": "0931da09763938740398484841b23e75",
-      "size": 13200,
-      "modified_time": "2025-09-15T15:13:16.283331"
+      "hash": "80e730ffc959c41458f8a0c1562c0d3b",
+      "size": 13134,
+      "modified_time": "2025-09-17T07:59:16.477388"
     },
     "src/task_engine/phase_controller.py": {
-      "hash": "69de6cb308f51fb2214cc243e4716fe9",
-      "size": 11071,
-      "modified_time": "2025-09-15T11:00:43.441968"
+      "hash": "a44a87d31f3239a4b79719244ffe4901",
+      "size": 10667,
+      "modified_time": "2025-09-17T07:56:07.053596"
     },
     "src/templates/__init__.py": {
       "hash": "dd51b427c37225cef4551d7a6673f281",
@@ -118,19 +163,19 @@
       "modified_time": "2025-09-15T18:10:03.268959"
     },
     "src/mcp_tools/task_init.py": {
-      "hash": "a8967c2c1a5664f3f3c82b3050c22d8c",
-      "size": 29137,
-      "modified_time": "2025-09-15T22:30:46.740515"
+      "hash": "82759d4b32b7e6b1bb8ac574feca2c14",
+      "size": 43712,
+      "modified_time": "2025-09-17T08:14:14.626323"
     },
     "src/mcp_tools/task_execute.py": {
-      "hash": "587352646ff8551d5906bbb9be547b47",
-      "size": 54000,
-      "modified_time": "2025-09-16T13:13:16.156092"
+      "hash": "c390aff487acac174a0f15f1bca0c386",
+      "size": 55219,
+      "modified_time": "2025-09-17T07:44:18.383393"
     },
     "src/mcp_tools/doc_guide.py": {
-      "hash": "4a8b769b0f7082e09940a5c89ba9a807",
-      "size": 37357,
-      "modified_time": "2025-09-15T23:53:34.510285"
+      "hash": "5f559b8b4ff63630be92859bf59cdba7",
+      "size": 37229,
+      "modified_time": "2025-09-17T08:02:38.885461"
     },
     "src/mcp_tools/init_tools.py": {
       "hash": "3acd9934ba15b4c9135d96ffb5a4e39c",
@@ -138,9 +183,9 @@
       "modified_time": "2025-09-15T21:51:32.210285"
     },
     "src/mcp_tools/__init__.py": {
-      "hash": "35331793d6f027245b7858f1cd47f82c",
-      "size": 457,
-      "modified_time": "2025-09-15T17:29:27.305191"
+      "hash": "349ff82afb9f3bc27bd7e8ede8ce66be",
+      "size": 423,
+      "modified_time": "2025-09-17T07:52:18.707195"
     },
     "src/mcp_tools/doc_update.py": {
       "hash": "1d92af815c2ab38c152d8ff46eb47c7e",
@@ -148,14 +193,9 @@
       "modified_time": "2025-09-15T22:04:46.537885"
     },
     "src/mcp_tools/task_status.py": {
-      "hash": "4021553ac099aaa5615447d483d205df",
-      "size": 23329,
-      "modified_time": "2025-09-15T22:26:05.108208"
-    },
-    "src/mcp_tools/doc_scan.py": {
-      "hash": "1f76281594a9fe4b5b90f8d4ea72e367",
-      "size": 22261,
-      "modified_time": "2025-09-16T13:09:58.845196"
+      "hash": "0f643cacd3de24ed8015382f9542c89d",
+      "size": 23264,
+      "modified_time": "2025-09-17T08:01:15.598394"
     },
     "src/mcp_tools/project_overview.py": {
       "hash": "cbb7698d73f5bcc94df45b3a8251a955",
@@ -173,9 +213,9 @@
       "modified_time": "2025-09-15T21:53:17.513966"
     },
     "src/services/file_service.py": {
-      "hash": "916a63e07c8751ac25c0d78004f278f8",
-      "size": 18127,
-      "modified_time": "2025-09-16T13:11:11.422240"
+      "hash": "64f27c4416379065ba716b1aae725d10",
+      "size": 21219,
+      "modified_time": "2025-09-16T14:38:23.822108"
     },
     "src/services/__init__.py": {
       "hash": "a11833158331c41930ad8226ec944f85",

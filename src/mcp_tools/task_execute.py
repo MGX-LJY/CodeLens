@@ -278,29 +278,30 @@ class TaskExecutor:
         self.logger.info("自动执行scan任务", {"task_id": task_id})
         
         try:
-            # 使用doc_scan生成项目分析
-            self.logger.debug("初始化DocScanTool")
-            from src.mcp_tools.doc_scan import DocScanTool
-            doc_scan_tool = DocScanTool()
-            self.logger.debug("DocScanTool初始化完成")
+            # 使用FileService生成简单的项目分析
+            self.logger.info("开始生成项目扫描报告", {"project_path": str(self.project_path)})
             
-            self.logger.info("开始执行doc_scan", {"project_path": str(self.project_path)})
-            scan_result = doc_scan_tool.execute({
-                "project_path": str(self.project_path),
-                "include_content": False,  # scan任务不需要文件内容
-                "config": {"max_files": 100}  # 限制扫描文件数量
+            # 获取项目基本信息
+            project_info = self.file_service.get_project_info(str(self.project_path))
+            
+            # 获取项目文件列表（限制数量）
+            project_files_info = self.file_service.get_project_files_info(
+                project_path=str(self.project_path),
+                include_content=False,
+                extensions=[".py", ".js", ".ts", ".java", ".go", ".rs", ".md"],
+                exclude_patterns=["__pycache__", ".git", "node_modules", "venv", ".venv"],
+                max_file_size=50000  # 50KB限制
+            )
+            
+            self.logger.info("项目信息获取完成", {
+                "total_files": project_files_info.get('statistics', {}).get('total_files', 0)
             })
-            self.logger.info("doc_scan执行完成", {"success": scan_result.get("success")})
-            
-            if not scan_result.get("success"):
-                error_msg = scan_result.get("error", "Unknown scan error")
-                self.logger.error("doc_scan执行失败", {"error": error_msg})
-                self.task_manager.update_task_status(task_id, TaskStatus.FAILED, error_msg)
-                self.logger.log_operation_end("execute_scan_task", operation_id, success=False, error=error_msg)
-                return {"success": False, "error": f"Scan failed: {error_msg}"}
             
             # 生成项目扫描报告并保存
-            scan_data = scan_result["data"]
+            scan_data = {
+                "project_info": project_info,
+                "files_info": project_files_info
+            }
             self.logger.debug("开始生成扫描报告")
             report_content = self._generate_scan_report(scan_data)
             self.logger.debug("扫描报告生成完成", {"content_length": len(report_content)})
@@ -338,19 +339,15 @@ class TaskExecutor:
     
     def _generate_scan_report(self, scan_data: Dict[str, Any]) -> str:
         """生成项目扫描报告内容"""
-        scan_result = scan_data.get("scan_result", {})
-        project_info = scan_result.get("project_info", {})
-        files = scan_result.get("files", [])
+        project_info = scan_data.get("project_info", {})
+        files_info = scan_data.get("files_info", {})
+        files = files_info.get("files", [])
+        statistics = files_info.get("statistics", {})
         
         # 统计文件信息
-        total_files = len(files)
+        total_files = statistics.get("total_files", len(files))
         python_files = len([f for f in files if f.get("extension", "") == ".py"])
-        
-        # 统计文件类型分布
-        file_types = {}
-        for file in files:
-            ext = file.get("extension", "")
-            file_types[ext] = file_types.get(ext, 0) + 1
+        file_types = statistics.get("file_types", {})
         
         # 生成目录结构
         directories = set()

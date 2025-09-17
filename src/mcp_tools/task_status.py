@@ -45,7 +45,7 @@ class TaskStatusTool:
                     },
                     "phase_filter": {
                         "type": "string",
-                        "enum": ["phase_1_scan", "phase_2_files", "phase_3_architecture", "phase_4_project"],
+                        "enum": ["phase_1_files", "phase_2_architecture", "phase_3_project"],
                         "description": "阶段过滤器（可选）"
                     },
                     "detailed_analysis": {
@@ -517,8 +517,7 @@ def main():
                                  "next_actions", "health_check"],
                         default="overall_status", help="Check type")
     parser.add_argument("--phase", dest="phase_filter",
-                        choices=["phase_1_scan", "phase_2_files", "phase_3_architecture",
-                                 "phase_4_project"],
+                        choices=["phase_1_files", "phase_2_architecture", "phase_3_project"],
                         help="Phase filter")
     parser.add_argument("--task-id", help="Specific task ID to check")
     parser.add_argument("--simple", action="store_true",
