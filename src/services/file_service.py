@@ -113,6 +113,7 @@ class FileService:
             'venv',
             'env',
             '.env',
+            '.venv',
             'dist',
             'build',
             '*.egg-info',
