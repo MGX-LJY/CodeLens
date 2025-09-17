@@ -3,7 +3,7 @@
 # 🔭 CodeLens - 智能文档协作平台
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.1.0-brightgreen" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.1.1-brightgreen" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-blue" alt="Python Version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/MCP-Protocol-orange" alt="MCP Protocol">
@@ -13,7 +13,7 @@
 
 <p align="center">
   <strong>🚀 智能化任务驱动的Claude Code协作平台</strong><br>
-  五层架构 • 热重载支持 • 10个专业工具 • 16个模板系统
+  六层架构 • 热重载支持 • 9个专业MCP工具 • 10个核心模板
 </p>
 
 <p align="center">
@@ -38,9 +38,9 @@
 <td width="50%">
 
 ### 🏗️ **架构设计**
-- **五层分离架构**：职责清晰，易于扩展
+- **六层分离架构**：职责清晰，易于扩展
 - **Task Engine驱动**：完整任务生命周期
-- **5阶段工作流**：严格依赖验证体系
+- **3阶段文档流程**：文件层→架构层→项目层
 
 ### 🔥 **开发体验**
 - **热重载支持**：实时代码更新
@@ -51,12 +51,12 @@
 <td width="50%">
 
 ### 🎯 **智能协作**
-- **10个专业工具**：完整MCP工具链
+- **9个专业MCP工具**：完整工具链集成
 - **AI辅助增强**：智能分析决策
 - **状态感知**：中断恢复能力
 
 ### 📚 **模板体系**
-- **16个核心模板**：四层架构覆盖
+- **10个核心模板**：三层架构覆盖
 - **自动识别**：5种语言8种框架
 - **定制策略**：项目特性适配
 
@@ -79,7 +79,6 @@
 | 📚 16个核心模板系统 | 四层架构(Architecture/Module/File/Project)覆盖所有文档需求 | ✅ 完成 |
 | 🤖 AI辅助工具集 | 智能文档阅读、文件变化检测、增量更新建议 | ✅ 完成 |
 | 🔥 热重载支持 | 实时监控代码变化，自动重载模块，无需重启服务 | ✅ 完成 |
-| 📄 智能大文件处理 | 50KB分片阈值+120KB处理上限，AST语义分片，支持超大代码文件 | ✅ 完成 |
 | 🛠️ 零依赖设计 | 核心功能仅使用Python标准库，部署简单 | ✅ 完成 |
 
 ## 快速开始
