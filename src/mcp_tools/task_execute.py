@@ -29,12 +29,13 @@ except ImportError:
 
 # 导入配置管理器
 try:
-    from src.config import get_file_size_limits_config, get_tool_config
+    from src.config import get_file_size_limits_config, get_tool_config, get_file_filtering_config
     HAS_CONFIG_MANAGER = True
 except ImportError:
     HAS_CONFIG_MANAGER = False
     get_file_size_limits_config = lambda: None
     get_tool_config = lambda x: {}
+    get_file_filtering_config = lambda: None
 
 
 class TaskExecutor:
@@ -285,11 +286,16 @@ class TaskExecutor:
             project_info = self.file_service.get_project_info(str(self.project_path))
             
             # 获取项目文件列表（限制数量）
+            # 从配置获取过滤规则
+            filtering_config = get_file_filtering_config() if HAS_CONFIG_MANAGER else None
+            exclude_patterns = filtering_config.exclude_patterns if filtering_config else ["__pycache__", ".git", "node_modules", "venv", ".venv"]
+            extensions = filtering_config.include_extensions if filtering_config else [".py", ".js", ".ts", ".java", ".go", ".rs", ".md"]
+            
             project_files_info = self.file_service.get_project_files_info(
                 project_path=str(self.project_path),
                 include_content=False,
-                extensions=[".py", ".js", ".ts", ".java", ".go", ".rs", ".md"],
-                exclude_patterns=["__pycache__", ".git", "node_modules", "venv", ".venv"],
+                extensions=extensions,
+                exclude_patterns=exclude_patterns,
                 max_file_size=50000  # 50KB限制
             )
             

@@ -15,6 +15,7 @@ sys.path.insert(0, project_root)
 
 from src.task_engine.task_manager import TaskManager, TaskStatus
 from src.task_engine.state_tracker import StateTracker
+from src.task_engine.phase_controller import PhaseController, Phase, PhaseStatus
 
 # 导入日志系统
 try:
@@ -168,12 +169,16 @@ class TaskCompleteTool:
                         "error": str(e)
                     })
                 
+                # 检查是否需要执行项目清理
+                cleanup_result = self._check_and_cleanup_project(project_path, task_manager)
+                
                 result = {
                     "success": True,
                     "message": f"Task {task_id} completed successfully",
                     "task_id": task_id,
                     "output_file": str(expected_output),
                     "verification": verification_result,
+                    "cleanup": cleanup_result,
                     "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
                 }
                 
@@ -266,6 +271,131 @@ class TaskCompleteTool:
         })
         result["valid"] = True
         return result
+    
+    def _check_and_cleanup_project(self, project_path: str, task_manager: TaskManager) -> Dict[str, Any]:
+        """检查项目状态并在所有阶段完成时执行清理操作"""
+        cleanup_result = {
+            "cleanup_performed": False,
+            "files_cleaned": [],
+            "cleanup_errors": [],
+            "project_status": "in_progress"
+        }
+        
+        try:
+            # 初始化阶段控制器
+            phase_controller = PhaseController(task_manager)
+            
+            # 检查所有阶段状态
+            all_phases_completed = True
+            phases_status = {}
+            
+            for phase in Phase:
+                status = phase_controller.get_phase_status(phase)
+                phases_status[phase.value] = status.value
+                if status != PhaseStatus.COMPLETED:
+                    all_phases_completed = False
+            
+            cleanup_result["phases_status"] = phases_status
+            
+            self.logger.info("项目阶段状态检查", {
+                "all_phases_completed": all_phases_completed,
+                "phases_status": phases_status
+            })
+            
+            # 如果所有阶段都完成，执行清理操作
+            if all_phases_completed:
+                cleanup_result["project_status"] = "completed"
+                cleanup_result.update(self._perform_cleanup(project_path))
+                
+                self.logger.info("项目所有阶段已完成，执行清理操作", {
+                    "cleanup_performed": cleanup_result["cleanup_performed"],
+                    "files_cleaned_count": len(cleanup_result["files_cleaned"])
+                })
+            else:
+                self.logger.debug("项目仍有未完成阶段，跳过清理操作")
+                
+        except Exception as e:
+            cleanup_result["cleanup_errors"].append(f"清理检查失败: {str(e)}")
+            self.logger.error("项目清理检查失败", {
+                "error": str(e)
+            }, exc_info=True)
+        
+        return cleanup_result
+    
+    def _perform_cleanup(self, project_path: str) -> Dict[str, Any]:
+        """执行项目清理操作"""
+        cleanup_info = {
+            "cleanup_performed": True,
+            "files_cleaned": [],
+            "cleanup_errors": []
+        }
+        
+        project_path = Path(project_path)
+        codelens_dir = project_path / ".codelens"
+        
+        # 定义需要清理的临时文件模式
+        temp_file_patterns = [
+            "analysis*.json",
+            "temp_*.json", 
+            "cache_*.json",
+            "scan_*.json",
+            "*_temp.json",
+            "*_cache.json",
+            "*.tmp",
+            "*.temp"
+        ]
+        
+        # 保留的重要文件
+        keep_files = {
+            "file_fingerprints.json",
+            "change_history.json",
+            "last_change.json",
+            "task_state.json",
+            "config.json"
+        }
+        
+        try:
+            if codelens_dir.exists():
+                # 清理临时文件
+                for pattern in temp_file_patterns:
+                    for file_path in codelens_dir.glob(pattern):
+                        if file_path.name not in keep_files:
+                            try:
+                                file_path.unlink()
+                                cleanup_info["files_cleaned"].append(str(file_path.relative_to(project_path)))
+                                self.logger.debug(f"清理临时文件: {file_path}")
+                            except Exception as e:
+                                error_msg = f"删除文件失败 {file_path}: {str(e)}"
+                                cleanup_info["cleanup_errors"].append(error_msg)
+                                self.logger.warning(error_msg)
+                
+                # 清理空的缓存目录
+                cache_dirs = ["cache", "temp", "analysis"]
+                for cache_dir_name in cache_dirs:
+                    cache_dir = codelens_dir / cache_dir_name
+                    if cache_dir.exists() and cache_dir.is_dir():
+                        try:
+                            # 只删除空目录
+                            if not any(cache_dir.iterdir()):
+                                cache_dir.rmdir()
+                                cleanup_info["files_cleaned"].append(str(cache_dir.relative_to(project_path)))
+                                self.logger.debug(f"清理空缓存目录: {cache_dir}")
+                        except Exception as e:
+                            error_msg = f"删除缓存目录失败 {cache_dir}: {str(e)}"
+                            cleanup_info["cleanup_errors"].append(error_msg)
+                            self.logger.warning(error_msg)
+                
+            self.logger.info("项目清理操作完成", {
+                "files_cleaned_count": len(cleanup_info["files_cleaned"]),
+                "errors_count": len(cleanup_info["cleanup_errors"])
+            })
+            
+        except Exception as e:
+            error_msg = f"项目清理操作失败: {str(e)}"
+            cleanup_info["cleanup_errors"].append(error_msg)
+            self.logger.error(error_msg, exc_info=True)
+        
+        return cleanup_info
 
 
 def main():

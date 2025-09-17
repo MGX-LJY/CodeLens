@@ -121,7 +121,36 @@ class TaskPlanGenerator:
         }
 
     def _use_default_file_filters(self):
-        """使用默认文件过滤规则"""
+        """使用默认文件过滤规则 - 优先使用配置系统"""
+        # 首先尝试使用配置系统
+        if HAS_CONFIG_MANAGER:
+            try:
+                filtering_config = get_file_filtering_config()
+                file_size_config = get_file_size_limits_config()
+                
+                if filtering_config and file_size_config:
+                    self.file_filters = {
+                        "exclude_patterns": filtering_config.exclude_patterns,
+                        "exclude_directories": filtering_config.exclude_directories,
+                        "min_file_size": file_size_config.min_file_size,
+                        "max_files_per_project": filtering_config.smart_filtering.get('max_files_per_project', 25) if hasattr(filtering_config, 'smart_filtering') else 25
+                    }
+                    
+                    self.logger.info("使用配置系统的过滤规则", {
+                        "exclude_patterns_count": len(self.file_filters["exclude_patterns"]),
+                        "exclude_directories_count": len(self.file_filters["exclude_directories"]),
+                        "min_file_size": self.file_filters["min_file_size"],
+                        "max_files_per_project": self.file_filters["max_files_per_project"]
+                    })
+                    return
+                else:
+                    self.logger.warning("配置系统返回空配置，使用默认规则")
+            except Exception as e:
+                self.logger.warning(f"配置系统访问失败，使用默认规则: {e}")
+        else:
+            self.logger.debug("配置系统不可用，使用默认屏蔽规则")
+        
+        # 使用默认规则作为后备
         self.file_filters = {
             "exclude_patterns": [
                 "__init__.py",  # 空的初始化文件
@@ -158,11 +187,18 @@ class TaskPlanGenerator:
                 "dist",
                 "logs",
                 "temp",
-                "tmp"
+                "tmp",
+                "src/config",  # 排除配置目录
+                "config"  # 排除配置目录
             ],
             "min_file_size": 50,  # 最小文件大小（字节）
             "max_files_per_project": 25  # 每个项目最大文件数
         }
+        
+        self.logger.info("使用默认过滤规则", {
+            "exclude_patterns_count": len(self.file_filters["exclude_patterns"]),
+            "exclude_directories_count": len(self.file_filters["exclude_directories"])
+        })
 
     def _get_include_extensions(self) -> List[str]:
         """获取要包含的文件扩展名"""

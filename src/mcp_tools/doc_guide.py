@@ -19,6 +19,14 @@ sys.path.insert(0, project_root)
 from src.services.file_service import FileService  # noqa: E402
 from src.logging import get_logger  # noqa: E402
 
+# 导入配置管理器
+try:
+    from src.config import get_file_filtering_config
+    HAS_CONFIG_MANAGER = True
+except ImportError:
+    HAS_CONFIG_MANAGER = False
+    get_file_filtering_config = lambda: None
+
 
 class ProjectAnalyzer:
     """项目分析器"""
@@ -204,12 +212,70 @@ class ProjectAnalyzer:
         }
 
     def _get_file_info(self, project_path: Path, config: Dict[str, Any]) -> Dict[str, Any]:
-        """获取文件信息"""
+        """获取文件信息 - 优先使用配置系统"""
         ignore_patterns = config.get("ignore_patterns", {})
         file_patterns = ignore_patterns.get("files", [])
         dir_patterns = ignore_patterns.get("directories", [])
 
-        # 扩展默认忽略模式 - 强化版本，排除所有非代码文件
+        # 从配置系统获取屏蔽规则
+        if HAS_CONFIG_MANAGER:
+            try:
+                filtering_config = get_file_filtering_config()
+                if filtering_config:
+                    # 使用配置系统的过滤规则
+                    config_exclude_patterns = filtering_config.exclude_patterns
+                    config_exclude_dirs = filtering_config.exclude_directories
+                    
+                    # 合并用户指定和配置系统的规则
+                    all_ignore_files = list(set(file_patterns + config_exclude_patterns))
+                    all_ignore_dirs = list(set(dir_patterns + config_exclude_dirs))
+                    
+                    self.logger.debug("使用配置系统的过滤规则", {
+                        "config_exclude_patterns_count": len(config_exclude_patterns),
+                        "config_exclude_dirs_count": len(config_exclude_dirs),
+                        "user_file_patterns_count": len(file_patterns),
+                        "user_dir_patterns_count": len(dir_patterns)
+                    })
+                else:
+                    # 配置为空，使用默认规则
+                    all_ignore_files, all_ignore_dirs = self._get_default_ignore_patterns(file_patterns, dir_patterns)
+            except Exception as e:
+                self.logger.warning(f"配置系统访问失败，使用默认规则: {e}")
+                all_ignore_files, all_ignore_dirs = self._get_default_ignore_patterns(file_patterns, dir_patterns)
+        else:
+            # 配置系统不可用，使用默认规则
+            self.logger.debug("配置系统不可用，使用默认屏蔽规则")
+            all_ignore_files, all_ignore_dirs = self._get_default_ignore_patterns(file_patterns, dir_patterns)
+
+        # 扫描文件
+        files = []
+        file_distribution = Counter()
+        directory_structure = []
+
+        for file_path in project_path.rglob("*"):
+            if file_path.is_file():
+                # 检查是否应该忽略
+                if self._should_ignore_file(file_path, all_ignore_files, all_ignore_dirs):
+                    continue
+
+                relative_path = file_path.relative_to(project_path)
+                files.append(str(relative_path))
+                file_distribution[file_path.suffix] += 1
+
+                # 记录目录结构
+                parent_dir = str(relative_path.parent)
+                if parent_dir != "." and parent_dir not in directory_structure:
+                    directory_structure.append(parent_dir)
+
+        return {
+            "files": files,
+            "file_distribution": dict(file_distribution),
+            "directory_structure": directory_structure
+        }
+    
+    def _get_default_ignore_patterns(self, file_patterns: List[str], dir_patterns: List[str]) -> tuple:
+        """获取默认的忽略模式"""
+        # 默认忽略文件模式 - 强化版本，排除所有非代码文件
         default_ignore_files = [
             # 文档和文本文件
             "*.md", "*.txt", "*.log", "*.tmp", "*.cache", "*.temp",
@@ -240,32 +306,8 @@ class ProjectAnalyzer:
 
         all_ignore_files = list(set(file_patterns + default_ignore_files))
         all_ignore_dirs = list(set(dir_patterns + default_ignore_dirs))
-
-        # 扫描文件
-        files = []
-        file_distribution = Counter()
-        directory_structure = []
-
-        for file_path in project_path.rglob("*"):
-            if file_path.is_file():
-                # 检查是否应该忽略
-                if self._should_ignore_file(file_path, all_ignore_files, all_ignore_dirs):
-                    continue
-
-                relative_path = file_path.relative_to(project_path)
-                files.append(str(relative_path))
-                file_distribution[file_path.suffix] += 1
-
-                # 记录目录结构
-                parent_dir = str(relative_path.parent)
-                if parent_dir != "." and parent_dir not in directory_structure:
-                    directory_structure.append(parent_dir)
-
-        return {
-            "files": files,
-            "file_distribution": dict(file_distribution),
-            "directory_structure": directory_structure
-        }
+        
+        return all_ignore_files, all_ignore_dirs
 
     @staticmethod
     def _should_ignore_file(file_path: Path, ignore_files: List[str], ignore_dirs: List[str]) -> bool:

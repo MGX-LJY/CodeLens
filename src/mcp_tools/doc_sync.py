@@ -16,6 +16,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, project_root)
 
 from src.logging import get_logger
+from src.config import get_file_filtering_config, get_file_size_limits_config
 
 
 class DocSyncTool:
@@ -297,32 +298,30 @@ class DocSyncTool:
         })
 
     def _scan_project_files(self, project_path: Path) -> Dict[str, Dict[str, Any]]:
-        """扫描项目文件 - 重用现有逻辑"""
+        """扫描项目文件 - 使用配置系统"""
         current_files = {}
         
-        # 定义需要忽略的目录
-        ignore_dirs = {
-            '.git', '__pycache__', '.pytest_cache', 'node_modules', 
-            '.idea', '.vscode', 'venv', 'env', '.env', 'dist', 'build',
-            'docs',  # 排除文档目录
-            '.codelens'  # 排除codelens工作目录
-        }
+        # 从配置获取过滤规则
+        filtering_config = get_file_filtering_config()
+        size_limits_config = get_file_size_limits_config()
         
-        # 定义需要忽略的文件扩展名（文档文件）
-        ignore_extensions = {
-            '.md', '.txt', '.rst', '.doc', '.docx', '.pdf',
-            '.log', '.tmp', '.temp', '.cache', '.bak',
-            '.pyc', '.pyo', '.pyd', '__pycache__'
-        }
+        # 获取需要忽略的目录
+        ignore_dirs = set(filtering_config.exclude_directories)
+        ignore_dirs.add('.codelens')  # 总是排除codelens工作目录
         
-        # 定义需要检测的文件扩展名（代码文件）
-        code_extensions = {
-            '.py', '.js', '.jsx', '.ts', '.tsx', '.json', '.yaml', '.yml',
-            '.toml', '.cfg', '.ini', '.conf', '.sh', '.bat', '.ps1',
-            '.html', '.css', '.scss', '.less', '.vue', '.go', '.rs',
-            '.java', '.kt', '.cpp', '.c', '.h', '.hpp', '.cs', '.php',
-            '.rb', '.swift', '.dart', '.sql', '.r', '.m', '.scala'
-        }
+        # 获取需要检测的文件扩展名
+        code_extensions = set(filtering_config.include_extensions)
+        
+        # 从排除模式中提取扩展名（简化处理）
+        ignore_extensions = set()
+        for pattern in filtering_config.exclude_patterns:
+            if pattern.startswith('.'):
+                ignore_extensions.add(pattern)
+            elif '.' in pattern:
+                # 处理类似 *.md 的模式
+                if pattern.startswith('*.'):
+                    ignore_extensions.add(pattern[1:])
+        ignore_extensions.add('__pycache__')
         
         # 遍历整个项目目录
         for file_path in project_path.rglob("*"):

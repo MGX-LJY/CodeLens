@@ -72,7 +72,8 @@
       "temp", "tmp", ".tmp",
       "cache", ".cache",
       "coverage", ".coverage",
-      "docs/_build", "site"
+      "docs/_build", "site",
+      "src/config", "config"
     ],
     "smart_filtering": {
       "enabled": true,
