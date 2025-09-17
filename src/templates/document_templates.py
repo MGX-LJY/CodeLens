@@ -41,7 +41,7 @@ class TemplateService:
         self.file_templates = FileTemplates()
         self.project_templates = ProjectTemplates()
         
-        # 模板注册表 - 8个模板
+        # 模板注册表 - 12个模板（增加创造模式3个模板）
         self.template_registry = {
             # 架构层模板 (6个)
             'architecture': self.arch_templates.OVERVIEW_TEMPLATE,
@@ -54,9 +54,14 @@ class TemplateService:
             # 文件层模板 (1个)
             'file_summary': self.file_templates.SUMMARY_TEMPLATE,
             
-            # 项目层模板 (2个)
+            # 项目层模板 (5个)
             'project_readme': self.project_templates.README_TEMPLATE,
-            'changelog': self.project_templates.CHANGELOG_TEMPLATE
+            'changelog': self.project_templates.CHANGELOG_TEMPLATE,
+            
+            # 创造模式模板 (3个)
+            'create_requirement': self.project_templates.REQUIREMENT_TEMPLATE,
+            'create_analysis': self.project_templates.ANALYSIS_TEMPLATE,
+            'create_todo': self.project_templates.TODO_TEMPLATE
         }
         
         # 初始化日志器
@@ -65,11 +70,12 @@ class TemplateService:
             "template_count": len(self.template_registry),
             "architecture_templates": 6,
             "file_templates": 1,
-            "project_templates": 2
+            "project_templates": 5,
+            "create_mode_templates": 3
         })
 
     def get_template_list(self) -> List[Dict[str, Any]]:
-        """获取模板列表 - 10个核心模板"""
+        """获取模板列表 - 12个核心模板（包含3个创造模式模板）"""
         return [
             # ============== 架构层模板 (6个) ==============
             {
@@ -171,6 +177,54 @@ class TemplateService:
                 'layer': 'project',
                 'file_path': '/docs/project/CHANGELOG.md',
                 'variables': ['project_name', 'version_entries']
+            },
+
+            # ============== 创造模式模板 (3个) ==============
+            {
+                'name': 'create_requirement',
+                'description': '功能需求确认模板 - 创造模式第一阶段：确认功能需求和验收标准',
+                'type': 'create_mode_level',
+                'layer': 'create',
+                'file_path': '/docs/project/create/requirements/[requirement_id].md',
+                'variables': ['feature_name', 'requirement_id', 'created_time', 'creator', 'project_name',
+                              'feature_overview', 'business_background', 'user_scenarios', 'core_requirements',
+                              'feature_boundaries', 'performance_requirements', 'compatibility_requirements',
+                              'acceptance_criteria', 'testing_requirements', 'quality_standards',
+                              'technical_constraints', 'dependencies', 'risk_assessment', 'priority_level',
+                              'urgency_level', 'estimated_effort', 'notes']
+            },
+            {
+                'name': 'create_analysis',
+                'description': '功能实现分析模板 - 创造模式第二阶段：分析实现方案和影响',
+                'type': 'create_mode_level',
+                'layer': 'create',
+                'file_path': '/docs/project/create/analysis/[analysis_id].md',
+                'variables': ['feature_name', 'requirement_id', 'analysis_id', 'analysis_time', 'analyzer',
+                              'architecture_impact', 'existing_components', 'new_components', 'main_files_to_modify',
+                              'core_functions_classes', 'data_structure_changes', 'directly_affected_files',
+                              'indirectly_affected_files', 'dependency_changes', 'interface_impact',
+                              'technology_choices', 'implementation_steps', 'key_technical_points', 'potential_risks',
+                              'unit_test_strategy', 'integration_test_strategy', 'regression_test_strategy',
+                              'performance_impact', 'optimization_suggestions', 'backward_compatibility',
+                              'api_compatibility', 'deployment_impact', 'configuration_changes', 'data_migration',
+                              'implementation_recommendations', 'risk_mitigation', 'next_actions', 'pending_confirmations']
+            },
+            {
+                'name': 'create_todo',
+                'description': '功能实现计划模板 - 创造模式第三阶段：生成详细实现计划',
+                'type': 'create_mode_level',
+                'layer': 'create',
+                'file_path': '/docs/project/create/todos/[todo_id].md',
+                'variables': ['feature_name', 'requirement_id', 'analysis_id', 'todo_id', 'plan_time', 'planner',
+                              'overall_strategy', 'implementation_phases', 'estimated_time', 'phase_1_preparation',
+                              'phase_2_core_implementation', 'phase_3_integration_testing', 'phase_4_documentation',
+                              'new_files', 'modified_files', 'deleted_files', 'new_functions_classes',
+                              'modified_functions_classes', 'deleted_functions_classes', 'unit_test_tasks',
+                              'integration_test_tasks', 'manual_test_tasks', 'function_verification',
+                              'performance_verification', 'compatibility_verification', 'critical_risks',
+                              'risk_responses', 'rollback_plan', 'external_dependencies', 'internal_dependencies',
+                              'resource_requirements', 'completion_criteria', 'quality_gates', 'deliverables',
+                              'milestone_schedule', 'key_milestones', 'delivery_timeline', 'implementation_notes']
             },
 
         ]

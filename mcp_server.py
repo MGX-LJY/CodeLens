@@ -26,6 +26,12 @@ from src.mcp_tools.task_complete import TaskCompleteTool
 from src.mcp_tools.project_overview import ProjectOverviewTool
 from src.mcp_tools.doc_sync import DocSyncTool
 
+# 导入创造模式工具
+from src.mcp_tools.create_guide import CreateGuideTool
+from src.mcp_tools.create_requirement import CreateRequirementTool
+from src.mcp_tools.create_analysis import CreateAnalysisTool
+from src.mcp_tools.create_todo import CreateTodoTool
+
 # 导入热重载功能
 from src.hot_reload import HotReloadManager
 
@@ -38,6 +44,7 @@ hot_reload_manager: Optional[HotReloadManager] = None
 def create_tool_instances():
     """创建工具实例"""
     return {
+        # 原有的文档模式工具
         "init_tools": InitTools(),
         "doc_guide": DocGuideTool(),
         "task_init": TaskInitTool(),
@@ -45,7 +52,13 @@ def create_tool_instances():
         "task_status": TaskStatusTool(),
         "task_complete": TaskCompleteTool(),
         "project_overview": ProjectOverviewTool(),
-        "doc_sync": DocSyncTool()
+        "doc_sync": DocSyncTool(),
+        
+        # 创造模式工具
+        "create_guide": CreateGuideTool(),
+        "create_requirement": CreateRequirementTool(),
+        "create_analysis": CreateAnalysisTool(),
+        "create_todo": CreateTodoTool()
     }
 
 # 初始化CodeLens工具

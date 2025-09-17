@@ -1,0 +1,118 @@
+{
+  "project_analysis": {
+    "project_type": "python",
+    "main_framework": "gin",
+    "identified_modules": [
+      "src",
+      "config",
+      "hot_reload",
+      "task_engine",
+      "logging",
+      "mcp_tools",
+      "services"
+    ],
+    "code_complexity": "medium",
+    "file_count": 48,
+    "key_files": [
+      "src/config/__init__.py",
+      "src/services/__init__.py",
+      "src/config/config_schema.py",
+      "src/__init__.py",
+      "src/hot_reload/__init__.py",
+      "src/task_engine/__init__.py",
+      "src/logging/__init__.py",
+      "src/mcp_tools/__init__.py",
+      "src/services/large_file_handler.py",
+      "claude_code_config.json",
+      "src/config/config_manager.py",
+      "src/config/default_config.json",
+      "src/logging/config.py",
+      "src/task_engine/phase_controller.py",
+      ".claude/settings.local.json",
+      "examples/config_usage_examples.py",
+      "examples/config_examples/production_config.json",
+      "examples/config_examples/development_config.json",
+      "examples/config_examples/large_project_config.json",
+      "src/services/file_service.py"
+    ],
+    "file_distribution": {
+      ".json": 11,
+      ".py": 36,
+      "": 1
+    },
+    "directory_structure": [
+      "bin",
+      ".claude",
+      ".codelens",
+      "examples",
+      "src",
+      "examples/config_examples",
+      "src/config",
+      "src/hot_reload",
+      "src/task_engine",
+      "src/logging",
+      "src/mcp_tools",
+      "src/services"
+    ]
+  },
+  "documentation_strategy": {
+    "execution_phases": [
+      "files_first",
+      "architecture_second",
+      "project_last"
+    ],
+    "priority_strategy": "bottom_up",
+    "priority_files": [
+      "src/config/__init__.py",
+      "src/services/__init__.py",
+      "src/config/config_schema.py",
+      "src/__init__.py",
+      "src/hot_reload/__init__.py",
+      "src/task_engine/__init__.py",
+      "src/logging/__init__.py",
+      "src/mcp_tools/__init__.py",
+      "src/services/large_file_handler.py",
+      "claude_code_config.json"
+    ],
+    "estimated_templates": 40,
+    "complexity_level": "medium"
+  },
+  "generation_plan": {
+    "phase_1_files": [
+      "src/config/__init__.py",
+      "src/services/__init__.py",
+      "src/config/config_schema.py",
+      "src/__init__.py",
+      "src/hot_reload/__init__.py",
+      "src/task_engine/__init__.py",
+      "src/logging/__init__.py",
+      "src/mcp_tools/__init__.py",
+      "src/services/large_file_handler.py",
+      "claude_code_config.json",
+      "src/config/config_manager.py",
+      "src/config/default_config.json",
+      "src/logging/config.py",
+      "src/task_engine/phase_controller.py",
+      ".claude/settings.local.json",
+      "examples/config_usage_examples.py",
+      "examples/config_examples/production_config.json",
+      "examples/config_examples/development_config.json",
+      "examples/config_examples/large_project_config.json",
+      "src/services/file_service.py"
+    ],
+    "phase_2_architecture": [
+      "system_overview",
+      "tech_stack",
+      "data_flow",
+      "deployment_architecture",
+      "package_structure",
+      "dependency_management"
+    ],
+    "phase_3_project": [
+      "project_readme"
+    ],
+    "estimated_duration": "2 hours 30 minutes"
+  },
+  "timestamp": 1758102708.06591,
+  "version": "1.0"
+}

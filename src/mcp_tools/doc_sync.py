@@ -127,7 +127,7 @@ class DocSyncTool:
         try:
             with open(fingerprints_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            if "files" in data and isinstance(data["files"], dict) and len(data["files"]) > 0:
+            if "files" in data and isinstance(data["files"], dict):
                 self.logger.info(f"发现有效指纹文件，包含{len(data['files'])}个文件记录，将执行更新检测")
                 return "update"
         except (json.JSONDecodeError, KeyError) as e:
