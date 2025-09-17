@@ -41,28 +41,41 @@ class LogRecord:
         }
 
     def to_json(self) -> str:
-        """转换为JSON字符串"""
-        record_dict = {
-            "timestamp": self.timestamp,
-            "level": self.level,
-            "component": self.component,
-            "operation": self.operation,
-            "message": self.message,
-            "context": self.context,
-            "metadata": self.metadata
-        }
-
+        """转换为易读的混合格式字符串"""
+        # 清理时间戳（去掉'Z'后缀）
+        clean_timestamp = self.timestamp.rstrip('Z')
+        
+        # 基础格式：timestamp [level] [component/operation] "message"
+        parts = [
+            clean_timestamp,
+            f"[{self.level}]",
+            f"[{self.component}/{self.operation}]", 
+            f'"{self.message}"'
+        ]
+        
+        # 添加上下文字段（平铺显示）
+        if self.context:
+            for key, value in self.context.items():
+                if isinstance(value, str):
+                    # 字符串值用引号包围
+                    parts.append(f'{key}="{value}"')
+                elif isinstance(value, (int, float, bool)):
+                    # 数字和布尔值直接显示
+                    parts.append(f'{key}={value}')
+                else:
+                    # 复杂对象转为JSON
+                    parts.append(f'{key}={json.dumps(value, ensure_ascii=False)}')
+        
         # 添加异常信息
         if self.exc_info:
-            record_dict["exception"] = {
-                "type": type(self.exc_info).__name__,
-                "message": str(self.exc_info),
-                "traceback": traceback.format_exception(
-                    type(self.exc_info), self.exc_info, self.exc_info.__traceback__
-                )
-            }
-
-        return json.dumps(record_dict, ensure_ascii=False, separators=(',', ':'))
+            error_msg = f"{type(self.exc_info).__name__}: {str(self.exc_info)}"
+            parts.append(f'error="{error_msg}"')
+        
+        # 添加请求ID（简化元数据显示）
+        if self.metadata.get("request_id"):
+            parts.append(f'req_id={self.metadata["request_id"]}')
+        
+        return " ".join(parts)
 
     def to_simple(self) -> str:
         """转换为简单格式字符串"""

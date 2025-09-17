@@ -1,123 +1,207 @@
-# 文件分析报告：src/templates/templates/project_templates.py
+# src/templates/templates/project_templates.py - 项目层模板集合
 
 ## 文件概述
+CodeLens三层架构模板系统的项目层模板文件，提供5个项目整体文档和管理相关的模板，包括传统的README和变更日志，以及创造模式的三阶段模板。
 
-**文件路径**: `/src/templates/templates/project_templates.py`  
-**文件类型**: Python模块  
-**主要作用**: CodeLens项目层模板集合，提供3个核心的项目级文档模板  
-**代码行数**: 约400行  
-**复杂度**: 中等
+## 导入模块
+无外部依赖，纯模板定义文件。
 
-这个文件实现了ProjectTemplates类，为项目README、变更日志、发展路线等核心项目文档提供标准化模板，是3层文档架构中项目层的完整实现。它在Phase 4阶段发挥关键作用，支持项目整体文档和管理相关的模板化生成。
+## 全局变量
+无全局变量，所有模板封装在类中。
 
-## 代码结构分析
+## 核心常量
+- **模板总数**: 5个
+- **传统模板**: 2个（README + CHANGELOG）
+- **创造模式模板**: 3个（需求确认 + 实现分析 + TODO计划）
 
-### 导入依赖
-无外部导入，纯模板字符串定义
+## 类汇总表
 
-### 全局变量和常量
-- **3个项目模板常量**: README_TEMPLATE, CHANGELOG_TEMPLATE, ROADMAP_TEMPLATE
-- **模板变量**: 每个模板包含特定的项目信息变量占位符
+| 类名 | 功能 | 模板数量 | 特性 |
+|------|------|----------|------|
+| `ProjectTemplates` | 项目层文档模板集合 | 5个 | 传统+创造模式 |
 
-### 配置和设置
-- **模板格式**: 使用Python字符串格式化语法（{variable}）
-- **文档结构**: 每个模板都包含标准的项目文档结构
+## 详细模板分析
 
-## 函数详细分析
+### 1. README_TEMPLATE - 项目主文档模板
+**目标文档**: `/docs/project/README.md`
 
-### 函数概览表
-| 函数名 | 参数数量 | 返回类型 | 主要功能 |
-|--------|----------|----------|----------|
-| 无函数 | - | - | - |
-
-### 函数详细说明
-本文件不包含任何函数定义，主要是项目文档模板字符串的定义。
-
-## 类详细分析
-
-### 类概览表
-| 类名 | 继承关系 | 主要属性 | 主要方法 | 核心功能 |
-|------|----------|----------|----------|----------|
-| ProjectTemplates | - | 3个模板常量 | - | 项目模板容器 |
-
-### 类详细说明
-
-**ProjectTemplates类**
-- **核心属性**: 3个项目层模板常量
-  - `README_TEMPLATE`: 项目主文档模板
-  - `CHANGELOG_TEMPLATE`: 变更日志模板
-  - `ROADMAP_TEMPLATE`: 发展路线模板
-- **设计模式**: 容器模式，提供项目层模板资源的统一访问
-
-## 函数调用流程图
-
-```mermaid
-graph TD
-    A[ProjectTemplates访问] --> B[选择模板类型]
-    B --> C[README_TEMPLATE]
-    B --> D[CHANGELOG_TEMPLATE]
-    B --> E[ROADMAP_TEMPLATE]
-    
-    C --> F[项目主文档生成]
-    D --> G[变更日志生成]
-    E --> H[发展路线文档]
-    
-    F --> I[项目对外展示]
-    G --> I
-    H --> I
-    
-    style A fill:#e1f5fe
-    style I fill:#f3e5f5
+#### 核心结构
+```markdown
+# {project_name} - {project_subtitle}
+## 项目概述
+## 核心特性  
+## 快速开始
+## 项目状态
+## 技术架构
+## 使用示例
+## 开发路线图
+## 贡献指南
+## 许可证
 ```
 
-## 变量作用域分析
+#### 关键变量
+- `project_name`: 项目名称
+- `project_subtitle`: 项目副标题
+- `project_overview`: 项目概述
+- `core_features`: 核心特性列表
+- `environment_requirements`: 环境要求
+- `step_2_name`, `step_2_content`: 自定义安装步骤
+- `current_version`: 当前版本
+- `tech_architecture`: 技术架构描述
+- `usage_examples`: 使用示例
+- `roadmap`: 开发路线图
 
-| 变量类型 | 作用域 | 生命周期 | 访问权限 |
-|----------|--------|----------|----------|
-| 模板常量 | 类级别 | 类生命周期 | public |
-| 模板变量 | 模板内部 | 格式化期间 | template-scope |
+### 2. CHANGELOG_TEMPLATE - 变更日志模板
+**目标文档**: `/docs/project/CHANGELOG.md`
 
-## 函数依赖关系
-
-本文件主要是静态模板定义，与以下组件协作：
-
-```mermaid
-graph LR
-    A[ProjectTemplates] --> B[TemplateService]
-    B --> C[task_execute工具]
-    C --> D[Phase 4项目文档]
-    D --> E[项目文档生成]
-    
-    style A fill:#e8f5e8
-    style D fill:#fff3e0
+#### 核心结构
+```markdown
+# {project_name} 更新日志
+{version_entries}
 ```
 
-### 在4阶段文档生成系统中的作用
+#### 特点
+- 简洁的版本记录格式
+- 支持动态版本条目
+- 标准化变更记录
 
-1. **Phase 1 (项目扫描)**: 暂不参与
-2. **Phase 2 (文件分析)**: 暂不参与
-3. **Phase 3 (架构分析)**: 为项目文档提供架构信息引用
-4. **Phase 4 (项目文档)**: 核心作用阶段，提供3种项目文档模板
+### 3. REQUIREMENT_TEMPLATE - 需求确认模板（创造模式第一阶段）
+**目标文档**: `/docs/project/create/requirements/[requirement_id].md`
 
-**核心价值**:
-- **对外展示**: 为项目提供专业的对外展示文档
-- **版本管理**: 提供结构化的变更追踪和版本规划
-- **标准化格式**: 确保项目文档的专业性和一致性
-- **完整覆盖**: 涵盖项目介绍、变更历史、未来规划等关键信息
+#### 核心结构
+```markdown
+# 功能需求确认文档
+## 基本信息
+## 用户描述  
+## AI理解和分析
+## 用户确认和修正
+```
 
-**模板类型详解**:
-- **README模板**: 
-  - 项目概述和核心特性
-  - 环境要求和快速开始指南
-  - 技术架构和使用示例
-  - 贡献指南和许可证信息
-- **CHANGELOG模板**:
-  - 版本变更记录
-  - 结构化的更新日志格式
-  - 功能增加、修复、改进的分类记录
-- **ROADMAP模板**:
-  - 总体目标和版本规划
-  - 长期愿景和技术演进
-  - 社区建设和发展方向
+#### 创新特性
+- **交互式需求确认**: 用户描述 → AI理解 → 用户修正
+- **结构化需求记录**: requirement_id, requirement_type等
+- **标准化字段**: feature_name, created_time, creator等
 
-这是CodeLens系统在Phase 4阶段的核心模板资源，为项目提供完整、专业的对外展示文档，确保项目形象的统一性和专业性。
+#### 关键变量
+- `requirement_id`: 唯一需求标识
+- `user_description`: 用户原始描述
+- `ai_description`: AI理解和分析
+- `user_revision`: 用户确认和修正
+- `requirement_type`: 需求类型（new_feature, enhancement, fix）
+
+### 4. ANALYSIS_TEMPLATE - 实现分析模板（创造模式第二阶段）
+**目标文档**: `/docs/project/create/analysis/[analysis_id].md`
+
+#### 核心结构
+```markdown
+# 功能实现分析报告
+## 基本信息
+## 架构分析
+### 系统架构影响
+```
+
+#### 分析维度
+- **架构影响评估**: 对现有系统的影响分析
+- **实现方案设计**: 技术实现路径
+- **风险评估**: 潜在风险和解决方案
+- **依赖分析**: 与现有组件的依赖关系
+
+#### 关键变量
+- `analysis_id`: 唯一分析标识
+- `requirement_id`: 关联的需求ID
+- `architecture_impact`: 架构影响分析
+- `implementation_approach`: 实现方法
+- `risk_assessment`: 风险评估
+
+### 5. TODO_TEMPLATE - 实现计划模板（创造模式第三阶段）
+**开发中模板**，用于生成详细的实现步骤和任务分解。
+
+## 创造模式工作流程
+
+### 三阶段渐进式开发
+```
+阶段1: 需求确认 → REQUIREMENT_TEMPLATE
+     ↓
+阶段2: 分析实现 → ANALYSIS_TEMPLATE  
+     ↓
+阶段3: 生成计划 → TODO_TEMPLATE
+```
+
+### 文件组织结构
+```
+/docs/project/create/
+├── requirements/
+│   └── [requirement_id].md
+├── analysis/
+│   └── [analysis_id].md
+└── todos/
+    └── [todo_id].md
+```
+
+## 模板变量系统
+
+### 基础信息变量
+- `feature_name`: 功能名称
+- `created_time`: 创建时间
+- `creator`: 创建者
+- `project_name`: 项目名称
+
+### 内容变量
+- 描述性变量：`*_description`, `*_overview`
+- 结构化变量：`*_requirements`, `*_criteria`  
+- 分析变量：`*_impact`, `*_assessment`
+
+### 动态变量
+- `version_entries`: 支持多版本记录
+- `[file]`: 文件路径占位符
+- `[id]`: 唯一标识占位符
+
+## 模板设计原则
+
+### 标准化结构
+- 统一的Markdown格式
+- 一致的变量命名规范
+- 标准化的文档头部信息
+
+### 灵活性支持
+- 可扩展的变量系统
+- 动态内容插入
+- 条件性章节显示
+
+### 用户体验优化
+- 清晰的章节划分
+- 直观的信息层次
+- 易于理解的模板结构
+
+## 使用场景
+
+### 传统文档生成
+- 项目初始化时生成README
+- 版本发布时更新CHANGELOG
+- 项目维护期间更新文档
+
+### 创造模式开发
+- 新功能开发前的需求确认
+- 技术方案设计和评估
+- 开发计划制定和跟踪
+
+## 扩展性评估
+**高扩展性**:
+- 模板变量易于扩展
+- 支持自定义章节结构
+- 可适配不同项目类型
+
+## 代码质量评估
+**优秀**:
+- 清晰的模板结构
+- 标准化的变量命名
+- 完整的文档覆盖
+
+## 文档完整性
+**完整**: 覆盖项目文档的主要需求，支持传统和创新开发模式
+
+## 注意事项
+- 模板变量使用`{variable_name}`格式
+- 创造模式模板需要配合相应的MCP工具使用
+- 文件路径中的`[placeholder]`需要运行时替换
+- **创造模式模板是CodeLens的创新特性**，支持AI辅助的功能开发流程

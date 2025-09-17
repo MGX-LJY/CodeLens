@@ -1,15 +1,28 @@
 {
-  "id": "change_1758095194737",
-  "timestamp": "2025-09-17T15:46:34.737189",
+  "id": "change_1758106985164",
+  "timestamp": "2025-09-17T19:03:05.164871",
   "operation": "update",
   "has_changes": true,
-  "files_count": 48,
+  "files_count": 50,
   "changes": {
     "modified": [
-      ".claude/settings.local.json"
+      "mcp_server.py",
+      ".claude/settings.local.json",
+      "src/templates/document_templates.py",
+      "src/logging/manager.py",
+      "src/mcp_tools/doc_sync.py",
+      "src/templates/templates/project_templates.py"
     ],
-    "added": [],
-    "deleted": []
+    "added": [
+      "src/mcp_tools/create_requirement.py",
+      "src/mcp_tools/create_guide.py",
+      "src/mcp_tools/create_analysis.py",
+      "src/mcp_tools/create_todo.py"
+    ],
+    "deleted": [
+      "src/mcp_tools/doc_update.py",
+      "src/mcp_tools/doc_update_init.py"
+    ]
   },
-  "summary": "检测到变更：修改1个文件"
+  "summary": "检测到变更：修改6个文件, 新增4个文件, 删除2个文件"
 }

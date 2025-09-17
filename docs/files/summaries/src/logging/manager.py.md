@@ -1,165 +1,187 @@
-# 文件分析报告：src/logging/manager.py
+# src/logging/manager.py - 日志核心管理器
 
 ## 文件概述
-CodeLens日志系统的核心管理器实现，为整个日志系统提供统一的日志管理功能，包括结构化日志生成、异步写入、文件轮转协调和上下文信息管理。该文件作为日志系统的管理中枢，集成LogRecord日志记录对象、AsyncLogWriter异步写入器和LogManager主管理器，实现企业级的日志处理能力。
+CodeLens日志系统的核心管理文件，提供统一的日志管理功能，包括**新优化的易读混合格式**、异步写入、文件轮转协调和上下文信息管理。
 
-## 代码结构分析
-
-### 导入依赖
-- **时间处理**: `datetime` - 时间戳生成和格式化
-- **数据处理**: `json` - JSON格式序列化
-- **系统模块**: `os, sys, threading, uuid` - 系统信息、线程管理和唯一标识
-- **并发模块**: `queue.Queue, Empty` - 异步队列管理
-- **异常处理**: `traceback` - 异常堆栈信息
-- **类型注解**: `typing.Dict, Any, Optional` - 类型提示支持
-- **配置管理**: `.config.LogConfig` - 日志配置管理
-- **文件轮转**: `.rotator.FileRotator` - 文件轮转服务
-
-### 全局变量和常量
-- 无全局变量定义，所有状态封装在类中
-
-### 配置和设置
-- **结构化日志**: 支持JSON和简单文本两种输出格式
-- **异步写入**: 基于队列的异步日志写入机制
-- **上下文管理**: 完整的日志上下文信息记录
-- **元数据支持**: 进程ID、线程ID、请求ID等系统元数据
-
-## 函数详细分析
-
-### 函数概览表
-| 函数名 | 参数 | 返回值 | 功能描述 |
-|--------|------|--------|----------|
-| `__init__` | self, level, component, operation, message, context, exc_info | None | 初始化日志记录对象 |
-| `to_json` | self | str | 将日志记录转换为JSON格式 |
-| `to_simple` | self | str | 将日志记录转换为简单文本格式 |
-| `__init__` | self, config | None | 初始化异步日志写入器 |
-| `_start_worker` | self | None | 启动异步写入工作线程 |
-| `_worker_loop` | self | None | 异步写入工作循环 |
-| `write_log` | self, record | None | 写入日志记录到队列 |
-| `shutdown` | self, timeout | None | 关闭异步写入器 |
-| `__init__` | self, component, operation, config | None | 初始化日志管理器 |
-| `log_operation_start` | self, operation, **context | str | 记录操作开始日志 |
-| `log_operation_end` | self, operation, operation_id, **context | None | 记录操作结束日志 |
-| `debug/info/warning/error/critical` | self, message, context, exc_info | None | 各级别日志记录方法 |
-
-### 函数详细说明
-
-**`LogRecord.__init__(self, level, component, operation, message, context, exc_info)`**
-- 创建结构化日志记录对象
-- 生成ISO格式时间戳和系统元数据
-- 收集进程ID、线程ID、请求ID等系统信息
-- 处理异常信息和上下文数据
-
-**`LogRecord.to_json(self)`**
-- 将日志记录序列化为JSON格式
-- 包含完整的日志信息和系统元数据
-- 处理异常信息的详细堆栈跟踪
-- 使用紧凑的JSON输出格式
-
-**`LogRecord.to_simple(self)`**
-- 生成简单易读的文本格式日志
-- 按时间戳、级别、组件、操作、消息的顺序排列
-- 可选地包含上下文信息和异常信息
-- 适用于人工查看和调试
-
-**`AsyncLogWriter.__init__(self, config)`**
-- 初始化异步日志写入组件
-- 创建日志队列和文件轮转器
-- 根据配置决定是否启动异步工作线程
-- 设置关闭标志和文件句柄
-
-**`AsyncLogWriter._worker_loop(self)`**
-- 异步写入的核心工作循环
-- 从队列中取出日志记录并写入文件
-- 处理文件轮转和异常情况
-- 支持优雅关闭和超时处理
-
-**`LogManager.log_operation_start(self, operation, **context)`**
-- 记录操作开始的日志
-- 生成唯一的操作ID用于关联
-- 记录操作开始时间和上下文信息
-- 返回操作ID供后续使用
-
-**`LogManager.log_operation_end(self, operation, operation_id, **context)`**
-- 记录操作结束的日志
-- 计算操作持续时间
-- 关联开始和结束的操作ID
-- 记录操作结果和性能信息
-
-## 类详细分析
-
-### 类概览表
-| 类名 | 继承关系 | 主要职责 | 实例方法数量 |
-|------|----------|----------|--------------|
-| `LogRecord` | 无继承 | 日志记录对象，数据结构和格式化 | 3个 |
-| `AsyncLogWriter` | 无继承 | 异步日志写入器，队列和线程管理 | 8个 |
-| `LogManager` | 无继承 | 日志管理器，统一接口和操作管理 | 10个以上 |
-
-### 类详细说明
-
-**`LogRecord`**
-- **设计目的**: 封装单条日志记录的所有信息
-- **核心职责**: 日志数据结构化、格式化输出、元数据管理
-- **数据字段**: 时间戳、级别、组件、操作、消息、上下文、异常、元数据
-- **输出格式**: 支持JSON和简单文本两种格式
-- **扩展性**: 易于添加新的输出格式和字段
-
-**`AsyncLogWriter`**
-- **设计目的**: 提供高性能的异步日志写入能力
-- **核心职责**: 队列管理、异步写入、文件轮转协调、线程安全
-- **工作机制**: 基于生产者-消费者模式的异步处理
-- **性能优化**: 批量写入、缓冲管理、非阻塞操作
-- **可靠性**: 优雅关闭、错误恢复、资源清理
-
-**`LogManager`**
-- **设计目的**: 提供统一的日志管理接口
-- **核心职责**: 日志记录、操作跟踪、配置管理、输出控制
-- **集成能力**: 整合配置、写入器、轮转器等组件
-- **易用性**: 提供便捷的日志记录方法和操作跟踪
-- **企业级**: 支持结构化日志、异步写入、文件管理
-
-## 函数调用流程图
-```mermaid
-graph TD
-    A[LogManager.debug/info等] --> B[创建LogRecord]
-    B --> C[LogRecord.to_json/to_simple]
-    C --> D{异步模式?}
-    
-    D -->|是| E[AsyncLogWriter.write_log]
-    D -->|否| F[直接文件写入]
-    
-    E --> G[添加到队列]
-    G --> H[工作线程处理]
-    H --> I[_worker_loop]
-    I --> J[从队列取记录]
-    J --> K[写入文件]
-    K --> L{需要轮转?}
-    L -->|是| M[FileRotator.rotate]
-    L -->|否| N[继续处理]
-    
-    F --> O[控制台输出]
-    M --> N
-    N --> P[记录完成]
-    
-    Q[log_operation_start] --> R[生成操作ID]
-    R --> S[记录开始时间]
-    S --> T[返回操作ID]
-    
-    U[log_operation_end] --> V[计算持续时间]
-    V --> W[记录结束日志]
+## 导入模块
+```python
+import datetime, json, os, sys, threading, traceback, uuid
+from queue import Queue, Empty
+from .config import LogConfig
+from .rotator import FileRotator
 ```
 
-## 变量作用域分析
-- **模块作用域**: 导入的模块和类
-- **类作用域**: LogRecord、AsyncLogWriter、LogManager类定义
-- **实例作用域**: 配置对象、队列、线程、文件句柄等实例属性
-- **方法作用域**: 各方法内的局部变量，如日志记录、时间戳等
+## 全局变量
+无全局变量，所有状态封装在类中。
 
-## 函数依赖关系
-- `LogManager` → `LogRecord` 日志记录创建
-- `LogManager` → `AsyncLogWriter` 异步写入
-- `AsyncLogWriter` → `FileRotator` 文件轮转
-- `LogRecord` → `json, datetime` 数据序列化
-- `AsyncLogWriter` → `Queue, threading` 异步处理
-- 操作跟踪方法 → `uuid` 唯一标识生成
-- 异常处理 → `traceback` 堆栈信息收集
+## 核心常量
+- **日志级别映射**: CRITICAL(50), ERROR(40), WARNING(30), INFO(20), DEBUG(10)
+- **时间戳格式**: ISO格式（去除'Z'后缀优化可读性）
+
+## 类汇总表
+
+| 类名 | 功能 | 关键方法 | 特性 |
+|------|------|----------|------|
+| `LogRecord` | 日志记录对象 | `to_json()`, `to_simple()` | **新混合格式** |
+| `AsyncLogWriter` | 异步日志写入器 | `write_async()`, `write_sync()` | 异步队列写入 |
+| `LogManager` | 日志核心管理器 | `debug()`, `info()`, `warning()`, `error()`, `critical()` | 统一日志接口 |
+
+## 🔥 重大改进：混合格式日志输出
+
+### 新格式特性
+**原紧凑JSON格式**:
+```json
+{"timestamp":"2025-01-01T10:00:00Z","level":"INFO","component":"Test","message":"Hello","context":{"key":"value"}}
+```
+
+**新易读混合格式**:
+```
+2025-01-01T10:00:00 [INFO] [Test/operation] "Hello" key="value" req_id=abc123
+```
+
+### 格式优化详情
+1. **时间戳简化**: 去掉'Z'后缀，提升可读性
+2. **级别突出**: 用方括号包围级别
+3. **组件清晰**: component/operation格式
+4. **消息明确**: 双引号包围消息内容
+5. **上下文平铺**: key=value格式，智能类型处理
+6. **元数据精简**: 只显示关键的req_id
+
+## 详细功能分析
+
+### LogRecord类核心功能
+
+#### to_json()方法 - 新混合格式实现
+```python
+def to_json(self) -> str:
+    """转换为易读的混合格式字符串"""
+    # 清理时间戳（去掉'Z'后缀）
+    clean_timestamp = self.timestamp.rstrip('Z')
+    
+    # 基础格式：timestamp [level] [component/operation] "message"
+    parts = [clean_timestamp, f"[{self.level}]", f"[{self.component}/{self.operation}]", f'"{self.message}"']
+    
+    # 智能上下文处理
+    if self.context:
+        for key, value in self.context.items():
+            if isinstance(value, str):
+                parts.append(f'{key}="{value}"')  # 字符串加引号
+            elif isinstance(value, (int, float, bool)):
+                parts.append(f'{key}={value}')    # 数字直接显示
+            else:
+                parts.append(f'{key}={json.dumps(value, ensure_ascii=False)}')  # 复杂对象JSON化
+```
+
+#### 智能异常处理
+```python
+if self.exc_info:
+    error_msg = f"{type(self.exc_info).__name__}: {str(self.exc_info)}"
+    parts.append(f'error="{error_msg}"')
+```
+
+### AsyncLogWriter类功能
+
+#### 重启清空机制
+```python
+def _clear_log_file_on_restart(self) -> None:
+    """重启时清空日志文件"""
+    # 保持文件但清空内容，避免旧日志混淆
+```
+
+#### 异步写入队列
+- **队列机制**: Queue线程安全队列
+- **工作线程**: 独立后台线程处理写入
+- **超时处理**: 1秒超时避免阻塞
+- **回退机制**: 异步失败时同步写入
+
+### LogManager类核心管理
+
+#### 日志级别控制
+```python
+def _should_log(self, level: str) -> bool:
+    """检查是否应该记录此级别的日志"""
+    current_level = self.config.get_log_level_int(self.component)
+    record_level = self.LEVEL_MAP.get(level, 20)
+    return record_level >= current_level
+```
+
+#### 上下文管理
+```python
+def set_context(self, **context) -> None:
+    """设置持久化上下文"""
+    self.context.update(context)
+
+def clear_context(self) -> None:
+    """清空上下文"""
+    self.context.clear()
+```
+
+## 数据流分析
+
+### 日志生成流程
+```
+日志调用 → _log() → 级别检查 → LogRecord创建 → 格式化 → 异步/同步写入 → 文件轮转
+```
+
+### 异步写入流程
+```
+日志记录 → 队列入队 → 后台线程 → 文件写入 → 轮转检查
+```
+
+## 性能优化考虑
+
+### 异步写入优势
+- 非阻塞日志记录
+- 批量文件操作
+- 独立工作线程
+
+### 混合格式优势
+- 减少JSON解析开销
+- 直观的视觉阅读
+- 保留结构化信息
+
+## 错误处理机制
+
+### 多层容错
+1. **异步失败回退**: 异步写入失败时同步写入
+2. **文件操作异常**: 捕获并输出到stderr
+3. **轮转失败处理**: 错误记录但不中断日志
+4. **队列满处理**: 直接同步写入避免丢失
+
+## 扩展性评估
+**高扩展性**:
+- 可插拔的格式化器
+- 灵活的处理器架构
+- 组件级别配置
+- 上下文系统支持
+
+## 代码质量评估
+**优秀**:
+- 清晰的类职责分离
+- 完善的异常处理
+- 线程安全设计
+- **用户体验优化**（新混合格式）
+
+## 使用示例
+
+### 基本日志记录
+```python
+logger = LogManager(config, "FileService", "scan")
+logger.info("文件处理完成", {"count": 25, "size_mb": 1024.5})
+# 输出: 2025-01-01T10:00:00 [INFO] [FileService/scan] "文件处理完成" count=25 size_mb=1024.5 req_id=abc123
+```
+
+### 异常日志记录
+```python
+try:
+    raise FileNotFoundError("配置文件不存在")
+except Exception as e:
+    logger.error("配置加载失败", {"path": "/etc/config.json"}, exc_info=e)
+# 输出: 2025-01-01T10:00:00 [ERROR] [FileService/scan] "配置加载失败" path="/etc/config.json" error="FileNotFoundError: 配置文件不存在" req_id=abc123
+```
+
+## 注意事项
+- 异步写入依赖后台线程，需要正确关闭
+- 文件轮转会清空当前日志文件
+- 上下文信息会在所有日志中持久化
+- **新混合格式大幅提升日志可读性**，减少视觉疲劳
