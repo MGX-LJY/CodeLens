@@ -1,0 +1,87 @@
+{
+  "created_at": "2025-09-17T15:22:08.897994",
+  "last_updated": "2025-09-17T15:46:34.737366",
+  "total_operations": 6,
+  "history": [
+    {
+      "id": "change_1758093728897",
+      "timestamp": "2025-09-17T15:22:08.897970",
+      "operation": "init",
+      "files_count": 48,
+      "summary": "初始化项目指纹基点，记录48个代码文件"
+    },
+    {
+      "id": "change_1758093755480",
+      "timestamp": "2025-09-17T15:22:35.480526",
+      "operation": "update",
+      "has_changes": false,
+      "files_count": 48,
+      "changes": {
+        "modified": [],
+        "added": [],
+        "deleted": []
+      },
+      "summary": "未检测到文件变更"
+    },
+    {
+      "id": "change_1758093769065",
+      "timestamp": "2025-09-17T15:22:49.065020",
+      "operation": "update",
+      "has_changes": true,
+      "files_count": 49,
+      "changes": {
+        "modified": [],
+        "added": [
+          "test_change_detection.py"
+        ],
+        "deleted": []
+      },
+      "summary": "检测到变更：新增1个文件"
+    },
+    {
+      "id": "change_1758093790874",
+      "timestamp": "2025-09-17T15:23:10.874174",
+      "operation": "update",
+      "has_changes": true,
+      "files_count": 49,
+      "changes": {
+        "modified": [
+          "test_change_detection.py"
+        ],
+        "added": [],
+        "deleted": []
+      },
+      "summary": "检测到变更：修改1个文件"
+    },
+    {
+      "id": "change_1758094095919",
+      "timestamp": "2025-09-17T15:28:15.919363",
+      "operation": "update",
+      "has_changes": true,
+      "files_count": 48,
+      "changes": {
+        "modified": [],
+        "added": [],
+        "deleted": [
+          "test_change_detection.py"
+        ]
+      },
+      "summary": "检测到变更：删除1个文件"
+    },
+    {
+      "id": "change_1758095194737",
+      "timestamp": "2025-09-17T15:46:34.737189",
+      "operation": "update",
+      "has_changes": true,
+      "files_count": 48,
+      "changes": {
+        "modified": [
+          ".claude/settings.local.json"
+        ],
+        "added": [],
+        "deleted": []
+      },
+      "summary": "检测到变更：修改1个文件"
+    }
+  ]
+}

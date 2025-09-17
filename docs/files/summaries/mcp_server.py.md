@@ -1,7 +1,9 @@
 # 文件分析报告：mcp_server.py
 
 ## 文件概述
-CodeLens MCP服务器主文件，实现了标准MCP协议，为Claude Code提供项目文档生成服务。集成了9个专业MCP工具和热重载功能，支持开发时的实时代码更新。作为整个系统的入口点，负责工具注册、请求路由和服务管理。支持3阶段文档生成工作流：文件层→架构层→项目层。
+CodeLens MCP服务器主文件，实现了标准MCP协议，为Claude Code提供项目文档生成服务。集成了8个专业MCP工具和热重载功能，支持开发时的实时代码更新。作为整个系统的入口点，负责工具注册、请求路由和服务管理。支持3阶段文档生成工作流：文件层→架构层→项目层。
+
+**重要更新**: 已将doc_update_init和doc_update工具合并为统一的doc_sync工具，提供智能文档同步功能。
 
 ## 代码结构分析
 
@@ -17,7 +19,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server  
 from mcp.types import Tool, TextContent
 
-# CodeLens工具模块 - 9个专业MCP工具
+# CodeLens工具模块 - 8个专业MCP工具
 from src.mcp_tools.doc_guide import DocGuideTool
 from src.mcp_tools.task_init import TaskInitTool
 from src.mcp_tools.task_execute import TaskExecuteTool
@@ -25,8 +27,7 @@ from src.mcp_tools.task_status import TaskStatusTool
 from src.mcp_tools.init_tools import InitTools
 from src.mcp_tools.task_complete import TaskCompleteTool
 from src.mcp_tools.project_overview import ProjectOverviewTool
-from src.mcp_tools.doc_update_init import DocUpdateInitTool
-from src.mcp_tools.doc_update import DocUpdateTool
+from src.mcp_tools.doc_sync import DocSyncTool
 
 # 热重载功能
 from src.hot_reload import HotReloadManager
@@ -40,7 +41,7 @@ server = Server("codelens")
 # 热重载管理器（全局实例）
 hot_reload_manager: Optional[HotReloadManager] = None
 
-# CodeLens工具实例字典 - 9个专业工具
+# CodeLens工具实例字典 - 8个专业工具
 codelens_tools = create_tool_instances()
 ```
 
@@ -73,12 +74,12 @@ batch_reload_window = 2.0     # 批量重载时间窗口
 #### create_tool_instances()
 **功能**: 工具实例工厂函数  
 **参数**: 无  
-**返回**: Dict[str, Tool] - 9个专业工具实例字典  
+**返回**: Dict[str, Tool] - 8个专业工具实例字典  
 **逻辑**: 创建所有CodeLens工具的实例并返回字典映射，包含：
 - 工作流工具：init_tools, task_complete
 - 项目分析工具：doc_guide, project_overview
 - 任务管理工具：task_init, task_execute, task_status
-- 文档更新工具：doc_update_init, doc_update
+- 文档同步工具：doc_sync（合并了doc_update_init和doc_update）
 
 #### setup_hot_reload()  
 **功能**: 热重载系统初始化  
